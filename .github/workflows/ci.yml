@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.300"   # DEVELOPMENT.md'de netlesen .NET surumune gore guncelleyin
+
+      - name: Restore
+        run: dotnet restore GenclikMerkezi.sln
+
+      - name: Build
+        run: dotnet build GenclikMerkezi.sln --no-restore --configuration Release
+
+      - name: Unit Tests
+        run: dotnet test tests/UnitTests/GenclikMerkezi.UnitTests/GenclikMerkezi.UnitTests.csproj --no-build --configuration Release
+
+      - name: Architecture Tests
+        run: dotnet test tests/ArchitectureTests/GenclikMerkezi.ArchitectureTests/GenclikMerkezi.ArchitectureTests.csproj --no-build --configuration Release
+
+      # Integration testleri genellikle DB/RabbitMQ gerektirdigi icin
+      # Testcontainers kurulana kadar ayri, opsiyonel bir job olarak birakildi.
+      # - name: Integration Tests
+      #   run: dotnet test tests/IntegrationTests/GenclikMerkezi.IntegrationTests/GenclikMerkezi.IntegrationTests.csproj --no-build --configuration Release

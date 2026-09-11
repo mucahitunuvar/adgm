@@ -1,0 +1,63 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/BuildingBlocks/" />
+  <Folder Name="/src/BuildingBlocks/Contracts/">
+    <Project Path="src/BuildingBlocks/Contracts/GenclikMerkezi.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/Infrastructure/">
+    <Project Path="src/BuildingBlocks/Infrastructure/GenclikMerkezi.BuildingBlocks.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/SharedKernel/">
+    <Project Path="src/BuildingBlocks/SharedKernel/GenclikMerkezi.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/src/Host/">
+    <Project Path="src/Host/GenclikMerkezi.Api/GenclikMerkezi.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Candidate/">
+    <Project Path="src/Modules/Candidate/GenclikMerkezi.Modules.Candidate.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/CareerAdvisor/">
+    <Project Path="src/Modules/CareerAdvisor/GenclikMerkezi.Modules.CareerAdvisor.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Employer/">
+    <Project Path="src/Modules/Employer/GenclikMerkezi.Modules.Employer.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Employment/">
+    <Project Path="src/Modules/Employment/GenclikMerkezi.Modules.Employment.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Identity/">
+    <Project Path="src/Modules/Identity/GenclikMerkezi.Modules.Identity.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Interview/">
+    <Project Path="src/Modules/Interview/GenclikMerkezi.Modules.Interview.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Job/">
+    <Project Path="src/Modules/Job/GenclikMerkezi.Modules.Job.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Matching/">
+    <Project Path="src/Modules/Matching/GenclikMerkezi.Modules.Matching.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Notification/">
+    <Project Path="src/Modules/Notification/GenclikMerkezi.Modules.Notification.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/ReferenceData/">
+    <Project Path="src/Modules/ReferenceData/GenclikMerkezi.Modules.ReferenceData.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Support/">
+    <Project Path="src/Modules/Support/GenclikMerkezi.Modules.Support.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Website/">
+    <Project Path="src/Modules/Website/GenclikMerkezi.Modules.Website.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/ArchitectureTests/">
+    <Project Path="tests/ArchitectureTests/GenclikMerkezi.ArchitectureTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/IntegrationTests/">
+    <Project Path="tests/IntegrationTests/GenclikMerkezi.IntegrationTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/UnitTests/">
+    <Project Path="tests/UnitTests/GenclikMerkezi.UnitTests.csproj" />
+  </Folder>
+</Solution>
