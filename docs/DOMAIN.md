@@ -613,7 +613,107 @@ Skill Improvement
 
 ---
 
-# 20. Event
+# 20. CareerDevelopment
+
+CareerDevelopment, adayın kariyer danışmanı eşliğinde yürüttüğü gelişim
+sürecini temsil eder.
+
+Bu domain, "adayın şu anda neyi eksik olduğunu ve bu eksikliği nasıl
+kapatacağını" yönetir — iş/pozisyon eşleştirmesinden (Matching) önce gelir.
+
+CareerDevelopment kapsamındaki kavramlar:
+
+```text
+CareerDevelopment
+    │
+    ├── SkillGap
+    ├── CareerGoal
+    ├── DevelopmentPlan
+    ├── TrainingRecommendation
+    └── AdvisorRecommendation
+```
+
+## CareerGoal
+
+Adayın kariyer hedefini temsil eder (örn. hedeflenen pozisyon, alan,
+sektör). Adayın kendisi veya CareerAdvisor tarafından belirlenebilir.
+
+## DevelopmentPlan
+
+CareerAdvisor'ın, aday için SkillGap ve CareerGoal'a dayanarak oluşturduğu
+gelişim planıdır. Bir DevelopmentPlan birden fazla TrainingRecommendation
+ve AdvisorRecommendation içerebilir.
+
+## TrainingRecommendation
+
+Adayın belirli bir SkillGap'i kapatmak amacıyla belirli bir eğitime
+yönlendirilmesini temsil eder.
+
+Önemli sınır:
+
+```text
+CareerDevelopment.TrainingRecommendation
+        ≠
+Website.Training
+```
+
+`Website.Training` eğitimin kendisidir (tarih, yer, içerik, kontenjan) ve
+Website modülünün sahipliğindedir.
+
+`TrainingRecommendation` ise "bu adaya, şu SkillGap nedeniyle, şu eğitim
+önerildi" kaydıdır ve CareerDevelopment modülünün sahipliğindedir.
+
+CareerDevelopment, Website.Training'e yalnızca contract/ID referansı ile
+bağlanır; Website'in database'ine doğrudan erişmez veya Training verisini
+kopyalamaz (bkz. ADR-003, ADR-008).
+
+## AdvisorRecommendation
+
+CareerAdvisor'ın aday için serbest metin veya yapılandırılmış biçimde
+girdiği değerlendirme/öneridir.
+
+Örnek:
+
+```text
+"Bu adayın teknik becerisi yeterli ancak Excel konusunda
+gelişmesi gerekiyor."
+```
+
+Bu girdi bir SkillGap kaydına dönüştürülebilir ve DevelopmentPlan'a
+bağlanabilir.
+
+## Akış
+
+```text
+Candidate
+   ↓
+CareerAdvisor Değerlendirmesi
+   ↓
+SkillGap
+   ↓
+DevelopmentPlan
+   ↓
+TrainingRecommendation
+   ↓
+Training (Website)
+   ↓
+Skill Improvement
+   ↓
+Matching
+```
+
+## Domain Sınırı
+
+CareerDevelopment, Candidate'ın kariyer gelişim sürecini yönetir; Matching
+ise CareerDevelopment sürecinin ürettiği güncellenmiş yetkinlik/hedef
+bilgisini girdi olarak kullanır.
+
+CareerDevelopment, Matching'in kendisini gerçekleştirmez ve Matching
+algoritmasının bir parçası değildir.
+
+---
+
+# 21. Event
 
 Event, Gençlik Merkezi tarafından düzenlenen etkinlikleri temsil eder.
 
@@ -631,7 +731,7 @@ Event'ler adaylarla ilişkilendirilebilir.
 
 ---
 
-# 21. Interview
+# 22. Interview
 
 Interview, aday ile işveren arasında gerçekleştirilen görüşme sürecidir.
 
@@ -662,7 +762,7 @@ gibi bilgileri içerebilir.
 
 ---
 
-# 22. Interview Lifecycle
+# 23. Interview Lifecycle
 
 Görüşme yaşam döngüsü örneğin:
 
@@ -693,7 +793,7 @@ Görüşme sonucu CareerAdvisor tarafından notlandırılabilir.
 
 ---
 
-# 23. Employment
+# 24. Employment
 
 Employment, adayın bir firma tarafından işe alınması sonucunda oluşan istihdam kaydıdır.
 
@@ -725,7 +825,7 @@ Domain, farklı işe yerleşme senaryolarını destekleyebilmelidir.
 
 ---
 
-# 24. Employment Follow-Up
+# 25. Employment Follow-Up
 
 Gençlik Merkezi'nin sorumluluğu işe yerleşmeyle sona ermez.
 
@@ -756,7 +856,7 @@ Continues / Left
 
 ---
 
-# 25. Career Journey
+# 26. Career Journey
 
 Candidate'ın sistem içerisindeki kariyer yolculuğu tek bir Job başvurusundan ibaret değildir.
 
@@ -812,7 +912,7 @@ New Matching
 
 ---
 
-# 26. Employer Journey
+# 27. Employer Journey
 
 İşverenin sistem içerisindeki yolculuğu:
 
@@ -838,7 +938,7 @@ Employment
 
 ---
 
-# 27. CareerAdvisor Journey
+# 28. CareerAdvisor Journey
 
 CareerAdvisor'ın temel çalışma döngüsü:
 
@@ -866,7 +966,7 @@ CareerAdvisor'ın temel görevi iki tarafın verilerini anlamlı şekilde birle�
 
 ---
 
-# 28. Candidate ↔ Employer Relationship
+# 29. Candidate ↔ Employer Relationship
 
 Candidate ile Employer arasındaki ilişki doğrudan olmak zorunda değildir.
 
@@ -914,7 +1014,7 @@ Bu nedenle Candidate ve Employer arasındaki ilişki tek bir entity veya tek bir
 
 ---
 
-# 29. Notification
+# 30. Notification
 
 Notification, sistem içerisinde kullanıcıları önemli olaylardan haberdar etmek için kullanılan domain/capability kavramıdır.
 
@@ -941,7 +1041,7 @@ olabilir.
 
 ---
 
-# 30. Domain Events
+# 31. Domain Events
 
 Domain içerisindeki önemli durum değişiklikleri domain event olarak ifade edilebilir.
 
@@ -976,7 +1076,7 @@ Domain event, domain içerisindeki bir olayın gerçekleştiğini ifade eder.
 
 ---
 
-# 31. Temel Domain İlişkileri
+# 32. Temel Domain İlişkileri
 
 Sistemin temel ilişkileri:
 
@@ -1025,58 +1125,65 @@ CareerAdvisor
 
 ---
 
-# 32. Temel Domain Kuralları
+# 33. Temel Domain Kuralları
 
 Aşağıdaki kurallar domain açısından temel kabul edilir.
 
-## 32.1 Candidate
+## 33.1 Candidate
 
 * Candidate onaylanmadan aktif kariyer süreçlerine dahil edilemez.
 * Candidate kendi profilini yönetebilir.
 * CareerAdvisor atanmış olduğu Candidate'ın kariyer verilerini inceleyebilir.
 * Yetkili kullanıcılar dışında Candidate'ın hassas bilgileri görüntülenemez.
 
-## 32.2 Employer
+## 33.2 Employer
 
 * Employer onaylanmadan aktif işveren operasyonlarına dahil edilemez.
 * Employer onaylanmadan Job yayınlayamaz.
 * Employer onaylanmadan PersonnelRequest oluşturamaz veya aktif hale getiremez.
 
-## 32.3 Job
+## 33.3 Job
 
 * Job doğrudan yayınlanamaz.
 * Job gerekli onay sürecinden geçmelidir.
 * Reddedilen Job için mümkünse red nedeni ve düzeltme talebi tutulmalıdır.
 * Düzeltilen Job yeniden değerlendirmeye gönderilebilir.
 
-## 32.4 PersonnelRequest
+## 33.4 PersonnelRequest
 
 * PersonnelRequest Employer tarafından oluşturulur.
 * CareerAdvisor tarafından değerlendirilebilir.
 * PersonnelRequest bir Job'a dönüşmek zorunda değildir.
 * PersonnelRequest doğrudan Candidate Recommendation sürecini başlatabilir.
 
-## 32.5 Recommendation
+## 33.5 Recommendation
 
 * Recommendation belirli bir Candidate ile belirli bir Employer/Job/PersonnelRequest ilişkisini temsil eder.
 * Recommendation, Application ile aynı kavram değildir.
 * Aynı aday aynı fırsat için tekrar önerilecekse domain kurallarına göre bunun yeni Recommendation mı yoksa mevcut Recommendation güncellemesi mi olduğu belirlenmelidir.
 
-## 32.6 Interview
+## 33.6 Interview
 
 * Interview geçerli bir aday-firma ilişkisine dayanmalıdır.
 * Interview planlanmadan önce gerekli taraflar belirlenmelidir.
 * Tamamlanan Interview için sonuç ve mümkünse değerlendirme notu tutulmalıdır.
 
-## 32.7 Employment
+## 33.7 Employment
 
 * Employment gerçek bir işe yerleşme durumunu temsil eder.
 * Employment oluşturulduğunda ilgili Candidate ve Employer ilişkisi takip edilebilir.
 * Employment süreci işe başlangıç ve sonrasındaki takip süreçlerini desteklemelidir.
 
+## 33.8 CareerDevelopment
+
+* SkillGap yalnızca CareerAdvisor tarafından oluşturulabilir veya onaylanabilir; aday kendi SkillGap'ini doğrudan belirleyemez.
+* DevelopmentPlan, ilgili Candidate'a atanmış CareerAdvisor tarafından oluşturulur.
+* TrainingRecommendation, Website.Training verisini kopyalamaz; yalnızca referans (ID/contract) tutar.
+* Bir TrainingRecommendation tamamlandığında (aday eğitimi bitirdiğinde) ilgili SkillGap'in durumu güncellenebilir ancak otomatik olarak kapatılmaz — CareerAdvisor onayı gerekebilir.
+
 ---
 
-# 33. Domain'de Olmaması Gereken Yaklaşım
+# 34. Domain'de Olmaması Gereken Yaklaşım
 
 Domain aşağıdaki şekilde modellenmemelidir:
 
@@ -1116,7 +1223,7 @@ Job ve Application bu yapının destekleyici parçalarıdır.
 
 ---
 
-# 34. Otomasyon ve Yapay Zeka
+# 35. Otomasyon ve Yapay Zeka
 
 Sistem ilerleyen aşamalarda bazı domain kararlarını otomatikleştirebilir.
 
@@ -1164,7 +1271,7 @@ Otomasyon ve yapay zeka sistemleri **domain kararlarının yerine doğrudan geç
 
 ---
 
-# 35. Public Web Domain
+# 36. Public Web Domain
 
 Gençlik Merkezi'nin public web sitesi de domainin bir parçasıdır ancak kariyer operasyonlarından farklı bir içerik alanına sahiptir.
 
@@ -1194,7 +1301,7 @@ Bu içerikler kamuya açık olabilir veya yönetim tarafından yayınlanabilir.
 
 ---
 
-# 36. Domain Sınırları
+# 37. Domain Sınırları
 
 Domain içerisindeki kavramlar birbirleriyle ilişkilidir ancak her kavram tek bir sorumluluğa sahip olmalıdır.
 
@@ -1240,7 +1347,7 @@ Bu kavramlar birbirinin yerine kullanılmamalıdır.
 
 ---
 
-# 37. Domain Terminolojisi
+# 38. Domain Terminolojisi
 
 Kod içerisinde domain kavramları mümkün olduğunca aşağıdaki isimlerle ifade edilmelidir:
 
@@ -1287,7 +1394,7 @@ gibi isimler rastgele kullanılmamalıdır.
 
 ---
 
-# 38. Domain'in Temel İlkesi
+# 39. Domain'in Temel İlkesi
 
 Gençlik Merkezi domaininin merkezinde Job değil **Candidate + CareerAdvisor + Employer ilişkisi** bulunmaktadır.
 
