@@ -7,7 +7,7 @@ Bu doküman, Gençlik Merkezi projesinde günlük yazılım geliştirme süreçl
 Bu dokümanın amacı:
 
 * Geliştirme sürecini standartlaştırmak
-* Codex ve geliştiricilerin aynı çalışma prensiplerini izlemesini sağlamak
+* Claude ve geliştiricilerin aynı çalışma prensiplerini izlemesini sağlamak
 * Feature geliştirme sürecini öngörülebilir hale getirmek
 * Gereksiz refactor ve teknik borç oluşmasını engellemek
 * Frontend ve backend geliştirme sırasını belirlemek
@@ -96,7 +96,7 @@ ADR
 → Mimari kararların nedenleri
 ```
 
-Dokümanlar arasında çelişki görülürse geliştirici/Codex kendi başına karar vermemelidir.
+Dokümanlar arasında çelişki görülürse geliştirici/Claude kendi başına karar vermemelidir.
 
 ---
 
@@ -122,9 +122,9 @@ Temel prensip:
 
 ---
 
-# 5. Codex Working Protocol
+# 5. Claude Working Protocol
 
-Codex her task için aşağıdaki sırayı izlemelidir.
+Claude her task için aşağıdaki sırayı izlemelidir.
 
 ```text
 1. AGENTS.md oku
@@ -204,27 +204,38 @@ Ancak mevcut kod doğrudan feature'ın çalışmasını engelliyorsa problem rap
 
 ---
 
-# 8. Frontend-First Development Strategy
+# 8. Backend-First Development Strategy
 
-Projenin başlangıç geliştirme stratejisi:
+Projenin geliştirme stratejisi **ADR-010**'da tanımlandığı şekilde **Backend-First**'tür:
 
-> **Önce frontend kullanıcı deneyimini ve tüm akışları tamamla, sonra backend implementation'ına geç.**
+> **Önce backend mimarisini, foundation'ı, Identity/Authorization'ı ve domain modüllerini olgunlaştır; React frontend geliştirmesine backend contract'ları ve temel iş akışları yeterince olgunlaştıktan sonra başla.**
 
-Bu yaklaşım özellikle ilk geliştirme fazında uygulanacaktır.
+Geliştirme sırası (ADR-010):
 
-** Önemli Değişiklik **
-Backend-First Development Strategy
+```text
+1. Backend Architecture
+2. Backend Foundation
+3. Database-per-Module
+4. Identity / Authorization
+5. Domain Modules
+6. CQRS / MediatR
+7. Events / RabbitMQ / Outbox
+8. Notification / Hangfire / Media
+9. API Contracts
+10. Backend Tests
+11. Backend Completion
+12. React Frontend
+```
 
-Projenin ilk geliştirme aşamasında backend mimarisi, domain modeli, modül sınırları, database izolasyonu, authentication/authorization, API contract'ları, event altyapısı ve backend testleri tamamlanacaktır.
+Bu doküman daha önce "Frontend-First" bir strateji tanımlıyordu; bu, projenin erken bir aşamasında değerlendirilip vazgeçilen bir yaklaşımın dokümanda unutulmuş kalıntısıydı ve **AGENTS.md §4 (Backend-First Rule)** ile **ADR-010** ile doğrudan çelişiyordu. Bu bölüm o çelişkiyi gidermek için güncellenmiştir.
 
-React frontend geliştirmesine backend foundation ve API contract'ları yeterli olgunluğa ulaştıktan sonra başlanacaktır.
+Aşağıdaki §9-§12 (Frontend Phase, Mock Data, Flow Completion, Definition of Done) backend foundation ve API contract'ları olgunlaştıktan **sonra** başlayacak frontend fazı için geçerliliğini korur; sadece zamanlaması değişmiştir.
 
-Frontend geliştirme süreci geliştirici ve Codex ile birlikte yürütülecek, UI/UX kararları backend tamamlanmadan varsayımsal olarak kodlanmayacaktır.
 ---
 
 # 9. Frontend Phase
 
-İlk aşamada React uygulamalarının çalışan UI ve kullanıcı akışları oluşturulacaktır.
+Backend foundation ve API contract'ları yeterli olgunluğa ulaştıktan sonra, React uygulamalarının çalışan UI ve kullanıcı akışları oluşturulacaktır.
 
 Frontend:
 
@@ -331,9 +342,9 @@ Bir frontend feature tamamlanmış sayılabilmesi için:
 
 # 13. Backend Phase
 
-Frontend akışları yeterli olgunluğa ulaştıktan sonra backend implementation aşamasına geçilir.
+Backend implementation, §8'de tanımlanan Backend-First stratejisine göre projenin en başında başlar (frontend'i beklemez).
 
-Backend geliştirme sırası:
+Bir backend modülü içindeki geliştirme sırası:
 
 ```text
 Domain
@@ -957,7 +968,7 @@ Komutlar proje configuration'ına göre değişebilir.
 
 # 39. No Fake Success
 
-Codex bir komut çalıştırmadıysa çalıştırmış gibi raporlamamalıdır.
+Claude bir komut çalıştırmadıysa çalıştırmış gibi raporlamamalıdır.
 
 Örneğin:
 
@@ -1195,7 +1206,7 @@ Gerekli mimari ön koşul bulunuyorsa ayrıca belirtilmelidir.
 
 # 50. Stop & Ask Rule
 
-Codex aşağıdaki durumlarda kendi başına karar vermemelidir:
+Claude aşağıdaki durumlarda kendi başına karar vermemelidir:
 
 * Mimari kural değişmesi gerekiyorsa
 * Başka module DB erişimi gerekiyorsa
@@ -1264,9 +1275,9 @@ Frontend feature:
 
 ---
 
-# 53. Final Codex Checklist
+# 53. Final Claude Checklist
 
-Codex task tamamlamadan önce:
+Claude task tamamlamadan önce:
 
 ```text
 [ ] AGENTS.md kurallarına uyuldu
