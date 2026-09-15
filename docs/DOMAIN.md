@@ -105,6 +105,7 @@ Candidate;
 
 sahip bir kariyer varlığıdır.
 
+Candidate entity alanları için bkz. db\Candidate.md
 ---
 
 # 4. Candidate Profile
@@ -247,6 +248,7 @@ Employer yalnızca ilan yayınlayan bir kullanıcı değildir.
 
 Employer aynı zamanda Gençlik Merkezi'nin kariyer danışmanlığı hizmetinden yararlanan işveren tarafıdır.
 
+Employer entity alanları için bkz. db\Employer.md
 ---
 
 # 8. Company Profile
