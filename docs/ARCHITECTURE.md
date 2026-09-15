@@ -10,7 +10,7 @@ Bu dokümanın temel amacı:
 * Modüller arasındaki bağımlılıkları kontrol altında tutmak
 * Veri izolasyonunu sağlamak
 * Yeni özelliklerin mevcut sistemi bozmadan eklenebilmesini sağlamak
-* Codex ve geliştiriciler için net mimari sınırlar oluşturmak
+* Claude ve geliştiriciler için net mimari sınırlar oluşturmak
 * Gelecekte gerektiğinde belirli modüllerin bağımsız servislere ayrılabilmesini mümkün kılmak
 
 Temel prensip:
@@ -101,16 +101,16 @@ Sistem dört ayrı frontend uygulaması ve tek backend API üzerine kurulacaktı
                                   │
        ┌──────────────┬───────────┼───────────┬──────────────┐
        ▼              ▼           ▼           ▼              ▼
-   Identity       Candidate    Employer      Job         Matching
+   Identity       Candidate    Advisor    Career Dev.       Job
       DB             DB           DB          DB             DB
 
        ▼              ▼           ▼           ▼              ▼
-   Advisor        Interview   Employment   Notification   Career Dev.
+   Matching        Employer   Interview   Employment    Notification
       DB             DB           DB          DB             DB
 
-       ▼              ▼           ▼           ▼
-      CMS        ReferenceData   Media       Event
-      DB             DB           DB          DB
+       ▼              ▼           ▼
+    Website         Support   ReferenceData
+      DB             DB           DB
 ```
 
 ---
@@ -285,17 +285,16 @@ src/
 └── Modules/
     ├── Identity/
     ├── Candidate/
-    ├── Employer/
     ├── CareerAdvisor/
+    ├── CareerDevelopment/
     ├── Job/
     ├── Matching/
+    ├── Employer/
     ├── Interview/
     ├── Employment/
-    ├── CareerDevelopment/
-    ├── Event/
     ├── Notification/
-    ├── CMS/
-    ├── Media/
+    ├── Website/
+    ├── Support/
     └── ReferenceData/
 ```
 
@@ -349,7 +348,7 @@ Feature'lar mümkün olduğunca kendi davranışlarını bir arada tutmalıdır.
 
 # 8. Module List
 
-Başlangıç mimarisinde aşağıdaki modüller bulunmaktadır.
+Başlangıç mimarisinde aşağıdaki modüller bulunmaktadır (bkz. §6 Solution Structure ile aynı sıra).
 
 ## 8.1. Identity
 
@@ -382,20 +381,7 @@ Sorumlulukları:
 
 ---
 
-## 8.3. Employer
-
-Sorumlulukları:
-
-* Employer
-* Company
-* CompanyProfile
-* Company approval
-* Company users
-* Company status
-
----
-
-## 8.4. CareerAdvisor
+## 8.3. CareerAdvisor
 
 Sorumlulukları:
 
@@ -405,6 +391,20 @@ Sorumlulukları:
 * Advisor workload
 * Advisor notes
 * Advisor activities
+
+---
+
+## 8.4. CareerDevelopment
+
+Sorumlulukları:
+
+* SkillGap
+* CareerGoal
+* DevelopmentPlan
+* TrainingRecommendation
+* AdvisorRecommendation
+
+CareerDevelopment ayrı bir modül olarak Candidate ve CareerAdvisor'dan bağımsızdır (bkz. ADR-011). `TrainingRecommendation`, eğitimin kendisini (bkz. 8.11 Website) değil, adaya yapılan öneriyi temsil eder; Website.Training verisini kopyalamaz, yalnızca contract/ID referansı tutar.
 
 ---
 
@@ -454,7 +454,20 @@ Matching algoritmaları ileride AI/ML tabanlı hale getirilebilir.
 
 ---
 
-## 8.7. Interview
+## 8.7. Employer
+
+Sorumlulukları:
+
+* Employer
+* Company
+* CompanyProfile
+* Company approval
+* Company users
+* Company status
+
+---
+
+## 8.8. Interview
 
 Sorumlulukları:
 
@@ -468,7 +481,7 @@ Sorumlulukları:
 
 ---
 
-## 8.8. Employment
+## 8.9. Employment
 
 Sorumlulukları:
 
@@ -482,32 +495,7 @@ Sorumlulukları:
 
 ---
 
-## 8.9. CareerDevelopment
-
-Sorumlulukları:
-
-* Assessment
-* Skill gap
-* Career goal
-* Training recommendation
-* Training participation
-* Career development activities
-
----
-
-## 8.10. Event
-
-Sorumlulukları:
-
-* Events
-* Training events
-* Workshops
-* Event registration
-* Event attendance
-
----
-
-## 8.11. Notification
+## 8.10. Notification
 
 Sorumlulukları:
 
@@ -520,37 +508,32 @@ Sorumlulukları:
 
 ---
 
-## 8.12. CMS
+## 8.11. Website
+
+Website, önceki tasarımda ayrı modüller olarak planlanan **CMS**, **Event** ve **Media** sorumluluklarını tek bir modülde birleştirir (yönetim panelinin tek bir modülde toplanması kararı).
 
 Sorumlulukları:
 
-* Public website content
-* News
-* Announcements
-* Projects
-* Activities
-* Success stories
-* Static pages
-* Menus
-* SEO metadata
+* Public website content: News, Announcements, Projects, Activities, Success stories, Static pages, Menus, SEO metadata
+* Events: Training events, Workshops, Event registration, Event attendance
+* Website'e ait medya/dosya metadata'sı: Upload yönetimi, dosya referansları, dosya erişim politikaları
+
+Dosyanın fiziksel olarak nerede tutulduğu Website modülünün business logic'ine gömülmemelidir; depolama sağlayıcısına özgü detaylar AGENTS.md §34'teki `IFileStorage` soyutlaması arkasında tutulur. Bu, her modülün kendi dosyalarını (ör. Candidate'ın CV dosyaları) aynı paylaşılan storage abstraction'ı kullanarak, ancak kendi veri sahipliğinde tutmasını engellemez — Website yalnızca kendi içerik/etkinlik/medya verisinin sahibidir, sistemdeki her dosyanın değil.
 
 ---
 
-## 8.13. Media
+## 8.12. Support
 
 Sorumlulukları:
 
-* File metadata
-* Upload management
-* File references
-* File access policies
-* Storage abstraction
-
-Dosyanın fiziksel olarak nerede tutulduğu Media modülünün business logic'ine gömülmemelidir.
+* Müşteri desteği / destek talebi (ticket) yönetimi
+* Support ticket lifecycle (açık, işlemde, çözüldü, kapatıldı)
+* Candidate/Employer ile Admin/CareerAdvisor arasındaki destek iletişimi
+* SSS/bilgi tabanı (ileride genişletilebilir)
 
 ---
 
-## 8.14. ReferenceData
+## 8.13. ReferenceData
 
 Sistem içerisinde birçok modül tarafından kullanılabilecek standart referans verilerini yönetir.
 
@@ -624,17 +607,16 @@ Her modül kendi MSSQL database'ine sahip olacaktır.
 ```text
 GenclikMerkezi.Identity
 GenclikMerkezi.Candidate
-GenclikMerkezi.Employer
 GenclikMerkezi.CareerAdvisor
+GenclikMerkezi.CareerDevelopment
 GenclikMerkezi.Job
 GenclikMerkezi.Matching
+GenclikMerkezi.Employer
 GenclikMerkezi.Interview
 GenclikMerkezi.Employment
-GenclikMerkezi.CareerDevelopment
-GenclikMerkezi.Event
 GenclikMerkezi.Notification
-GenclikMerkezi.CMS
-GenclikMerkezi.Media
+GenclikMerkezi.Website
+GenclikMerkezi.Support
 GenclikMerkezi.ReferenceData
 ```
 
@@ -1339,7 +1321,7 @@ Cache için uygun adaylar:
 * Sector
 * Profession
 * Skill
-* CMS content
+* Website content
 * Frequently accessed configuration
 
 Gerektiğinde Redis'e geçilebilir.
@@ -2226,9 +2208,9 @@ açıklamalıdır.
 
 ---
 
-# 68. Codex Execution Protocol
+# 68. Claude Execution Protocol
 
-Codex herhangi bir kod değişikliği yapmadan önce aşağıdaki süreci izlemelidir.
+Claude herhangi bir kod değişikliği yapmadan önce aşağıdaki süreci izlemelidir.
 
 ### 1. AGENTS.md oku
 
@@ -2297,7 +2279,7 @@ Yapılan değişiklikler, test sonuçları ve varsa riskler açıkça raporlanma
 
 # 69. Mandatory Stop Conditions
 
-Codex aşağıdaki durumlardan biriyle karşılaşırsa kendi başına mimari karar vermemelidir.
+Claude aşağıdaki durumlardan biriyle karşılaşırsa kendi başına mimari karar vermemelidir.
 
 İşlem durdurulmalı ve gerekçe açıklanmalıdır.
 
@@ -2472,9 +2454,9 @@ Gençlik Merkezi'nin hedef mimarisi:
 │                                                               │
 │                     MODULAR MONOLITH                          │
 │                                                               │
-│ Identity │ Candidate │ Employer │ Advisor │ Job               │
-│ Matching │ Interview │ Employment │ CareerDevelopment         │
-│ Event │ Notification │ CMS │ Media │ ReferenceData             │
+│ Identity │ Candidate │ CareerAdvisor │ CareerDevelopment │ Job │
+│ Matching │ Employer │ Interview │ Employment │ Notification   │
+│ Website │ Support │ ReferenceData                              │
 └──────────────────────────────┬────────────────────────────────┘
                                │
                 ┌──────────────┼──────────────┐
@@ -2499,7 +2481,7 @@ Bu mimarinin temel hedefi:
 
 # 74. Final Rule
 
-Codex ve geliştiriciler için son ve bağlayıcı kural:
+Claude ve geliştiriciler için son ve bağlayıcı kural:
 
 > **Bu projede kod yazmadan önce bu mimari kuralları oku. Mimariyle çelişen bir implementasyon gerekiyorsa kendin karar verme; dur ve gerekçeyi belirt.**
 
