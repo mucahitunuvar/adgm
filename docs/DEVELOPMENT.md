@@ -917,6 +917,8 @@ Business rule'lar için unit testler tercih edilir.
 
 Database/integration davranışları integration testlerle doğrulanır.
 
+Integration testlerde SQLite kullanılır (bkz. ADR-012); Production ve Development ortamında her zaman SQL Server kullanılır.
+
 ---
 
 # 37. Architecture Tests
