@@ -14,7 +14,7 @@
 
 This repository follows a production-oriented **.NET Web API + Clean Architecture + Modular Monolith + DDD + CQRS + Vertical Slice** architecture.
 
-The purpose of this file is to define the non-negotiable engineering and Codex execution rules.
+The purpose of this file is to define the non-negotiable engineering and Claude execution rules.
 
 Detailed product behavior belongs in:
 
@@ -53,13 +53,13 @@ Architectural decisions belong in:
 docs/adr/
 ```
 
-AGENTS.md defines **how Codex must work**, not every detail of the system.
+AGENTS.md defines **how Claude must work**, not every detail of the system.
 
 ---
 
 # 2. Mandatory Documentation Reading
 
-Before meaningful implementation work, Codex must read:
+Before meaningful implementation work, Claude must read:
 
 1. `AGENTS.md`
 2. `PROJECT.md`
@@ -161,7 +161,7 @@ Frontend development may begin after backend contracts and required business flo
 
 # 5. Stop Before Coding
 
-Before implementing a meaningful feature, Codex must:
+Before implementing a meaningful feature, Claude must:
 
 1. Identify the bounded context/module.
 2. Identify the actor.
@@ -176,7 +176,7 @@ Before implementing a meaningful feature, Codex must:
 11. Identify relevant documentation and ADRs.
 12. Prepare a concise implementation plan.
 
-For broad changes, Codex must list:
+For broad changes, Claude must list:
 
 ```text
 Files to create
@@ -202,7 +202,7 @@ If an implementation requirement conflicts with:
 * Performance constraints
 * Existing ADR decisions
 
-Codex must **stop before coding**.
+Claude must **stop before coding**.
 
 It must explain:
 
@@ -214,7 +214,7 @@ Possible alternatives
 Recommended solution
 ```
 
-Codex must not silently invent a workaround.
+Claude must not silently invent a workaround.
 
 > **Bu projede kod yazmadan önce bu mimari kuralları oku. Mimariyle çelişen bir implementasyon gerekiyorsa kendin karar verme; dur ve gerekçeyi belirt.**
 
@@ -1566,7 +1566,7 @@ If a violation is outside scope, report it explicitly.
 
 ---
 
-# 54. Codex Implementation Workflow
+# 54. Claude Implementation Workflow
 
 ## Before implementation
 
@@ -1684,9 +1684,9 @@ Do not claim a command succeeded if it was not actually executed.
 
 ---
 
-# 57. New Codex Session Rule
+# 57. New Claude Session Rule
 
-At the beginning of a new Codex session:
+At the beginning of a new Claude session:
 
 > Read `AGENTS.md` completely before doing anything.
 

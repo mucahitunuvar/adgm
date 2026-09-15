@@ -991,9 +991,9 @@ Yeni bir feature tamamlanmadan önce:
 
 ---
 
-# 43. Codex Performance Rules
+# 43. Claude Performance Rules
 
-Codex aşağıdaki yaklaşımı izlemelidir:
+Claude aşağıdaki yaklaşımı izlemelidir:
 
 1. Önce mevcut implementasyonu analiz et.
 2. Performance problemini ölçülebilir şekilde tanımla.
@@ -1003,13 +1003,13 @@ Codex aşağıdaki yaklaşımı izlemelidir:
 6. Önce/sonra davranışı doğrula.
 7. Mimari sınırları kontrol et.
 
-Codex yalnızca "daha hızlı olabilir" gerekçesiyle büyük refactor yapmamalıdır.
+Claude yalnızca "daha hızlı olabilir" gerekçesiyle büyük refactor yapmamalıdır.
 
 ---
 
 # 44. Performance Stop Conditions
 
-Aşağıdaki durumlarda Codex durmalı ve açıklama istemelidir:
+Aşağıdaki durumlarda Claude durmalı ve açıklama istemelidir:
 
 * Database-per-module sınırını aşan optimizasyon
 * Cross-module direct database access

@@ -1025,7 +1025,7 @@ Incident response sırasında production verisi üzerinde kontrolsüz değişikl
 
 # 42. Secure Development Rules
 
-Codex veya geliştirici aşağıdaki davranışları gerçekleştiremez:
+Claude veya geliştirici aşağıdaki davranışları gerçekleştiremez:
 
 * Authorization kontrolünü frontend'e bırakmak
 * Başka modülün DbContext'ine erişmek
@@ -1057,7 +1057,7 @@ Aşağıdaki değişiklikler yapılmadan önce güvenlik etkisi değerlendirilme
 * External integration eklenmesi
 * Secret/configuration değişikliği
 
-Belirsiz veya yüksek riskli değişikliklerde Codex uygulamaya geçmeden önce durmalı ve açıklama istemelidir.
+Belirsiz veya yüksek riskli değişikliklerde Claude uygulamaya geçmeden önce durmalı ve açıklama istemelidir.
 
 ---
 
