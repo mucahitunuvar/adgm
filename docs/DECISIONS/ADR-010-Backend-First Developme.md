@@ -1,6 +1,6 @@
 # ADR-010 — Backend-First Development
 
-* **Status:** Accepted
+* **Status:** Accepted (development order steps 5-8 amended by ADR-013)
 * **Date:** 2026-09-10
 
 ## Context

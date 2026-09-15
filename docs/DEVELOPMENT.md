@@ -210,22 +210,27 @@ Projenin geliştirme stratejisi **ADR-010**'da tanımlandığı şekilde **Backe
 
 > **Önce backend mimarisini, foundation'ı, Identity/Authorization'ı ve domain modüllerini olgunlaştır; React frontend geliştirmesine backend contract'ları ve temel iş akışları yeterince olgunlaştıktan sonra başla.**
 
-Geliştirme sırası (ADR-010):
+Geliştirme sırası (ADR-010, **ADR-013** ile güncellenmiştir):
 
 ```text
 1. Backend Architecture
 2. Backend Foundation
 3. Database-per-Module
 4. Identity / Authorization
-5. Domain Modules
-6. CQRS / MediatR
-7. Events / RabbitMQ / Outbox
-8. Notification / Hangfire / Media
+5. Events / RabbitMQ / Outbox
+6. Notification
+7. Domain Modules
+8. CQRS / MediatR
 9. API Contracts
 10. Backend Tests
 11. Backend Completion
 12. React Frontend
 ```
+
+Notification modülü (ve buna bağlı Outbox/RabbitMQ altyapısı) ADR-010'da
+8. sırada iken, Identity'nin email verification ve password reset
+akışlarının placeholder olmadan gerçekten çalışabilmesi için Identity'den
+hemen sonraya çekilmiştir (bkz. **ADR-013**).
 
 Bu doküman daha önce "Frontend-First" bir strateji tanımlıyordu; bu, projenin erken bir aşamasında değerlendirilip vazgeçilen bir yaklaşımın dokümanda unutulmuş kalıntısıydı ve **AGENTS.md §4 (Backend-First Rule)** ile **ADR-010** ile doğrudan çelişiyordu. Bu bölüm o çelişkiyi gidermek için güncellenmiştir.
 
