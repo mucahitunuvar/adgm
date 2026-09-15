@@ -385,6 +385,71 @@ sorusu sorulmalıdır.
 
 Gereksiz kişisel veri toplanmamalıdır.
 
+## 12.1 Özel Nitelikli Kişisel Veri (Sensitive Personal Data)
+
+KVKK madde 6 kapsamında sağlık verisi, engellilik durumu ve benzeri bilgiler
+**özel nitelikli kişisel veri** sayılır ve genel kişisel verilerden daha sıkı
+kurallara tabidir.
+
+Bu kapsama giren alanlar (Candidate.md referans alınmıştır):
+
+```text
+Engelli Kategorisi
+Engellilik Yüzdesi
+Engellilik Açıklaması
+Sağlık Raporu Bilgisi
+Kullanılan İlaç Bilgisi
+Kronik Rahatsızlık Bilgisi
+Bulaşıcı Hastalık Bilgisi
+Bilinç Kaybı Durumu
+```
+
+### Zorunlu Kurallar
+
+* Bu veriler **yalnızca** kullanıcı "Engelliyim" seçeneğini işaretlediğinde
+  toplanır; varsayılan olarak istenmez.
+* Bu verilerin işlenmesi için genel üyelik sözleşmesinden **ayrı, açık ve
+  spesifik bir KVKK rızası** alınmalıdır (ayrı checkbox + ayrı aydınlatma metni).
+* Rıza metni; verinin hangi amaçla, kimler tarafından, ne kadar süreyle
+  işleneceğini açıkça belirtmelidir.
+* Kullanıcı rızasını istediği zaman geri çekebilmelidir; geri çekme, ilgili
+  alanların silinmesini/anonimleştirilmesini tetikler.
+
+### Depolama ve İzolasyon
+
+* Bu alanlar Candidate modülünün genel profil tablosunda **değil**, ayrı bir
+  tabloda (`CandidateDisabilityInfo` benzeri) tutulmalıdır.
+* Bu tabloya erişim, Candidate modülü içinde bile ayrı bir yetki seviyesi
+  gerektirmelidir — genel `CandidateProfile` okuma yetkisi bu tabloyu
+  otomatik olarak kapsamamalıdır.
+* Alan seviyesinde şifreleme (encryption at rest) uygulanmalıdır.
+
+### Erişim Kuralları
+
+* Bu veriye erişebilecekler: **yalnızca** adaya atanmış CareerAdvisor ve
+  gerekçeli erişimi olan Admin.
+* Employer bu veriye **hiçbir koşulda** doğrudan erişemez.
+* Bu veri **public web sitesinde, CV export'ta veya işverene gösterilen
+  aday özetinde** kesinlikle yer almaz — yalnızca "engelli istihdamı"
+  kapsamında genel/istatistiksel amaçla, kişi bazında olmayan biçimde
+  kullanılabilir.
+* Bu alanlar **default matching/arama sorgularına** dahil edilmez; yalnızca
+  adayın kendi rızasıyla "engelli istihdamı" özel eşleştirme akışında
+  kullanılır.
+
+### Audit ve Loglama
+
+* Bu tabloya yapılan her `read` işlemi audit log'a kaydedilmelidir
+  (kim, ne zaman, hangi amaçla).
+* Bu veriler application log'larına, hata mesajlarına veya exception
+  trace'lerine **kesinlikle yazılmamalıdır** (bkz. §13 Sensitive Data).
+
+### Saklama Süresi
+
+* Bu verilerin retention süresi, genel candidate verisinden **daha kısa
+  ve daha sıkı** tutulmalıdır; rıza geri çekildiğinde veya hesap
+  silindiğinde öncelikli olarak temizlenir.
+  
 ---
 
 # 13. Sensitive Data
