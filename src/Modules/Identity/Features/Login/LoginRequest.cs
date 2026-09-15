@@ -1,0 +1,3 @@
+namespace GenclikMerkezi.Modules.Identity.Features.Login;
+
+public sealed record LoginRequest(string Email, string Password);
