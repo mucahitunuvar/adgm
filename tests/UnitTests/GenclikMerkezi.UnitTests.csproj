@@ -18,4 +18,9 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\BuildingBlocks\SharedKernel\GenclikMerkezi.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Identity\GenclikMerkezi.Modules.Identity.csproj" />
+  </ItemGroup>
+
 </Project>
