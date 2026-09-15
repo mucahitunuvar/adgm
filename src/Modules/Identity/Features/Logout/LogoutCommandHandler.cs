@@ -1,7 +1,9 @@
+using GenclikMerkezi.Modules.Identity;
 using GenclikMerkezi.Modules.Identity.Application.Abstractions;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GenclikMerkezi.Modules.Identity.Features.Logout;
 
@@ -9,7 +11,7 @@ public sealed class LogoutCommandHandler(
     IUserRepository userRepository,
     IRefreshTokenGenerator refreshTokenGenerator,
     ICurrentUserService currentUserService,
-    IUnitOfWork unitOfWork)
+    [FromKeyedServices(IdentityModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<LogoutCommand, Result>
 {
     public async Task<Result> Handle(LogoutCommand request, CancellationToken cancellationToken)

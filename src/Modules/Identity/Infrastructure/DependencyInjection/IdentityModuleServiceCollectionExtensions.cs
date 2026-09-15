@@ -1,4 +1,5 @@
 using System.Text;
+using GenclikMerkezi.Modules.Identity;
 using GenclikMerkezi.Modules.Identity.Application.Abstractions;
 using GenclikMerkezi.Modules.Identity.Infrastructure.Notifications;
 using GenclikMerkezi.Modules.Identity.Infrastructure.Persistence;
@@ -37,7 +38,9 @@ public static class IdentityModuleServiceCollectionExtensions
             }
         });
 
-        services.AddScoped<SharedKernel.Abstractions.IUnitOfWork>(sp => sp.GetRequiredService<IdentityDbContext>());
+        services.AddKeyedScoped<SharedKernel.Abstractions.IUnitOfWork>(
+            IdentityModuleMarker.UnitOfWorkKey,
+            (sp, _) => sp.GetRequiredService<IdentityDbContext>());
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();

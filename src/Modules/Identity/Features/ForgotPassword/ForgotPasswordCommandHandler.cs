@@ -1,8 +1,10 @@
+using GenclikMerkezi.Modules.Identity;
 using GenclikMerkezi.Modules.Identity.Application.Abstractions;
 using GenclikMerkezi.Modules.Identity.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GenclikMerkezi.Modules.Identity.Features.ForgotPassword;
 
@@ -10,7 +12,7 @@ public sealed class ForgotPasswordCommandHandler(
     IUserRepository userRepository,
     IPasswordResetTokenGenerator tokenGenerator,
     IPasswordResetTokenNotifier notifier,
-    IUnitOfWork unitOfWork)
+    [FromKeyedServices(IdentityModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<ForgotPasswordCommand, Result>
 {
     public async Task<Result> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)

@@ -4,6 +4,8 @@ using GenclikMerkezi.BuildingBlocks.Infrastructure.DependencyInjection;
 using GenclikMerkezi.BuildingBlocks.Infrastructure.ExceptionHandling;
 using GenclikMerkezi.Modules.Identity;
 using GenclikMerkezi.Modules.Identity.Infrastructure.DependencyInjection;
+using GenclikMerkezi.Modules.Notification;
+using GenclikMerkezi.Modules.Notification.Infrastructure.DependencyInjection;
 using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,9 +16,11 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddSharedApplicationServices(
-    typeof(IdentityModuleMarker).Assembly);
+    typeof(IdentityModuleMarker).Assembly,
+    typeof(NotificationModuleMarker).Assembly);
 
 builder.Services.AddIdentityModule(builder.Configuration);
+builder.Services.AddNotificationModule(builder.Configuration, builder.Environment);
 
 var isTestingEnvironment = builder.Environment.IsEnvironment("Testing");
 
