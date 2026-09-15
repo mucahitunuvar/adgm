@@ -15,6 +15,10 @@
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />
+    <PackageReference Include="DotNetCore.CAP" Version="10.0.2" />
+    <PackageReference Include="DotNetCore.CAP.RabbitMQ" Version="10.0.2" />
+    <PackageReference Include="DotNetCore.CAP.SqlServer" Version="10.0.2" />
+    <PackageReference Include="Savorboard.CAP.InMemoryMessageQueue" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
