@@ -1,6 +1,7 @@
 using GenclikMerkezi.BuildingBlocks.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.Notification;
 using GenclikMerkezi.Modules.Notification.Application.Abstractions;
+using GenclikMerkezi.Modules.Notification.Infrastructure.Email;
 using GenclikMerkezi.Modules.Notification.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -30,6 +31,9 @@ public static class NotificationModuleServiceCollectionExtensions
             NotificationModuleMarker.UnitOfWorkKey,
             (sp, _) => sp.GetRequiredService<NotificationDbContext>());
         services.AddScoped<IEmailNotificationRepository, EmailNotificationRepository>();
+
+        services.Configure<SmtpSettings>(configuration.GetSection(SmtpSettings.SectionName));
+        services.AddScoped<IEmailSender, SmtpEmailSender>();
 
         services.AddMessaging<NotificationDbContext>(configuration, environment);
 

@@ -3,6 +3,11 @@ bin/
 obj/
 *.user
 
+## Local secrets - never commit real credentials.
+## Copy appsettings.Development.json.example to appsettings.Development.json and fill it in locally.
+appsettings.Development.json
+appsettings.*.local.json
+
 ## IDE
 .vs/
 .vscode/
