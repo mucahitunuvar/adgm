@@ -1,0 +1,40 @@
+using GenclikMerkezi.Modules.Identity.Application.Abstractions;
+using GenclikMerkezi.Modules.Identity.Domain;
+using GenclikMerkezi.SharedKernel.Abstractions;
+using GenclikMerkezi.SharedKernel.Results;
+using MediatR;
+
+namespace GenclikMerkezi.Modules.Identity.Features.ForgotPassword;
+
+public sealed class ForgotPasswordCommandHandler(
+    IUserRepository userRepository,
+    IPasswordResetTokenGenerator tokenGenerator,
+    IPasswordResetTokenNotifier notifier,
+    IUnitOfWork unitOfWork)
+    : IRequestHandler<ForgotPasswordCommand, Result>
+{
+    public async Task<Result> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
+    {
+        var emailResult = Email.Create(request.Email);
+
+        if (emailResult.IsSuccess)
+        {
+            var user = await userRepository.GetByEmailAsync(emailResult.Value, cancellationToken);
+
+            if (user is not null && user.Status == UserStatus.Active)
+            {
+                var plainToken = tokenGenerator.GenerateToken();
+                var tokenHash = tokenGenerator.Hash(plainToken);
+                var expiresAtUtc = DateTime.UtcNow.Add(tokenGenerator.Lifetime);
+
+                user.IssuePasswordResetToken(tokenHash, expiresAtUtc);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
+
+                await notifier.NotifyAsync(user.Email.Value, plainToken, expiresAtUtc, cancellationToken);
+            }
+        }
+
+        // Always succeed, regardless of whether the email is registered, to avoid user enumeration.
+        return Result.Success();
+    }
+}
