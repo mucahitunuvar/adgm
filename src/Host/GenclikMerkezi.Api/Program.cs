@@ -1,23 +1,84 @@
+using System.Security.Claims;
+using System.Threading.RateLimiting;
+using GenclikMerkezi.BuildingBlocks.Infrastructure.DependencyInjection;
+using GenclikMerkezi.BuildingBlocks.Infrastructure.ExceptionHandling;
+using GenclikMerkezi.Modules.Identity;
+using GenclikMerkezi.Modules.Identity.Infrastructure.DependencyInjection;
+using Microsoft.AspNetCore.RateLimiting;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
+builder.Services.AddSharedApplicationServices(
+    typeof(IdentityModuleMarker).Assembly);
+
+builder.Services.AddIdentityModule(builder.Configuration);
+
+var isTestingEnvironment = builder.Environment.IsEnvironment("Testing");
+
+// The "Testing" environment (integration tests) shares a single in-process host across many
+// requests from multiple test cases; the production limits would cause unrelated test failures.
+var credentialEndpointPermitLimit = isTestingEnvironment ? 1000 : 5;
+var authenticatedEndpointPermitLimit = isTestingEnvironment ? 1000 : 60;
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Login/Register/ForgotPassword/ResetPassword: partitioned per client IP, 5/min in production.
+    // Prevents credential-stuffing/brute-force attempts regardless of which account is targeted.
+    options.AddPolicy("auth", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: GetClientIpAddress(httpContext),
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = credentialEndpointPermitLimit,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0,
+        }));
+
+    // RefreshAccessToken/GetCurrentUser/ChangePassword/etc.: partitioned per authenticated user
+    // when available, falling back to client IP for anonymous requests (e.g. token refresh).
+    options.AddPolicy("authenticated", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: GetAuthenticatedPartitionKey(httpContext),
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = authenticatedEndpointPermitLimit,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0,
+        }));
+});
+
+static string GetClientIpAddress(HttpContext httpContext) =>
+    httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+static string GetAuthenticatedPartitionKey(HttpContext httpContext) =>
+    httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? GetClientIpAddress(httpContext);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseExceptionHandler();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "GenclikMerkezi API v1"));
 }
 
 app.UseHttpsRedirection();
 
+app.UseRateLimiter();
+
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapIdentityModuleEndpoints();
 
 app.Run();
+
+public partial class Program;
