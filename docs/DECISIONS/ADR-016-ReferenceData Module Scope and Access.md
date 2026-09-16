@@ -1,7 +1,7 @@
 # ADR-016 — ReferenceData Module: Scope, Seed/Admin-Managed Split, and Cross-Module Access
 
-* **Status:** Proposed — pending explicit approval on the Decision 2 (cross-module access) and
-  Decision 3 (generic admin-managed CRUD pattern) sections before implementation begins.
+* **Status:** Accepted — Decision 2 (Option C: in-process Contracts interface) and Decision 3
+  (generic commands/queries over `DbSet<TLookup>()`) approved as recommended, 2026-09-16.
 * **Date:** 2026-09-16
 * **Amends:** ADR-008 (ReferenceData as Separate Module) — ADR-008 decided the module should
   exist and named example lookups, but explicitly left "module communication ve cache stratejisi"
