@@ -7,6 +7,7 @@ using GenclikMerkezi.Modules.Identity.Infrastructure;
 using GenclikMerkezi.Modules.Identity.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.Notification;
 using GenclikMerkezi.Modules.Notification.Infrastructure.DependencyInjection;
+using GenclikMerkezi.Modules.ReferenceData;
 using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,10 +19,12 @@ builder.Services.AddProblemDetails();
 
 builder.Services.AddSharedApplicationServices(
     typeof(IdentityModuleMarker).Assembly,
-    typeof(NotificationModuleMarker).Assembly);
+    typeof(NotificationModuleMarker).Assembly,
+    typeof(ReferenceDataModuleMarker).Assembly);
 
 builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddNotificationModule(builder.Configuration);
+builder.Services.AddReferenceDataModule(builder.Configuration);
 
 // CAP supports exactly one instance per process, so it is registered exactly once here rather
 // than inside each module's own AddXModule() - IdentityDbContext is the transactional outbox
