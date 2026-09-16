@@ -130,4 +130,22 @@ public class AdminAuditLogWritesFlowTests : IClassFixture<CustomWebApplicationFa
         Assert.Contains("Candidate", entry.Details);
         Assert.Contains("Employer", entry.Details);
     }
+
+    [Fact]
+    public async Task ChangeUserRole_ToSameRole_WritesNoAuditLogEntry()
+    {
+        var (_, accessToken) = await LoginAsAdminAsync();
+        var targetUserId = await RegisterCandidateAsync();
+
+        var request = new HttpRequestMessage(
+            HttpMethod.Put, $"/api/v1/auth/admin/users/{targetUserId}/role")
+        {
+            Content = JsonContent.Create(new { newRole = "Candidate" }),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        await _client.SendAsync(request);
+
+        var entries = await _factory.GetAdminAuditLogEntriesAsync();
+        Assert.DoesNotContain(entries, e => e.TargetUserId == targetUserId);
+    }
 }

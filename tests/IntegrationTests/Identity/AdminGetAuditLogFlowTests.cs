@@ -73,6 +73,23 @@ public class AdminGetAuditLogFlowTests : IClassFixture<CustomWebApplicationFacto
     }
 
     [Fact]
+    public async Task GetAuditLog_WithFromUtcAfterToUtc_ReturnsBadRequest()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var now = DateTime.UtcNow;
+
+        var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/api/v1/auth/admin/audit-log?fromUtc={Uri.EscapeDataString(now.ToString("O"))}" +
+            $"&toUtc={Uri.EscapeDataString(now.AddDays(-1).ToString("O"))}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetAuditLog_WithInvalidActionType_ReturnsBadRequest()
     {
         var accessToken = await LoginAsAdminAsync();
