@@ -147,6 +147,20 @@ Logout işlemi yalnızca frontend'de token silmekten ibaret olmamalıdır.
 
 Kullanıcı hesabı devre dışı bırakıldığında aktif session/token'ların geçersizleştirilmesi desteklenmelidir.
 
+## 5.1 Bilinen Sınır: Deactivate Sonrası Access Token Geçerliliği
+
+Identity modülünün Admin `Deactivate` işlemi (bkz. ARCHITECTURE.md §27.1) refresh token'ları
+iptal etmez; yalnızca `User.Status`'u `Disabled` yapar. `Login` ve `RefreshAccessToken` her ikisi
+de `Status != Active` kontrolü yaptığından refresh token bir daha kullanılamaz, ancak deactivate
+anında kullanıcının elinde hâlâ **süresi dolmamış bir access token** varsa, bu token — JWT
+stateless olduğundan — kendi süresi dolana kadar (en fazla 15 dakika, `Jwt:AccessTokenExpirationMinutes`)
+geçerli kalmaya devam edebilir.
+
+Bu **bilinen ve bilinçli olarak kabul edilmiş bir sınırdır**. Ek bir revocation mekanizması
+(security stamp, token blacklist/deny-list, vb.) şimdilik eklenmemiştir — 15 dakikalık pencere,
+mevcut kullanıcı sayısı ve tehdit modeli için kabul edilebilir görülmüştür. Kullanıcı sayısı veya
+"anlık erişim kesme" ihtiyacı büyürse, bu mekanizmalardan biri eklenerek pencere kapatılabilir.
+
 ---
 
 # 6. Authorization

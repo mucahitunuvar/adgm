@@ -1182,6 +1182,18 @@ aynı backend authentication altyapısını kullanabilir.
 
 Authentication ile Authorization birbirinden ayrılmalıdır.
 
+## 27.1 Access Token Ömrü ve Deactivate Sonrası Erişim Penceresi
+
+Access token (JWT) ömrü 15 dakikadır (`Jwt:AccessTokenExpirationMinutes`), refresh token ömrü
+ayrıdır ve değişmemiştir. JWT stateless olduğundan, bir kullanıcı Admin tarafından deactivate
+edildiğinde elindeki access token — henüz süresi dolmamışsa — en fazla 15 dakika daha geçerli
+kalabilir (bkz. SECURITY.md, "Bilinen Sınırlar"). Bu, bilinçli olarak kabul edilmiş bir sınırdır;
+refresh token tarafı zaten `Status != Active` kontrolüyle kapalıdır (`Login`,
+`RefreshAccessToken`), yani erişim en geç bir refresh denemesinde veya access token'ın doğal
+süresi dolduğunda kesilir. Kullanıcı sayısı/ihtiyaç büyürse (örn. anlık erişim kesme zorunluluğu
+doğarsa) bir revocation mekanizması (security stamp, token blacklist, kısa ömürlü + sık
+refresh gibi) eklenebilir; şu an için bu karmaşıklık gerekli görülmemiştir.
+
 ---
 
 # 28. Authorization
