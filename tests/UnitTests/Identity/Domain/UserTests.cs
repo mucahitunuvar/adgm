@@ -311,4 +311,54 @@ public class UserTests
 
         Assert.True(result.IsSuccess);
     }
+
+    [Fact]
+    public void RequestEmailVerificationResend_WithNoPriorToken_IssuesNewToken()
+    {
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+
+        var token = user.RequestEmailVerificationResend("new-hash", DateTime.UtcNow.AddHours(48), TimeSpan.FromMinutes(1));
+
+        Assert.NotNull(token);
+        Assert.Same(token, user.FindEmailVerificationToken("new-hash"));
+    }
+
+    [Fact]
+    public void RequestEmailVerificationResend_InvalidatesPreviousActiveToken()
+    {
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var oldToken = user.IssueEmailVerificationToken(
+            "old-hash", DateTime.UtcNow.AddHours(48) - TimeSpan.FromMinutes(2));
+
+        var newToken = user.RequestEmailVerificationResend("new-hash", DateTime.UtcNow.AddHours(48), TimeSpan.Zero);
+
+        Assert.NotNull(newToken);
+        Assert.True(oldToken.IsUsed);
+        Assert.False(oldToken.IsActive);
+    }
+
+    [Fact]
+    public void RequestEmailVerificationResend_WithinCooldown_ReturnsNullAndIssuesNoNewToken()
+    {
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        user.IssueEmailVerificationToken("recent-hash", DateTime.UtcNow.AddHours(48));
+
+        var token = user.RequestEmailVerificationResend("new-hash", DateTime.UtcNow.AddHours(48), TimeSpan.FromMinutes(1));
+
+        Assert.Null(token);
+        Assert.Single(user.EmailVerificationTokens);
+        Assert.True(user.FindEmailVerificationToken("recent-hash")!.IsActive);
+    }
+
+    [Fact]
+    public void RequestEmailVerificationResend_WhenAlreadyConfirmed_ReturnsNull()
+    {
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        user.IssueEmailVerificationToken("verify-hash", DateTime.UtcNow.AddHours(48));
+        user.ConfirmEmail("verify-hash");
+
+        var token = user.RequestEmailVerificationResend("new-hash", DateTime.UtcNow.AddHours(48), TimeSpan.Zero);
+
+        Assert.Null(token);
+    }
 }

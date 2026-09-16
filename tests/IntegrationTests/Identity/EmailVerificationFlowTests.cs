@@ -57,6 +57,35 @@ public class EmailVerificationFlowTests : IClassFixture<CustomWebApplicationFact
     }
 
     [Fact]
+    public async Task ResendVerificationEmail_WithUnknownEmail_ReturnsNoContentAndSendsNothing()
+    {
+        var email = $"never-registered-{Guid.NewGuid():N}@example.com";
+
+        var response = await _client.PostAsJsonAsync("/api/v1/auth/resend-verification-email", new { email });
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.DoesNotContain(_factory.EmailSender.SentEmails, e => e.ToEmail == email);
+    }
+
+    [Fact]
+    public async Task ResendVerificationEmail_CalledRightAfterRegistration_IsSilentlyThrottledByPerAccountCooldown()
+    {
+        var email = $"aday-{Guid.NewGuid():N}@example.com";
+        await _client.PostAsJsonAsync(
+            "/api/v1/auth/register", new { email, password = "Sifre123", role = "Candidate" });
+        await WaitForEmailAsync(email, "doğrulayın");
+
+        // Called immediately after registration, still within the one-per-minute-per-account
+        // cooldown (User.RequestEmailVerificationResend) - the endpoint still reports success
+        // (enumeration-safety, same as ForgotPassword) but must not actually send a second email.
+        var resendResponse = await _client.PostAsJsonAsync("/api/v1/auth/resend-verification-email", new { email });
+        Assert.Equal(HttpStatusCode.NoContent, resendResponse.StatusCode);
+
+        await Task.Delay(300);
+        Assert.Single(_factory.EmailSender.SentEmails.Where(e => e.ToEmail == email && e.Subject.Contains("doğrulayın")));
+    }
+
+    [Fact]
     public async Task VerifyEmail_ViaPost_AlsoConfirmsEmail()
     {
         var email = $"aday-{Guid.NewGuid():N}@example.com";

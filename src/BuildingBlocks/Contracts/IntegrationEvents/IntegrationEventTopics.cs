@@ -7,4 +7,5 @@ public static class IntegrationEventTopics
 {
     public const string UserRegistered = "identity.user-registered";
     public const string PasswordResetRequested = "identity.password-reset-requested";
+    public const string EmailVerificationRequested = "identity.email-verification-requested";
 }

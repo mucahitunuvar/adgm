@@ -177,6 +177,37 @@ public sealed class User : AggregateRoot
         return _emailVerificationTokens.FirstOrDefault(t => t.TokenHash == tokenHash);
     }
 
+    // Returns the newly issued token, or null when nothing was issued (already verified, or a
+    // resend was requested within minimumResendInterval of the last one) - the caller uses this
+    // to decide whether an email actually needs to go out, without the "why not" ever needing to
+    // reach the client (ResendVerificationEmailCommandHandler always reports success either way,
+    // to avoid leaking account/verification state - the same enumeration-safety trade-off already
+    // made by ForgotPasswordCommandHandler).
+    public EmailVerificationToken? RequestEmailVerificationResend(
+        string newTokenHash,
+        DateTime newExpiresAtUtc,
+        TimeSpan minimumResendInterval)
+    {
+        if (EmailConfirmed)
+        {
+            return null;
+        }
+
+        var mostRecentToken = _emailVerificationTokens.OrderByDescending(t => t.CreatedAtUtc).FirstOrDefault();
+
+        if (mostRecentToken is not null && DateTime.UtcNow - mostRecentToken.CreatedAtUtc < minimumResendInterval)
+        {
+            return null;
+        }
+
+        foreach (var activeToken in _emailVerificationTokens.Where(t => t.IsActive))
+        {
+            activeToken.MarkUsed();
+        }
+
+        return IssueEmailVerificationToken(newTokenHash, newExpiresAtUtc);
+    }
+
     public Result ConfirmEmail(string tokenHash)
     {
         if (EmailConfirmed)

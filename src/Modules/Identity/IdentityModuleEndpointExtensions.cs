@@ -6,6 +6,7 @@ using GenclikMerkezi.Modules.Identity.Features.Login;
 using GenclikMerkezi.Modules.Identity.Features.Logout;
 using GenclikMerkezi.Modules.Identity.Features.RefreshAccessToken;
 using GenclikMerkezi.Modules.Identity.Features.RegisterUser;
+using GenclikMerkezi.Modules.Identity.Features.ResendVerificationEmail;
 using GenclikMerkezi.Modules.Identity.Features.ResetPassword;
 using GenclikMerkezi.Modules.Identity.Features.VerifyEmail;
 using Microsoft.AspNetCore.Routing;
@@ -26,6 +27,7 @@ public static class IdentityModuleEndpointExtensions
         ResetPasswordEndpoint.Map(app);
         ChangeUserRoleEndpoint.Map(app);
         VerifyEmailEndpoint.Map(app);
+        ResendVerificationEmailEndpoint.Map(app);
 
         return app;
     }

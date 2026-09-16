@@ -41,8 +41,12 @@ builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-    // Login/Register/ForgotPassword/ResetPassword: partitioned per client IP, 5/min in production.
-    // Prevents credential-stuffing/brute-force attempts regardless of which account is targeted.
+    // Login/Register/ForgotPassword/ResetPassword/VerifyEmail/ResendVerificationEmail: partitioned
+    // per client IP, 5/min in production. Prevents credential-stuffing/brute-force attempts
+    // regardless of which account is targeted. ResendVerificationEmail additionally enforces a
+    // one-per-minute-per-account cooldown of its own (User.RequestEmailVerificationResend) since
+    // this IP policy alone would not stop repeated resends aimed at a single victim account from
+    // different IPs.
     options.AddPolicy("auth", httpContext => RateLimitPartition.GetFixedWindowLimiter(
         partitionKey: GetClientIpAddress(httpContext),
         factory: _ => new FixedWindowRateLimiterOptions

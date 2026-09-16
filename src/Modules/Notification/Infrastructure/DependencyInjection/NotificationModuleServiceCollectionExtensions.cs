@@ -51,6 +51,7 @@ public static class NotificationModuleServiceCollectionExtensions
         // discover them; never resolved directly by application code.
         services.AddTransient<UserRegisteredIntegrationEventConsumer>();
         services.AddTransient<PasswordResetRequestedIntegrationEventConsumer>();
+        services.AddTransient<EmailVerificationRequestedIntegrationEventConsumer>();
 
         return services;
     }
