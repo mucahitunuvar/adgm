@@ -37,6 +37,7 @@ public static class IdentityModuleServiceCollectionExtensions
             IdentityModuleMarker.UnitOfWorkKey,
             (sp, _) => sp.GetRequiredService<IdentityDbContext>());
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IRefreshTokenGenerator, RefreshTokenGenerator>();

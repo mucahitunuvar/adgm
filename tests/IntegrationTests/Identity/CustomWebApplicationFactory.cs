@@ -90,6 +90,16 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
         return user.Id;
     }
 
+    // No query endpoint reads this back on its own merits yet at the time some tests need it
+    // (AdminAuditLog rows are written by domain event handlers, asynchronously to the admin
+    // command's own SaveChangesAsync) - reads directly against the same DbContext the app uses.
+    public async Task<List<AdminAuditLogEntry>> GetAdminAuditLogEntriesAsync()
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        return await dbContext.AdminAuditLogEntries.AsNoTracking().ToListAsync();
+    }
+
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
