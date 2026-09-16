@@ -32,6 +32,7 @@ public sealed class GetCurrentUserQueryHandler(
             user.Email.Value,
             user.Role.ToString(),
             user.Status.ToString(),
-            user.CreatedAtUtc));
+            user.CreatedAtUtc,
+            user.EmailConfirmed));
     }
 }

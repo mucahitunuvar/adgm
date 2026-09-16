@@ -71,6 +71,7 @@ public sealed class RefreshAccessTokenCommandHandler(
             accessToken.Token,
             accessToken.ExpiresAtUtc,
             newRefreshTokenPlainText,
-            newRefreshTokenExpiresAtUtc));
+            newRefreshTokenExpiresAtUtc,
+            user.EmailConfirmed));
     }
 }

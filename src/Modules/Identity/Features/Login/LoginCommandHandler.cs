@@ -76,6 +76,7 @@ public sealed class LoginCommandHandler(
             accessToken.Token,
             accessToken.ExpiresAtUtc,
             refreshTokenPlainText,
-            refreshTokenExpiresAtUtc));
+            refreshTokenExpiresAtUtc,
+            user.EmailConfirmed));
     }
 }

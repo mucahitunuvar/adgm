@@ -5,4 +5,5 @@ public sealed record GetCurrentUserResponse(
     string Email,
     string Role,
     string Status,
-    DateTime CreatedAtUtc);
+    DateTime CreatedAtUtc,
+    bool EmailConfirmed);
