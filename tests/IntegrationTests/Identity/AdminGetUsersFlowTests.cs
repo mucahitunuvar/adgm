@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using GenclikMerkezi.Modules.Identity.Features.AdminGetUsers;
 using GenclikMerkezi.Modules.Identity.Features.Login;
+using GenclikMerkezi.Modules.Identity.Features.RegisterUser;
 
 namespace GenclikMerkezi.IntegrationTests.Identity;
 
@@ -91,5 +92,58 @@ public class AdminGetUsersFlowTests : IClassFixture<CustomWebApplicationFactory>
         var response = await _client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetUsers_WithInvalidRoleName_ReturnsBadRequest()
+    {
+        var accessToken = await LoginAsAdminAsync();
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/auth/admin/users?role=NotARealRole");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetUsers_WithInvalidStatusName_ReturnsBadRequest()
+    {
+        var accessToken = await LoginAsAdminAsync();
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/auth/admin/users?status=NotARealStatus");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetUsers_FilteredByStatus_ReturnsOnlyMatchingUsers()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var uniqueSuffix = Guid.NewGuid().ToString("N");
+        var candidateEmail = $"aday-{uniqueSuffix}@example.com";
+
+        var registerResponse = await _client.PostAsJsonAsync(
+            "/api/v1/auth/register", new { email = candidateEmail, password = "Sifre123", role = "Candidate" });
+        var registered = await registerResponse.Content.ReadFromJsonAsync<RegisterUserResponse>();
+
+        var deactivateRequest = new HttpRequestMessage(
+            HttpMethod.Put, $"/api/v1/auth/admin/users/{registered!.UserId}/deactivate");
+        deactivateRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        await _client.SendAsync(deactivateRequest);
+
+        var request = new HttpRequestMessage(
+            HttpMethod.Get, $"/api/v1/auth/admin/users?email={uniqueSuffix}&status=Disabled");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        var response = await _client.SendAsync(request);
+        var body = await response.Content.ReadFromJsonAsync<AdminGetUsersResponse>();
+
+        Assert.Equal(1, body!.TotalCount);
+        Assert.Equal("Disabled", body.Items[0].Status);
     }
 }

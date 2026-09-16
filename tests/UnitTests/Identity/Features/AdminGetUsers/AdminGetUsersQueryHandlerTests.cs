@@ -97,6 +97,22 @@ public class AdminGetUsersQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_FilteredByStatus_ReturnsOnlyMatchingUsers()
+    {
+        var deactivated = AddUser("deactivated@example.com", UserRole.Candidate);
+        deactivated.Deactivate();
+        AddUser("active@example.com", UserRole.Candidate);
+
+        var result = await CreateHandler().Handle(
+            new AdminGetUsersQuery(null, null, "Disabled", null, null, 1, 20), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Single(result.Value.Items);
+        Assert.Equal("deactivated@example.com", result.Value.Items[0].Email);
+        Assert.Equal("Disabled", result.Value.Items[0].Status);
+    }
+
+    [Fact]
     public async Task Handle_Pagination_ReturnsCorrectSliceAndTotals()
     {
         for (var i = 0; i < 5; i++)
