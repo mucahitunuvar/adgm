@@ -1,7 +1,9 @@
 using GenclikMerkezi.Modules.Identity.Infrastructure;
+using GenclikMerkezi.Modules.Notification.Application.Abstractions;
 using GenclikMerkezi.Modules.Notification.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +27,8 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
     private string NotificationConnectionString =>
         $"{LocalDbServer}Database={_notificationDatabaseName};";
 
+    public FakeEmailSender EmailSender { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -46,6 +50,13 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
             using var scope = services.BuildServiceProvider().CreateScope();
             scope.ServiceProvider.GetRequiredService<IdentityDbContext>().Database.EnsureCreated();
             scope.ServiceProvider.GetRequiredService<NotificationDbContext>().Database.EnsureCreated();
+        });
+
+        // Runs after Program.cs's own AddNotificationModule() registration, so this replaces the
+        // real SmtpEmailSender - no real mail server is involved in these tests.
+        builder.ConfigureTestServices(services =>
+        {
+            services.AddSingleton<IEmailSender>(EmailSender);
         });
     }
 
