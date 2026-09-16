@@ -21,6 +21,7 @@ public static class IdentityModuleServiceCollectionExtensions
             ?? throw new InvalidOperationException("Jwt configuration section is missing.");
 
         services.Configure<PasswordResetSettings>(configuration.GetSection(PasswordResetSettings.SectionName));
+        services.Configure<EmailVerificationSettings>(configuration.GetSection(EmailVerificationSettings.SectionName));
 
         services.AddDbContext<IdentityDbContext>(options =>
         {
@@ -42,6 +43,7 @@ public static class IdentityModuleServiceCollectionExtensions
         services.AddScoped<IRefreshTokenGenerator, RefreshTokenGenerator>();
         services.AddScoped<IPasswordResetTokenGenerator, PasswordResetTokenGenerator>();
         services.AddScoped<IPasswordResetTokenNotifier, LoggingPasswordResetTokenNotifier>();
+        services.AddScoped<IEmailVerificationTokenGenerator, EmailVerificationTokenGenerator>();
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();

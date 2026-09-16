@@ -261,4 +261,54 @@ public class UserTests
         Assert.True(result.IsFailure);
         Assert.Equal("Auth.InvalidResetToken", result.Error.Code);
     }
+
+    [Fact]
+    public void IssueEmailVerificationToken_ThenConfirmEmail_SetsEmailConfirmedAndConsumesToken()
+    {
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var token = user.IssueEmailVerificationToken("verify-hash", DateTime.UtcNow.AddHours(48));
+
+        var result = user.ConfirmEmail("verify-hash");
+
+        Assert.True(result.IsSuccess);
+        Assert.True(user.EmailConfirmed);
+        Assert.True(token.IsUsed);
+        Assert.Contains(user.DomainEvents, e => e is UserEmailVerifiedDomainEvent);
+    }
+
+    [Fact]
+    public void ConfirmEmail_WithUnknownToken_ReturnsFailure()
+    {
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+
+        var result = user.ConfirmEmail("unknown-hash");
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Auth.InvalidVerificationToken", result.Error.Code);
+        Assert.False(user.EmailConfirmed);
+    }
+
+    [Fact]
+    public void ConfirmEmail_WithExpiredToken_ReturnsFailure()
+    {
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        user.IssueEmailVerificationToken("verify-hash", DateTime.UtcNow.AddSeconds(-1));
+
+        var result = user.ConfirmEmail("verify-hash");
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Auth.InvalidVerificationToken", result.Error.Code);
+    }
+
+    [Fact]
+    public void ConfirmEmail_WhenAlreadyConfirmed_IsIdempotentAndSucceeds()
+    {
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        user.IssueEmailVerificationToken("verify-hash", DateTime.UtcNow.AddHours(48));
+        user.ConfirmEmail("verify-hash");
+
+        var result = user.ConfirmEmail("verify-hash");
+
+        Assert.True(result.IsSuccess);
+    }
 }

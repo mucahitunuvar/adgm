@@ -11,6 +11,7 @@ public sealed class UserRepository(IdentityDbContext dbContext) : IUserRepositor
         return dbContext.Users
             .Include(u => u.RefreshTokens)
             .Include(u => u.PasswordResetTokens)
+            .Include(u => u.EmailVerificationTokens)
             .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
     }
 
@@ -19,6 +20,7 @@ public sealed class UserRepository(IdentityDbContext dbContext) : IUserRepositor
         return dbContext.Users
             .Include(u => u.RefreshTokens)
             .Include(u => u.PasswordResetTokens)
+            .Include(u => u.EmailVerificationTokens)
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
     }
 
@@ -27,6 +29,7 @@ public sealed class UserRepository(IdentityDbContext dbContext) : IUserRepositor
         return dbContext.Users
             .Include(u => u.RefreshTokens)
             .Include(u => u.PasswordResetTokens)
+            .Include(u => u.EmailVerificationTokens)
             .FirstOrDefaultAsync(u => u.RefreshTokens.Any(rt => rt.TokenHash == tokenHash), cancellationToken);
     }
 
@@ -35,7 +38,17 @@ public sealed class UserRepository(IdentityDbContext dbContext) : IUserRepositor
         return dbContext.Users
             .Include(u => u.RefreshTokens)
             .Include(u => u.PasswordResetTokens)
+            .Include(u => u.EmailVerificationTokens)
             .FirstOrDefaultAsync(u => u.PasswordResetTokens.Any(t => t.TokenHash == tokenHash), cancellationToken);
+    }
+
+    public Task<User?> GetByEmailVerificationTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default)
+    {
+        return dbContext.Users
+            .Include(u => u.RefreshTokens)
+            .Include(u => u.PasswordResetTokens)
+            .Include(u => u.EmailVerificationTokens)
+            .FirstOrDefaultAsync(u => u.EmailVerificationTokens.Any(t => t.TokenHash == tokenHash), cancellationToken);
     }
 
     public void Add(User user)

@@ -10,6 +10,7 @@ public sealed class User : AggregateRoot
 
     private readonly List<RefreshToken> _refreshTokens = [];
     private readonly List<PasswordResetToken> _passwordResetTokens = [];
+    private readonly List<EmailVerificationToken> _emailVerificationTokens = [];
 
     public Email Email { get; private set; }
 
@@ -25,9 +26,13 @@ public sealed class User : AggregateRoot
 
     public DateTime? LockedUntilUtc { get; private set; }
 
+    public bool EmailConfirmed { get; private set; }
+
     public IReadOnlyCollection<RefreshToken> RefreshTokens => _refreshTokens.AsReadOnly();
 
     public IReadOnlyCollection<PasswordResetToken> PasswordResetTokens => _passwordResetTokens.AsReadOnly();
+
+    public IReadOnlyCollection<EmailVerificationToken> EmailVerificationTokens => _emailVerificationTokens.AsReadOnly();
 
     public bool IsLockedOut => Status == UserStatus.Locked && LockedUntilUtc is not null && DateTime.UtcNow < LockedUntilUtc;
 
@@ -156,6 +161,41 @@ public sealed class User : AggregateRoot
         RegisterSuccessfulLogin();
 
         RaiseDomainEvent(new UserPasswordResetDomainEvent(Id));
+
+        return Result.Success();
+    }
+
+    public EmailVerificationToken IssueEmailVerificationToken(string tokenHash, DateTime expiresAtUtc)
+    {
+        var token = EmailVerificationToken.Create(Id, tokenHash, expiresAtUtc);
+        _emailVerificationTokens.Add(token);
+        return token;
+    }
+
+    public EmailVerificationToken? FindEmailVerificationToken(string tokenHash)
+    {
+        return _emailVerificationTokens.FirstOrDefault(t => t.TokenHash == tokenHash);
+    }
+
+    public Result ConfirmEmail(string tokenHash)
+    {
+        if (EmailConfirmed)
+        {
+            return Result.Success();
+        }
+
+        var token = FindEmailVerificationToken(tokenHash);
+
+        if (token is null || !token.IsActive)
+        {
+            return Result.Failure(
+                Error.Unauthorized("Auth.InvalidVerificationToken", "The email verification token is invalid or has expired."));
+        }
+
+        token.MarkUsed();
+        EmailConfirmed = true;
+
+        RaiseDomainEvent(new UserEmailVerifiedDomainEvent(Id, Email.Value));
 
         return Result.Success();
     }

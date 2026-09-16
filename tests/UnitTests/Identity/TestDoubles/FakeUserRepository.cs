@@ -29,6 +29,11 @@ public sealed class FakeUserRepository : IUserRepository
         return Task.FromResult(_users.FirstOrDefault(u => u.FindPasswordResetToken(tokenHash) is not null));
     }
 
+    public Task<User?> GetByEmailVerificationTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(_users.FirstOrDefault(u => u.FindEmailVerificationToken(tokenHash) is not null));
+    }
+
     public void Add(User user)
     {
         _users.Add(user);

@@ -12,5 +12,7 @@ public interface IUserRepository
 
     Task<User?> GetByPasswordResetTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default);
 
+    Task<User?> GetByEmailVerificationTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default);
+
     void Add(User user);
 }
