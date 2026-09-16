@@ -1,3 +1,4 @@
+using GenclikMerkezi.Contracts.IntegrationEvents;
 using GenclikMerkezi.Modules.Identity;
 using GenclikMerkezi.Modules.Identity.Application.Abstractions;
 using GenclikMerkezi.Modules.Identity.Domain;
@@ -11,6 +12,8 @@ namespace GenclikMerkezi.Modules.Identity.Features.RegisterUser;
 public sealed class RegisterUserCommandHandler(
     IUserRepository userRepository,
     IPasswordHasher passwordHasher,
+    IEmailVerificationTokenGenerator verificationTokenGenerator,
+    IIntegrationEventPublisher integrationEventPublisher,
     [FromKeyedServices(IdentityModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<RegisterUserCommand, Result<RegisterUserResponse>>
 {
@@ -39,9 +42,25 @@ public sealed class RegisterUserCommandHandler(
         var passwordHash = PasswordHash.FromHashedValue(passwordHasher.Hash(request.Password));
 
         var user = User.Register(email, passwordHash, role);
-
         userRepository.Add(user);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        var plainVerificationToken = verificationTokenGenerator.GenerateToken();
+        var verificationTokenHash = verificationTokenGenerator.Hash(plainVerificationToken);
+        var verificationExpiresAtUtc = DateTime.UtcNow.Add(verificationTokenGenerator.Lifetime);
+        user.IssueEmailVerificationToken(verificationTokenHash, verificationExpiresAtUtc);
+
+        var integrationEvent = new UserRegisteredIntegrationEvent(
+            user.Id,
+            user.Email.Value,
+            plainVerificationToken,
+            verificationExpiresAtUtc,
+            DateTime.UtcNow);
+
+        await integrationEventPublisher.PublishTransactionalAsync(
+            IntegrationEventTopics.UserRegistered,
+            integrationEvent,
+            () => unitOfWork.SaveChangesAsync(cancellationToken),
+            cancellationToken);
 
         return Result.Success(new RegisterUserResponse(user.Id, user.Email.Value, user.Role.ToString()));
     }

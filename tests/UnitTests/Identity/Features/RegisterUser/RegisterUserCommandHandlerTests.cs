@@ -1,3 +1,4 @@
+using GenclikMerkezi.Contracts.IntegrationEvents;
 using GenclikMerkezi.Modules.Identity.Domain;
 using GenclikMerkezi.Modules.Identity.Features.RegisterUser;
 using GenclikMerkezi.SharedKernel.Results;
@@ -9,10 +10,12 @@ public class RegisterUserCommandHandlerTests
 {
     private readonly FakeUserRepository _userRepository = new();
     private readonly FakePasswordHasher _passwordHasher = new();
+    private readonly FakeEmailVerificationTokenGenerator _verificationTokenGenerator = new();
+    private readonly FakeIntegrationEventPublisher _integrationEventPublisher = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
 
     private RegisterUserCommandHandler CreateHandler() =>
-        new(_userRepository, _passwordHasher, _unitOfWork);
+        new(_userRepository, _passwordHasher, _verificationTokenGenerator, _integrationEventPublisher, _unitOfWork);
 
     [Fact]
     public async Task Handle_WithValidInput_CreatesUserAndReturnsSuccess()
@@ -29,6 +32,25 @@ public class RegisterUserCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WithValidInput_IssuesVerificationTokenAndPublishesIntegrationEvent()
+    {
+        var command = new RegisterUserCommand("aday@example.com", "Sifre123", "Candidate");
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        var user = _userRepository.Users.Single();
+        Assert.False(user.EmailConfirmed);
+        Assert.Single(user.EmailVerificationTokens);
+
+        var (topic, integrationEvent) = Assert.Single(_integrationEventPublisher.PublishedEvents);
+        Assert.Equal(IntegrationEventTopics.UserRegistered, topic);
+        var userRegisteredEvent = Assert.IsType<UserRegisteredIntegrationEvent>(integrationEvent);
+        Assert.Equal(user.Id, userRegisteredEvent.UserId);
+        Assert.Equal("aday@example.com", userRegisteredEvent.Email);
+        Assert.NotEmpty(userRegisteredEvent.VerificationToken);
+    }
+
+    [Fact]
     public async Task Handle_WithInvalidEmail_ReturnsValidationFailure_AndDoesNotPersist()
     {
         var command = new RegisterUserCommand("not-an-email", "Sifre123", "Candidate");
@@ -39,6 +61,7 @@ public class RegisterUserCommandHandlerTests
         Assert.Equal(ErrorType.Validation, result.Error.Type);
         Assert.Empty(_userRepository.Users);
         Assert.Equal(0, _unitOfWork.SaveChangesCallCount);
+        Assert.Empty(_integrationEventPublisher.PublishedEvents);
     }
 
     [Fact]
@@ -58,5 +81,6 @@ public class RegisterUserCommandHandlerTests
         Assert.Equal(ErrorType.Conflict, result.Error.Type);
         Assert.Single(_userRepository.Users);
         Assert.Equal(0, _unitOfWork.SaveChangesCallCount);
+        Assert.Empty(_integrationEventPublisher.PublishedEvents);
     }
 }
