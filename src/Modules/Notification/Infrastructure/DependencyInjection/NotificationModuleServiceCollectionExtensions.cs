@@ -1,5 +1,7 @@
 using GenclikMerkezi.Modules.Notification;
+using GenclikMerkezi.Modules.Notification.Application;
 using GenclikMerkezi.Modules.Notification.Application.Abstractions;
+using GenclikMerkezi.Modules.Notification.Features.SendVerificationEmail;
 using GenclikMerkezi.Modules.Notification.Infrastructure.Email;
 using GenclikMerkezi.Modules.Notification.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -41,6 +43,12 @@ public static class NotificationModuleServiceCollectionExtensions
 
         services.Configure<SmtpSettings>(configuration.GetSection(SmtpSettings.SectionName));
         services.AddScoped<IEmailSender, SmtpEmailSender>();
+
+        services.Configure<AppLinkSettings>(configuration.GetSection(AppLinkSettings.SectionName));
+
+        // Registered so CAP (scanning the DI container for ICapSubscribe implementations) can
+        // discover it; never resolved directly by application code.
+        services.AddTransient<UserRegisteredIntegrationEventConsumer>();
 
         return services;
     }

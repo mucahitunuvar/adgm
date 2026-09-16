@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\BuildingBlocks\SharedKernel\GenclikMerkezi.SharedKernel.csproj" />
     <ProjectReference Include="..\..\src\Modules\Identity\GenclikMerkezi.Modules.Identity.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Notification\GenclikMerkezi.Modules.Notification.csproj" />
   </ItemGroup>
 
 </Project>
