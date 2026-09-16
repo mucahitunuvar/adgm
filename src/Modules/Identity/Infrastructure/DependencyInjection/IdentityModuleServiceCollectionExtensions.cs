@@ -1,7 +1,6 @@
 using System.Text;
 using GenclikMerkezi.Modules.Identity;
 using GenclikMerkezi.Modules.Identity.Application.Abstractions;
-using GenclikMerkezi.Modules.Identity.Infrastructure.Notifications;
 using GenclikMerkezi.Modules.Identity.Infrastructure.Persistence;
 using GenclikMerkezi.Modules.Identity.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -42,7 +41,6 @@ public static class IdentityModuleServiceCollectionExtensions
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IRefreshTokenGenerator, RefreshTokenGenerator>();
         services.AddScoped<IPasswordResetTokenGenerator, PasswordResetTokenGenerator>();
-        services.AddScoped<IPasswordResetTokenNotifier, LoggingPasswordResetTokenNotifier>();
         services.AddScoped<IEmailVerificationTokenGenerator, EmailVerificationTokenGenerator>();
 
         services.AddHttpContextAccessor();

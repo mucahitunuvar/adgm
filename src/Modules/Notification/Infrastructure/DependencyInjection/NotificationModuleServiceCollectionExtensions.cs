@@ -1,6 +1,7 @@
 using GenclikMerkezi.Modules.Notification;
 using GenclikMerkezi.Modules.Notification.Application;
 using GenclikMerkezi.Modules.Notification.Application.Abstractions;
+using GenclikMerkezi.Modules.Notification.Features.SendPasswordResetEmail;
 using GenclikMerkezi.Modules.Notification.Features.SendVerificationEmail;
 using GenclikMerkezi.Modules.Notification.Infrastructure.Email;
 using GenclikMerkezi.Modules.Notification.Infrastructure.Persistence;
@@ -47,8 +48,9 @@ public static class NotificationModuleServiceCollectionExtensions
         services.Configure<AppLinkSettings>(configuration.GetSection(AppLinkSettings.SectionName));
 
         // Registered so CAP (scanning the DI container for ICapSubscribe implementations) can
-        // discover it; never resolved directly by application code.
+        // discover them; never resolved directly by application code.
         services.AddTransient<UserRegisteredIntegrationEventConsumer>();
+        services.AddTransient<PasswordResetRequestedIntegrationEventConsumer>();
 
         return services;
     }

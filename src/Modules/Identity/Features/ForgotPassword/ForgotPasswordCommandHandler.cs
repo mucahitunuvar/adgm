@@ -1,3 +1,4 @@
+using GenclikMerkezi.Contracts.IntegrationEvents;
 using GenclikMerkezi.Modules.Identity;
 using GenclikMerkezi.Modules.Identity.Application.Abstractions;
 using GenclikMerkezi.Modules.Identity.Domain;
@@ -11,7 +12,7 @@ namespace GenclikMerkezi.Modules.Identity.Features.ForgotPassword;
 public sealed class ForgotPasswordCommandHandler(
     IUserRepository userRepository,
     IPasswordResetTokenGenerator tokenGenerator,
-    IPasswordResetTokenNotifier notifier,
+    IIntegrationEventPublisher integrationEventPublisher,
     [FromKeyedServices(IdentityModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<ForgotPasswordCommand, Result>
 {
@@ -30,9 +31,19 @@ public sealed class ForgotPasswordCommandHandler(
                 var expiresAtUtc = DateTime.UtcNow.Add(tokenGenerator.Lifetime);
 
                 user.IssuePasswordResetToken(tokenHash, expiresAtUtc);
-                await unitOfWork.SaveChangesAsync(cancellationToken);
 
-                await notifier.NotifyAsync(user.Email.Value, plainToken, expiresAtUtc, cancellationToken);
+                var integrationEvent = new PasswordResetRequestedIntegrationEvent(
+                    user.Id,
+                    user.Email.Value,
+                    plainToken,
+                    expiresAtUtc,
+                    DateTime.UtcNow);
+
+                await integrationEventPublisher.PublishTransactionalAsync(
+                    IntegrationEventTopics.PasswordResetRequested,
+                    integrationEvent,
+                    () => unitOfWork.SaveChangesAsync(cancellationToken),
+                    cancellationToken);
             }
         }
 

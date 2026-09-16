@@ -1,3 +1,4 @@
+using GenclikMerkezi.Contracts.IntegrationEvents;
 using GenclikMerkezi.Modules.Identity.Domain;
 using GenclikMerkezi.Modules.Identity.Features.ForgotPassword;
 using GenclikMerkezi.UnitTests.Identity.TestDoubles;
@@ -8,11 +9,11 @@ public class ForgotPasswordCommandHandlerTests
 {
     private readonly FakeUserRepository _userRepository = new();
     private readonly FakePasswordResetTokenGenerator _tokenGenerator = new();
-    private readonly FakePasswordResetTokenNotifier _notifier = new();
+    private readonly FakeIntegrationEventPublisher _integrationEventPublisher = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
 
     private ForgotPasswordCommandHandler CreateHandler() =>
-        new(_userRepository, _tokenGenerator, _notifier, _unitOfWork);
+        new(_userRepository, _tokenGenerator, _integrationEventPublisher, _unitOfWork);
 
     private User AddUser(string email = "aday@example.com") =>
         AddUser(email, UserStatus.Active);
@@ -31,7 +32,7 @@ public class ForgotPasswordCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WithExistingActiveUser_IssuesTokenAndNotifies()
+    public async Task Handle_WithExistingActiveUser_IssuesTokenAndPublishesIntegrationEvent()
     {
         var user = AddUser();
 
@@ -39,23 +40,28 @@ public class ForgotPasswordCommandHandlerTests
 
         Assert.True(result.IsSuccess);
         Assert.Single(user.PasswordResetTokens);
-        Assert.Equal(1, _notifier.NotifyCallCount);
-        Assert.Equal("aday@example.com", _notifier.LastEmail);
+
+        var (topic, integrationEvent) = Assert.Single(_integrationEventPublisher.PublishedEvents);
+        Assert.Equal(IntegrationEventTopics.PasswordResetRequested, topic);
+        var passwordResetEvent = Assert.IsType<PasswordResetRequestedIntegrationEvent>(integrationEvent);
+        Assert.Equal(user.Id, passwordResetEvent.UserId);
+        Assert.Equal("aday@example.com", passwordResetEvent.Email);
+        Assert.NotEmpty(passwordResetEvent.ResetToken);
         Assert.Equal(1, _unitOfWork.SaveChangesCallCount);
     }
 
     [Fact]
-    public async Task Handle_WithUnknownEmail_StillReturnsSuccess_ButDoesNotNotify()
+    public async Task Handle_WithUnknownEmail_StillReturnsSuccess_ButDoesNotPublish()
     {
         var result = await CreateHandler().Handle(new ForgotPasswordCommand("unknown@example.com"), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(0, _notifier.NotifyCallCount);
+        Assert.Empty(_integrationEventPublisher.PublishedEvents);
         Assert.Equal(0, _unitOfWork.SaveChangesCallCount);
     }
 
     [Fact]
-    public async Task Handle_WithLockedAccount_ReturnsSuccess_ButDoesNotIssueTokenOrNotify()
+    public async Task Handle_WithLockedAccount_ReturnsSuccess_ButDoesNotIssueTokenOrPublish()
     {
         var user = AddUser("aday@example.com", UserStatus.Locked);
 
@@ -63,7 +69,7 @@ public class ForgotPasswordCommandHandlerTests
 
         Assert.True(result.IsSuccess);
         Assert.Empty(user.PasswordResetTokens);
-        Assert.Equal(0, _notifier.NotifyCallCount);
+        Assert.Empty(_integrationEventPublisher.PublishedEvents);
     }
 
     [Fact]
@@ -72,6 +78,6 @@ public class ForgotPasswordCommandHandlerTests
         var result = await CreateHandler().Handle(new ForgotPasswordCommand("not-an-email"), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(0, _notifier.NotifyCallCount);
+        Assert.Empty(_integrationEventPublisher.PublishedEvents);
     }
 }
