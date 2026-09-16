@@ -86,6 +86,20 @@ public class LoginCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WithDeactivatedAccount_ReturnsAccountDeactivated()
+    {
+        var user = AddUser("aday@example.com", "Sifre123");
+        user.Deactivate();
+
+        var result = await CreateHandler().Handle(
+            new LoginCommand("aday@example.com", "Sifre123"), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Forbidden, result.Error.Type);
+        Assert.Equal("Auth.AccountDeactivated", result.Error.Code);
+    }
+
+    [Fact]
     public async Task Handle_WithFewerThanMaxFailedAttempts_ThenCorrectPassword_SucceedsAndResetsCounter()
     {
         var user = AddUser("aday@example.com", "Sifre123");

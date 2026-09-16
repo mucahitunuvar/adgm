@@ -50,6 +50,12 @@ public sealed class RefreshAccessTokenCommandHandler(
 
         user.UnlockIfLockoutExpired();
 
+        if (user.Status == UserStatus.Disabled)
+        {
+            return Result.Failure<LoginResponse>(
+                Error.Forbidden("Auth.AccountDeactivated", "This account has been deactivated."));
+        }
+
         if (user.Status != UserStatus.Active)
         {
             return Result.Failure<LoginResponse>(

@@ -1,5 +1,7 @@
+using GenclikMerkezi.Modules.Identity.Features.AdminDeactivateUser;
 using GenclikMerkezi.Modules.Identity.Features.AdminGetUserById;
 using GenclikMerkezi.Modules.Identity.Features.AdminGetUsers;
+using GenclikMerkezi.Modules.Identity.Features.AdminReactivateUser;
 using GenclikMerkezi.Modules.Identity.Features.AdminUnlockUser;
 using GenclikMerkezi.Modules.Identity.Features.ChangePassword;
 using GenclikMerkezi.Modules.Identity.Features.ChangeUserRole;
@@ -34,6 +36,8 @@ public static class IdentityModuleEndpointExtensions
         AdminGetUsersEndpoint.Map(app);
         AdminGetUserByIdEndpoint.Map(app);
         AdminUnlockUserEndpoint.Map(app);
+        AdminDeactivateUserEndpoint.Map(app);
+        AdminReactivateUserEndpoint.Map(app);
 
         return app;
     }

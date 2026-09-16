@@ -392,4 +392,53 @@ public class UserTests
         Assert.Equal(UserStatus.Active, user.Status);
         Assert.DoesNotContain(user.DomainEvents, e => e is UserManuallyUnlockedDomainEvent);
     }
+
+    [Fact]
+    public void Deactivate_SetsStatusDisabledAndRaisesDomainEvent()
+    {
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var refreshToken = user.IssueRefreshToken("refresh-hash", DateTime.UtcNow.AddDays(7));
+
+        user.Deactivate();
+
+        Assert.Equal(UserStatus.Disabled, user.Status);
+        Assert.True(refreshToken.IsActive);
+        Assert.Contains(user.DomainEvents, e => e is UserDeactivatedDomainEvent);
+    }
+
+    [Fact]
+    public void Deactivate_WhenAlreadyDisabled_IsNoOp()
+    {
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        user.Deactivate();
+        user.ClearDomainEvents();
+
+        user.Deactivate();
+
+        Assert.Equal(UserStatus.Disabled, user.Status);
+        Assert.DoesNotContain(user.DomainEvents, e => e is UserDeactivatedDomainEvent);
+    }
+
+    [Fact]
+    public void Reactivate_WhenDisabled_SetsStatusActiveAndRaisesDomainEvent()
+    {
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        user.Deactivate();
+
+        user.Reactivate();
+
+        Assert.Equal(UserStatus.Active, user.Status);
+        Assert.Contains(user.DomainEvents, e => e is UserReactivatedDomainEvent);
+    }
+
+    [Fact]
+    public void Reactivate_WhenNotDisabled_IsNoOp()
+    {
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+
+        user.Reactivate();
+
+        Assert.Equal(UserStatus.Active, user.Status);
+        Assert.DoesNotContain(user.DomainEvents, e => e is UserReactivatedDomainEvent);
+    }
 }

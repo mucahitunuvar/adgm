@@ -114,4 +114,18 @@ public class RefreshAccessTokenCommandHandlerTests
         Assert.Equal(ErrorType.Forbidden, result.Error.Type);
         Assert.Equal("Auth.AccountNotActive", result.Error.Code);
     }
+
+    [Fact]
+    public async Task Handle_WithDeactivatedAccount_ReturnsAccountDeactivated()
+    {
+        var (user, plainToken) = AddUserWithRefreshToken(DateTime.UtcNow.AddDays(1));
+        user.Deactivate();
+
+        var result = await CreateHandler().Handle(
+            new RefreshAccessTokenCommand(plainToken), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Forbidden, result.Error.Type);
+        Assert.Equal("Auth.AccountDeactivated", result.Error.Code);
+    }
 }

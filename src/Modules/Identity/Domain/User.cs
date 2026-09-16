@@ -130,6 +130,36 @@ public sealed class User : AggregateRoot
         RaiseDomainEvent(new UserManuallyUnlockedDomainEvent(Id));
     }
 
+    // Soft-disable: closes off access without deleting the account, so records this user's id is
+    // still referenced by in other modules (applications, job postings, etc.) stay intact.
+    // Existing refresh tokens are deliberately left alone rather than revoked - Login and
+    // RefreshAccessToken both already gate on Status != Active, so nothing extra is needed to
+    // block access, and revoking here would make a subsequent refresh attempt misreport as
+    // "RefreshTokenReuseDetected" instead of "account deactivated".
+    public void Deactivate()
+    {
+        if (Status == UserStatus.Disabled)
+        {
+            return;
+        }
+
+        Status = UserStatus.Disabled;
+
+        RaiseDomainEvent(new UserDeactivatedDomainEvent(Id));
+    }
+
+    public void Reactivate()
+    {
+        if (Status != UserStatus.Disabled)
+        {
+            return;
+        }
+
+        Status = UserStatus.Active;
+
+        RaiseDomainEvent(new UserReactivatedDomainEvent(Id));
+    }
+
     public void ChangePassword(PasswordHash newPasswordHash)
     {
         PasswordHash = newPasswordHash;
