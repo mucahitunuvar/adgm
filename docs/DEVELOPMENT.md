@@ -514,6 +514,14 @@ Query mümkün olduğunca:
 
 olmalıdır.
 
+Sayfalanmış bir liste sorgusu `PagedResult<TItem>` (SharedKernel/Results) döndürmelidir — ilk
+kullanım örneği `AdminGetUsersQuery` (`IUserRepository.SearchAsync`). Bir Value Object'e
+(`HasConversion` ile map edilmiş, örn. `Email`) göre substring arama gerekiyorsa
+ARCHITECTURE.md §21.1'i oku: `u.Email.Value` gibi bir member access EF Core tarafından translate
+edilmez (Where'de derleme-zamanı hatası değil, çalışma-zamanı "could not be translated"; Select'te
+ise `InvalidCastException`) — bu yüzden `AdminGetUsers`'ın implementasyonu diğer filtreleri DB'de
+uygulayıp adayları materialize ettikten sonra substring eşleşmesini client-side yapar.
+
 ---
 
 # 19. Validation
@@ -553,6 +561,24 @@ Admin.ApproveEmployer
 Authorization yalnızca frontend menü gizleme yöntemiyle sağlanamaz.
 
 Gerçek authorization backend'de uygulanmalıdır.
+
+Identity modülündeki mevcut admin-only endpoint'ler (`RequireAuthorization(policy =>
+policy.RequireRole(nameof(UserRole.Admin)))` + `RequireRateLimiting("authenticated")` deseni):
+
+```text
+PUT  /api/v1/auth/admin/users/{userId}/role         (ChangeUserRole)
+GET  /api/v1/auth/admin/users                       (AdminGetUsers - sayfalı liste + filtre)
+GET  /api/v1/auth/admin/users/{userId}              (AdminGetUserById - detay)
+PUT  /api/v1/auth/admin/users/{userId}/unlock        (AdminUnlockUser)
+PUT  /api/v1/auth/admin/users/{userId}/deactivate    (AdminDeactivateUser)
+PUT  /api/v1/auth/admin/users/{userId}/reactivate    (AdminReactivateUser)
+```
+
+Anonim (`AllowAnonymous`) auth endpoint'leri (`RequireRateLimiting("auth")`, IP başına dakikada
+sınırlı) `POST /api/v1/auth/resend-verification-email`'i de kapsar; bu endpoint ayrıca hesap
+başına dakikada bir istekle sınırlıdır — bu, ASP.NET Core'un rate limiter middleware'i değil,
+domain seviyesinde bir kural (`User.RequestEmailVerificationResend`), çünkü hedef hesap İSTEK
+GÖVDESİNDEDİR ve rate limiter partition key'i HTTP request body'sini parse etmeden çalışır.
 
 ---
 

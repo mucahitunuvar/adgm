@@ -584,11 +584,17 @@ SharedKernel/
 │
 ├── Results/
 │   ├── Result.cs
-│   └── Error.cs
+│   ├── Error.cs
+│   └── PagedResult.cs
 │
 └── Abstractions/
     └── ...
 ```
+
+`PagedResult<TItem>` (Items, TotalCount, Page, PageSize, TotalPages) sayfalanmış herhangi bir liste
+sorgusunun dönüş şeklidir — Identity'nin admin kullanıcı listesi ilk kullanıcısıdır, ama module-
+specific değildir; ileride başka modüllerin (Job, Candidate, ...) liste endpoint'leri de bunu
+kullanabilir.
 
 SharedKernel içerisine:
 
@@ -1020,6 +1026,24 @@ IJobRepository
 ```
 
 Ancak EF Core DbContext'in zaten yeterli abstraction sağladığı durumlarda gereksiz repository oluşturulmamalıdır.
+
+## 21.1 Value Object'ler Üzerinde Filtreleme/Arama (EF Core Gotcha)
+
+Bir property `HasConversion(vo => vo.Value, ...)` ile bir Value Object'e (örn. `Email`) map
+edildiğinde:
+
+* `u.Email == someEmail` gibi tam eşitlik karşılaştırmaları düzgün translate edilir.
+* `u.Email.Value` gibi converted property üzerine encaklenmiş bir member access **translate
+  edilmez** — `Where` içinde "could not be translated" hatası, `Select` içinde ise
+  `InvalidCastException` fırlatır (bkz. `IUserRepository.SearchAsync`'in `AdminGetUsers` için
+  yazılan implementasyonu).
+
+Bunun yerine: diğer (translate edilebilir) filtreler DB tarafında uygulanır, ardından `u.Id` +
+`u.Email` (whole property, normal converter path) projekte edilip materialize edilir, substring
+eşleşmesi client-side yapılır, ve eşleşen id'ler `Contains` ile son sorguya (count + pagination)
+geri beslenir. `EF.Property<string>(...)` bir `Where` predicate'inde translate olur ama
+materialization sırasında (`Select`) aynı `InvalidCastException`'ı verir — güvenilir bir çözüm
+değildir.
 
 Temel prensip:
 
@@ -1524,6 +1548,12 @@ Aşağıdaki gibi kritik işlemler audit edilebilir:
 * Administrative operations
 
 Audit mekanizması gerektiğinde merkezi veya ilgili modül içerisinde uygulanabilir.
+
+Identity modülünün admin işlemleri (`ManuallyUnlock`, `Deactivate`, `Reactivate`, `ChangeUserRole`)
+şu an yalnızca **structured log** (kim/neyi/ne zaman) üretir — `ILogger` üzerinden, ayrı bir
+audit-log tablosu/store'u henüz yoktur. Bu, SECURITY.md §8'in istediği "her admin işlemi audit
+edilmeli" gereksinimini tam karşılamaz; kalıcı/sorgulanabilir bir audit trail (ayrı store, hangi
+modülün sahipleneceği kararı dahil) ayrı bir ADR gerektiren, henüz üstlenilmemiş bir iştir.
 
 ---
 

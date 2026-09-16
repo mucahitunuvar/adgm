@@ -82,6 +82,31 @@ Bir kullanıcı sisteme giriş yapabilen kimliği temsil eder.
 
 Candidate, Employer ve CareerAdvisor ise sistem içerisindeki domain rollerini ve davranışlarını temsil eder.
 
+## 2.1 User Hesap Durumu (Account Status) ve Admin Yetkileri
+
+`User` (Identity modülü) kimlik/erişim kavramıdır ve şu durumlardan birinde olabilir:
+
+```text
+Pending
+Active
+Suspended
+Locked      -> başarısız giriş denemeleri sonucu geçici (LockedUntilUtc doluncaya kadar)
+Disabled    -> Admin tarafından manuel olarak erişimi kapatılmış (soft-disable)
+Deleted
+```
+
+`Locked` durumu kendiliğinden (lockout süresi dolunca) veya Admin'in manuel müdahalesiyle
+(`ManuallyUnlock`) sona erebilir. `Disabled` durumu yalnızca Admin'in `Deactivate`/`Reactivate`
+işlemleriyle değişir; hesabı silmez — kullanıcının Candidate/Employer/CareerAdvisor tarafındaki
+geçmiş kayıtları (başvurular, ilanlar, atamalar vb.) korunur, yalnızca erişim kapatılır.
+
+Admin'in bir kullanıcıyı ararken/filtrelerken kullanabileceği alanlar (rol, lockout durumu, email
+doğrulama durumu, e-posta) `User` aggregate'inin sahip olduğu verilerle sınırlıdır. **İsme göre
+arama şu an desteklenmez**: `User` hiçbir ad/soyad verisi tutmaz — bu veri (varsa) Candidate/Employer
+profilinde yaşayacaktır ve Identity, database-per-module kuralı gereği o modüllerin veritabanını
+sorgulayamaz (bkz. ARCHITECTURE.md). Candidate/Employer profil modülleri hayata geçtiğinde, isme göre
+arama ancak bir read-model/entegrasyon olayı mekanizmasıyla eklenebilir.
+
 ---
 
 # 3. Candidate
@@ -1051,6 +1076,17 @@ ve ForgotPassword akışlarının bir parçası olarak zaten üretilip
 gönderilmektedir; buradaki liste henüz eklenmemiş olan iş olaylarını
 kapsar.
 
+E-posta doğrulama bağlantısının süresi dolduğunda veya ilk e-posta
+kaybolduğunda kullanıcı `POST /api/v1/auth/resend-verification-email` ile
+yeni bir bağlantı isteyebilir; bu akış Register'ınkinden ayrı bir
+integration event (`identity.email-verification-requested`) kullanır —
+Register'ın ürettiği `identity.user-registered` olayı yalnızca gerçek bir
+kayıt gerçekleştiğinde anlamlı kalsın diye. Kötüye kullanımı önlemek için
+hesap başına dakikada bir istekle sınırlıdır (`User.RequestEmailVerificationResend`)
+ve — ForgotPassword ile aynı prensiple — hesabın var olup olmadığından,
+doğrulanmış olup olmadığından veya bu sınırdan bağımsız olarak her zaman
+başarıyla sonuçlanır (user enumeration'ı önlemek için).
+
 ---
 
 # 31. Domain Events
@@ -1080,6 +1116,21 @@ InterviewCompleted
 EmploymentCreated
 EmploymentStarted
 EmploymentEnded
+```
+
+Identity modülünün hesap yaşam döngüsüne dair domain event'leri (yukarıdaki
+iş-domain'i örneklerinden ayrı olarak) zaten uygulanmıştır:
+
+```text
+UserRegisteredDomainEvent
+UserLockedOutDomainEvent
+UserManuallyUnlockedDomainEvent      -> Admin'in ManuallyUnlock işlemi
+UserDeactivatedDomainEvent           -> Admin'in Deactivate işlemi
+UserReactivatedDomainEvent           -> Admin'in Reactivate işlemi
+UserRoleChangedDomainEvent
+UserPasswordChangedDomainEvent
+UserPasswordResetDomainEvent
+UserEmailVerifiedDomainEvent
 ```
 
 Domain event ile integration event aynı kavram değildir.
