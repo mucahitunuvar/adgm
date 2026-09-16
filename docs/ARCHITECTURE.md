@@ -506,6 +506,20 @@ Sorumlulukları:
 * Notification templates
 * Notification preferences
 
+Notification, ADR-013 gereği ADR-010'daki sıradan öne çekilmiştir: Identity'nin
+email doğrulama ve şifre sıfırlama akışları placeholder olmadan gerçekten
+çalışabilsin diye, Domain Modules'ten önce hayata geçirilmiştir.
+
+Kendi database'inde (`GenclikMerkezi.Notification`) `EmailNotification`
+aggregate'i ile hangi e-postanın kime, ne zaman, hangi sonuçla (Sent/Failed)
+gönderildiğini kaydeder — bu, gönderim başarısız olduğunda görünürlük
+sağlayan bir audit trail'dir (AGENTS.md §38).
+
+Diğer modüllerin Outbox'ına (ADR-006) yazdığı integration event'leri
+CAP tabanlı `[CapSubscribe]` consumer'larla tüketir (ADR-014). Kendi
+HTTP endpoint'i yoktur; tetiklendiği tek yer, event'i üreten modülün
+kendi akışıdır (örn. Identity'nin Register/ForgotPassword'ü).
+
 ---
 
 ## 8.11. Website
@@ -700,6 +714,22 @@ public sealed class CandidateDbContext : DbContext
 ```
 
 Başka modülün DbContext'i dependency olarak inject edilmemelidir.
+
+## 11.1. Keyed IUnitOfWork (önemli, tekrar tekrar keşfedilmesin)
+
+Her modül kendi `SharedKernel.Abstractions.IUnitOfWork`'ünü **keyed service**
+olarak kaydetmelidir (`AddKeyedScoped<IUnitOfWork>(ModuleMarker.UnitOfWorkKey, ...)`),
+handler'lar da `[FromKeyedServices(ModuleMarker.UnitOfWorkKey)]` ile
+enjekte etmelidir — düz (unkeyed) `AddScoped<IUnitOfWork>(...)` **kullanılmamalıdır**.
+
+Bunun nedeni bir varsayım değil, gerçekte yaşanmış bir hatadır: Identity ve
+Notification aynı anda düz `IUnitOfWork` kaydettiğinde, DI container'ın
+"son kayıt kazanır" davranışı yüzünden Identity'nin handler'ları sessizce
+`NotificationDbContext`'i almaya başladı — Register/Login gibi endpoint'ler
+200/201 döndürmeye devam etti ama hiçbir şey kalıcı olarak kaydedilmedi.
+Bu, entegrasyon testinde "Register sonrası Login başarısız oluyor" şeklinde
+ortaya çıktı ve keyed service'e geçilerek düzeltildi. Yeni bir modül
+eklerken bu deseni takip etmemek aynı sessiz veri kaybını yeniden üretir.
 
 ---
 

@@ -705,6 +705,23 @@ RabbitMQ
 
 Event database commit'ten önce RabbitMQ'ya gönderilmemelidir.
 
+Bu proje bu akışı elle değil **DotNetCore.CAP** ile uygular (bkz. ADR-014).
+Yeni bir modül event publish etmeye başlayacaksa önce ADR-014'ü oku:
+
+* CAP tek process başına **tek instance** destekler — `AddCap(...)`
+  (`AddMessaging<TDbContext>()` sarmalayıcısı üzerinden) yalnızca **host
+  composition root'ta bir kez**, mevcut publisher'ın (şu an Identity)
+  DbContext'ine bağlı olarak çağrılır. İkinci bir modülde tekrar
+  çağırmak, ilk kaydı sessizce geçersiz kılar.
+* CAP'in SqlServer storage paketi yalnızca SqlServer'a karşı çalışır;
+  CAP'e bağlı (anchor) DbContext, Testing dahil her ortamda SqlServer/
+  LocalDB olmalıdır (ADR-012'nin Sqlite anahtarı bu modül için geçerli
+  değildir).
+* IUnitOfWork kaydı için bkz. ARCHITECTURE.md §11.1 (keyed service
+  zorunluluğu — aynı süreçte birden fazla modül olduğunda düz
+  `AddScoped<IUnitOfWork>` sessizce yanlış modülün DbContext'ini
+  döndürebilir).
+
 ---
 
 # 27. Idempotency

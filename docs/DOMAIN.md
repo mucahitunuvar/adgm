@@ -1041,6 +1041,16 @@ Bildirim kanalları:
 
 olabilir.
 
+Yukarıdaki liste, Domain Modules (Candidate/Employer/Job/Interview/...)
+tamamlandıkça büyüyecek olan **iş olayı** bildirimleridir. Bunlardan önce,
+Identity modülünün kendi **transactional/security** bildirimleri
+(e-posta doğrulama, şifre sıfırlama) hayata geçirilmiştir — bkz. ADR-013
+(Notification'ın ADR-010'daki sıradan öne çekilme gerekçesi) ve ADR-014
+(Outbox/RabbitMQ altyapısı). Bu iki bildirim türü, Identity'nin Register
+ve ForgotPassword akışlarının bir parçası olarak zaten üretilip
+gönderilmektedir; buradaki liste henüz eklenmemiş olan iş olaylarını
+kapsar.
+
 ---
 
 # 31. Domain Events
