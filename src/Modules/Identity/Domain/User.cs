@@ -114,6 +114,22 @@ public sealed class User : AggregateRoot
         }
     }
 
+    // Idempotent: unlocking an account that is not currently locked (already active, or a
+    // lockout that already expired) is a no-op - no event, since nothing actually changed.
+    public void ManuallyUnlock()
+    {
+        if (Status != UserStatus.Locked)
+        {
+            return;
+        }
+
+        Status = UserStatus.Active;
+        LockedUntilUtc = null;
+        FailedLoginAttemptCount = 0;
+
+        RaiseDomainEvent(new UserManuallyUnlockedDomainEvent(Id));
+    }
+
     public void ChangePassword(PasswordHash newPasswordHash)
     {
         PasswordHash = newPasswordHash;

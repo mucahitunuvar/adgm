@@ -361,4 +361,35 @@ public class UserTests
 
         Assert.Null(token);
     }
+
+    [Fact]
+    public void ManuallyUnlock_WhenLocked_ReactivatesAndRaisesDomainEvent()
+    {
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        for (var i = 0; i < 5; i++)
+        {
+            user.RegisterFailedLoginAttempt();
+        }
+
+        Assert.True(user.IsLockedOut);
+
+        user.ManuallyUnlock();
+
+        Assert.Equal(UserStatus.Active, user.Status);
+        Assert.False(user.IsLockedOut);
+        Assert.Null(user.LockedUntilUtc);
+        Assert.Equal(0, user.FailedLoginAttemptCount);
+        Assert.Contains(user.DomainEvents, e => e is UserManuallyUnlockedDomainEvent);
+    }
+
+    [Fact]
+    public void ManuallyUnlock_WhenNotLocked_IsNoOp()
+    {
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+
+        user.ManuallyUnlock();
+
+        Assert.Equal(UserStatus.Active, user.Status);
+        Assert.DoesNotContain(user.DomainEvents, e => e is UserManuallyUnlockedDomainEvent);
+    }
 }
