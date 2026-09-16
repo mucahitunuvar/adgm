@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.ReferenceData.Domain;
+using GenclikMerkezi.Modules.ReferenceData.Infrastructure.Seed;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -14,5 +15,15 @@ public sealed class DistrictConfiguration : LookupItemConfiguration<District>
 
         builder.Property(d => d.ProvinceId).IsRequired();
         builder.HasIndex(d => d.ProvinceId);
+
+        builder.HasData(DistrictSeedData.All.Select((district, index) => new
+        {
+            Id = DeterministicGuid.Create($"District:{district.Code}"),
+            district.Code,
+            DisplayName = district.Name,
+            IsActive = true,
+            SortOrder = index,
+            ProvinceId = DeterministicGuid.Create($"Province:{district.ProvinceCode}"),
+        }));
     }
 }
