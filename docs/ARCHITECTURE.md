@@ -1550,10 +1550,15 @@ Aşağıdaki gibi kritik işlemler audit edilebilir:
 Audit mekanizması gerektiğinde merkezi veya ilgili modül içerisinde uygulanabilir.
 
 Identity modülünün admin işlemleri (`ManuallyUnlock`, `Deactivate`, `Reactivate`, `ChangeUserRole`)
-şu an yalnızca **structured log** (kim/neyi/ne zaman) üretir — `ILogger` üzerinden, ayrı bir
-audit-log tablosu/store'u henüz yoktur. Bu, SECURITY.md §8'in istediği "her admin işlemi audit
-edilmeli" gereksinimini tam karşılamaz; kalıcı/sorgulanabilir bir audit trail (ayrı store, hangi
-modülün sahipleneceği kararı dahil) ayrı bir ADR gerektiren, henüz üstlenilmemiş bir iştir.
+artık `AdminAuditLog` tablosuna (Identity'nin kendi şemasında) kalıcı, sorgulanabilir bir kayıt
+yazar — bkz. **ADR-015**. Yazma işlemi, ilgili komut handler'larına serpiştirilmek yerine, o
+handler'ların zaten fırlattığı domain event'lere reaksiyon veren dört ayrı
+`INotificationHandler<DomainEventNotification<T>>` üzerinden yapılır (Identity'nin ilk domain
+event handler'ları). `GET /api/v1/auth/admin/audit-log` (Admin-only, sayfalı, TargetUserId/
+ActionType/tarih aralığına göre filtrelenebilir) bu kaydı okur. SECURITY.md §8/§22'nin admin
+işlemleri için istediği audit gereksinimi bu dört işlem için artık karşılanmıştır; yalnızca
+`ILogger` structured log'a dayanan eski yaklaşım (hâlâ ek olarak üretilir) tek başına yeterli
+değildi.
 
 ---
 

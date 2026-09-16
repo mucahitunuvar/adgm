@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Identity.Features.AdminDeactivateUser;
+using GenclikMerkezi.Modules.Identity.Features.AdminGetAuditLog;
 using GenclikMerkezi.Modules.Identity.Features.AdminGetUserById;
 using GenclikMerkezi.Modules.Identity.Features.AdminGetUsers;
 using GenclikMerkezi.Modules.Identity.Features.AdminReactivateUser;
@@ -38,6 +39,7 @@ public static class IdentityModuleEndpointExtensions
         AdminUnlockUserEndpoint.Map(app);
         AdminDeactivateUserEndpoint.Map(app);
         AdminReactivateUserEndpoint.Map(app);
+        AdminGetAuditLogEndpoint.Map(app);
 
         return app;
     }
