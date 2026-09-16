@@ -24,18 +24,13 @@ public static class IdentityModuleServiceCollectionExtensions
 
         services.AddDbContext<IdentityDbContext>(options =>
         {
+            // Always SqlServer, in every environment: IdentityDbContext is the CAP transactional
+            // outbox anchor (AddMessaging<IdentityDbContext>() at the host composition root - CAP
+            // only supports a single instance per process, see ADR-014's amendment), and CAP's
+            // SqlServer storage package cannot target a Sqlite connection. Integration tests use a
+            // real (throwaway, per-run) LocalDB database instead of ADR-012's usual Sqlite switch.
             var connectionString = configuration.GetConnectionString("IdentityDatabase");
-
-            // "Database:Provider" only exists to let integration tests swap in a real relational
-            // provider (Sqlite) instead of SqlServer. Production always uses the SqlServer default.
-            if (string.Equals(configuration["Database:Provider"], "Sqlite", StringComparison.OrdinalIgnoreCase))
-            {
-                options.UseSqlite(connectionString);
-            }
-            else
-            {
-                options.UseSqlServer(connectionString);
-            }
+            options.UseSqlServer(connectionString);
         });
 
         services.AddKeyedScoped<SharedKernel.Abstractions.IUnitOfWork>(

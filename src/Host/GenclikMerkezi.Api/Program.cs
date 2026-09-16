@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using GenclikMerkezi.BuildingBlocks.Infrastructure.DependencyInjection;
 using GenclikMerkezi.BuildingBlocks.Infrastructure.ExceptionHandling;
 using GenclikMerkezi.Modules.Identity;
+using GenclikMerkezi.Modules.Identity.Infrastructure;
 using GenclikMerkezi.Modules.Identity.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.Notification;
 using GenclikMerkezi.Modules.Notification.Infrastructure.DependencyInjection;
@@ -20,7 +21,14 @@ builder.Services.AddSharedApplicationServices(
     typeof(NotificationModuleMarker).Assembly);
 
 builder.Services.AddIdentityModule(builder.Configuration);
-builder.Services.AddNotificationModule(builder.Configuration, builder.Environment);
+builder.Services.AddNotificationModule(builder.Configuration);
+
+// CAP supports exactly one instance per process, so it is registered exactly once here rather
+// than inside each module's own AddXModule() - IdentityDbContext is the transactional outbox
+// anchor since Identity is the system's first publisher (ADR-014's amendment). Any [CapSubscribe]
+// consumer registered by any module (e.g. Notification's) is still discovered by this one
+// registration regardless of which assembly it lives in.
+builder.Services.AddMessaging<IdentityDbContext>(builder.Configuration, builder.Environment);
 
 var isTestingEnvironment = builder.Environment.IsEnvironment("Testing");
 

@@ -1,4 +1,3 @@
-using GenclikMerkezi.BuildingBlocks.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.Notification;
 using GenclikMerkezi.Modules.Notification.Application.Abstractions;
 using GenclikMerkezi.Modules.Notification.Infrastructure.Email;
@@ -6,25 +5,33 @@ using GenclikMerkezi.Modules.Notification.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace GenclikMerkezi.Modules.Notification.Infrastructure.DependencyInjection;
 
 public static class NotificationModuleServiceCollectionExtensions
 {
-    public static IServiceCollection AddNotificationModule(
-        this IServiceCollection services,
-        IConfiguration configuration,
-        IHostEnvironment environment)
+    // Does not register messaging (CAP) itself - CAP only supports a single instance per
+    // process (see ADR-014's amendment), so it is registered exactly once at the host
+    // composition root, anchored to whichever module currently publishes. Notification's
+    // [CapSubscribe] consumers still get discovered by that one shared registration
+    // regardless of which module/assembly they live in.
+    public static IServiceCollection AddNotificationModule(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<NotificationDbContext>(options =>
         {
-            // Unlike Identity, this is not config-switched to Sqlite in Testing: CAP's
-            // UseEntityFramework<T>() (see AddMessaging below) always issues SqlServer SQL
-            // against this DbContext's connection, so it must be SqlServer in every
-            // environment for the outbox to work at all (ADR-014 addendum).
             var connectionString = configuration.GetConnectionString("NotificationDatabase");
-            options.UseSqlServer(connectionString);
+
+            // "Database:Provider" mirrors Identity's ADR-012 switch: Sqlite only in the
+            // Testing environment, SqlServer everywhere else. Unlike Identity, Notification's
+            // own DbContext is never the CAP transactional anchor, so this is unconstrained.
+            if (string.Equals(configuration["Database:Provider"], "Sqlite", StringComparison.OrdinalIgnoreCase))
+            {
+                options.UseSqlite(connectionString);
+            }
+            else
+            {
+                options.UseSqlServer(connectionString);
+            }
         });
 
         services.AddKeyedScoped<SharedKernel.Abstractions.IUnitOfWork>(
@@ -34,8 +41,6 @@ public static class NotificationModuleServiceCollectionExtensions
 
         services.Configure<SmtpSettings>(configuration.GetSection(SmtpSettings.SectionName));
         services.AddScoped<IEmailSender, SmtpEmailSender>();
-
-        services.AddMessaging<NotificationDbContext>(configuration, environment);
 
         return services;
     }

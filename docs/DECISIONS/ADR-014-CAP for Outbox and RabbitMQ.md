@@ -48,12 +48,13 @@ Development / Production → RabbitMQ transport, real broker required
 Testing                  → In-memory transport, no broker required
 ```
 
-Each producing module configures CAP against its **own** DbContext via
-`x.UseEntityFramework<TModuleDbContext>()`, which creates CAP's outbox/inbox
-tables (`cap.Published` / `cap.Received`) inside that same module's
-database — verified by inspecting the database directly after a run:
-`cap.Published`/`cap.Received` land next to the module's own tables, not in
-a shared location. This satisfies Database-per-Module (AGENTS.md §9).
+CAP is registered **exactly once**, at the host composition root
+(`Program.cs`), against **one** designated module's DbContext via
+`x.UseEntityFramework<TDbContext>()` — see the Amendment below for why this
+is not "per producing module" as originally written here. That DbContext's
+database ends up holding CAP's outbox/inbox tables (`cap.Published` /
+`cap.Received`) alongside its own tables — verified by inspecting the
+database directly after a run.
 
 **Storage is not environment-switched like the transport is, and this is a
 real constraint, not a choice**: `UseEntityFramework<T>()` is defined
@@ -72,16 +73,11 @@ ambiguity** (CS0121) on top of that runtime problem — there is no way to
 support both dialects from one compiled module even if the first issue
 did not exist.
 
-**Consequence for modules that register messaging**: their DbContext must
-use SqlServer in every environment, including Testing — ADR-012's
-Sqlite-for-tests switch does not apply to them. The Notification module
-(this ADR) and, once Identity starts publishing integration events
-(email verification / password reset), `IdentityDbContext` in any test
-that exercises that path, use a SQL Server LocalDB database instead of
-Sqlite. ADR-012 continues to apply unchanged to every module/test that
-never touches the outbox (e.g. Identity's existing
-`AuthenticationFlowTests`, which has nothing to do with messaging and is
-unaffected).
+**Consequence for the module CAP is anchored to**: its DbContext must use
+SqlServer in every environment, including Testing — ADR-012's
+Sqlite-for-tests switch does not apply to it. See the Amendment below for
+which module that ended up being and why every module's integration tests
+now use LocalDB rather than only the anchor's.
 
 Publishing follows CAP's documented transactional pattern:
 
@@ -121,8 +117,9 @@ needed for messages CAP itself delivers.
 
 * Significantly less custom infrastructure code than a hand-rolled Outbox
   processor + consumer host.
-* Outbox/consumer tables live inside each module's own database
-  automatically — no manual migration work to add them.
+* Outbox/consumer tables live inside the anchor module's own database
+  automatically — no manual migration work to add them (see the Amendment
+  below: this turned out to mean *one* module's database, not each one).
 * The RabbitMQ broker dependency is removable for tests (in-memory
   transport) without Docker in this environment.
 
@@ -131,12 +128,16 @@ needed for messages CAP itself delivers.
 * Adds a dependency the team did not previously have experience with;
   CAP's own conventions (topic naming, its internal table schema) become
   something contributors need to learn.
-* Messaging-registered modules cannot use ADR-012's Sqlite-for-tests
-  switch — their tests need a real SQL Server/LocalDB instead, because of
-  the storage-package constraint documented above. This was not
-  anticipated when CAP was chosen and was only discovered by actually
-  running it against Sqlite; it is a genuine limitation, not a
-  configuration mistake.
+* The module CAP is anchored to (Identity, see the Amendment below)
+  cannot use ADR-012's Sqlite-for-tests switch — its tests need a real
+  SQL Server/LocalDB instead, because of the storage-package constraint
+  documented above. This was not anticipated when CAP was chosen and was
+  only discovered by actually running it against Sqlite; it is a genuine
+  limitation, not a configuration mistake.
+* CAP supports exactly one instance per process (also only discovered by
+  running it, not documented up front) - it cannot give each module its
+  own isolated outbox database the way this ADR originally assumed. See
+  the Amendment below.
 * If CAP itself ever moves to a commercial model, the same
   re-evaluation this ADR describes for MassTransit would need to happen
   again. Given its current MIT license, broad adoption, and lack of any
@@ -145,6 +146,62 @@ needed for messages CAP itself delivers.
 * Production deployments require an actual RabbitMQ broker
   (Development/Production environments) — this was already a requirement
   of ADR-006 and is not new, but is now concretely exercised.
+
+## Amendment (2026-09-16): CAP is a single instance per process
+
+While wiring Identity as a second `AddCap()` caller (alongside
+Notification, added when this ADR was first written), both modules'
+databases were inspected after a run. Only Notification's database had
+`cap.Published`/`cap.Received`; Identity's had none, even though its
+`AddCap(x => x.UseEntityFramework<IdentityDbContext>()...)` call completed
+without error and the app logged `### CAP started!`. A second `AddCap`
+call does not add a second, independent CAP instance — it replaces the
+first one's configuration. This is consistent with CAP's own
+multi-tenancy issue tracker, which describes the architecture as unable
+to support per-tenant/per-module database isolation without workarounds
+(message-header tenant IDs, subscribe filters) that do not apply here.
+
+This invalidates this ADR's original "each producing module configures
+CAP against its own DbContext" design — that was never actually possible
+with more than one module, and Notification only appeared to work in
+isolation because it was the only module calling `AddCap`.
+
+**Corrected design**: `AddMessaging<TDbContext>()` (the thin wrapper
+around `AddCap` in `BuildingBlocks.Infrastructure`) is called **exactly
+once**, at the host composition root (`Program.cs`), not from inside each
+module's own `AddXModule()`. `IdentityDbContext` is the chosen anchor,
+since Identity is the system's first (and, for now, only) publisher -
+its Register and password-reset flows are what need transactional outbox
+delivery. `IIntegrationEventPublisher` is registered as a plain
+(non-keyed) scoped service, since there is only ever one CAP instance to
+resolve. Notification's own `AddNotificationModule()` no longer calls
+`AddMessaging` at all; its `[CapSubscribe]` consumers are still
+discovered because CAP scans the whole DI container for `ICapSubscribe`
+implementations, regardless of which module registered them.
+
+**Consequence for `IdentityDbContext`**: like Notification's DbContext
+before it, it must use SqlServer in every environment, including Testing
+— it lost ADR-012's Sqlite-for-tests switch entirely (there is now no
+`Database:Provider` branch in `IdentityModuleServiceCollectionExtensions`
+at all; it is unconditionally SqlServer). The Identity integration test
+factory (`CustomWebApplicationFactory`) now provisions a throwaway,
+per-run LocalDB database for `IdentityDatabase` instead of the Sqlite
+shared-cache in-memory database it used before, mirroring the pattern
+already used for `NotificationDatabase`. Both are dropped in `Dispose()`.
+Notification's own DbContext keeps ADR-012's `Database:Provider` switch
+(it is no longer CAP-constrained) - the test factory sets both
+connections to LocalDB anyway for simplicity of having one database
+technology in one shared test host, not because Notification requires it.
+
+**If a second module needs to publish with its own transactional
+guarantee in the future**, this single-anchor design will need revisiting
+- CAP itself does not support it. Options at that point: accept
+non-atomic best-effort publishing for the second publisher (publish after
+its own SaveChanges, outside CAP's transaction), give the second
+publisher its own separate outbox-processing mechanism entirely
+(defeating the point of standardizing on CAP), or replace CAP with
+something that supports multiple isolated instances. No such second
+publisher exists yet, so this is not resolved further here.
 
 ## Alternatives Considered
 
