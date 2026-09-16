@@ -1,5 +1,6 @@
 using GenclikMerkezi.Modules.Identity.Application.Abstractions;
 using GenclikMerkezi.Modules.Identity.Domain;
+using GenclikMerkezi.SharedKernel.Results;
 
 namespace GenclikMerkezi.UnitTests.Identity.TestDoubles;
 
@@ -37,5 +38,46 @@ public sealed class FakeUserRepository : IUserRepository
     public void Add(User user)
     {
         _users.Add(user);
+    }
+
+    public Task<PagedResult<UserSummary>> SearchAsync(UserSearchFilter filter, CancellationToken cancellationToken = default)
+    {
+        var query = _users.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(filter.Email))
+        {
+            query = query.Where(u => u.Email.Value.Contains(filter.Email, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (filter.Role is not null)
+        {
+            query = query.Where(u => u.Role == filter.Role);
+        }
+
+        if (filter.Status is not null)
+        {
+            query = query.Where(u => u.Status == filter.Status);
+        }
+
+        if (filter.EmailConfirmed is not null)
+        {
+            query = query.Where(u => u.EmailConfirmed == filter.EmailConfirmed);
+        }
+
+        if (filter.IsLockedOut is not null)
+        {
+            query = query.Where(u => u.IsLockedOut == filter.IsLockedOut);
+        }
+
+        var matched = query.OrderByDescending(u => u.CreatedAtUtc).ToList();
+
+        var items = matched
+            .Skip((filter.Page - 1) * filter.PageSize)
+            .Take(filter.PageSize)
+            .Select(u => new UserSummary(
+                u.Id, u.Email.Value, u.Role, u.Status, u.EmailConfirmed, u.IsLockedOut, u.CreatedAtUtc))
+            .ToList();
+
+        return Task.FromResult(new PagedResult<UserSummary>(items, matched.Count, filter.Page, filter.PageSize));
     }
 }

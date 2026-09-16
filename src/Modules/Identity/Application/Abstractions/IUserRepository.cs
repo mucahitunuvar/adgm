@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Identity.Domain;
+using GenclikMerkezi.SharedKernel.Results;
 
 namespace GenclikMerkezi.Modules.Identity.Application.Abstractions;
 
@@ -15,4 +16,6 @@ public interface IUserRepository
     Task<User?> GetByEmailVerificationTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default);
 
     void Add(User user);
+
+    Task<PagedResult<UserSummary>> SearchAsync(UserSearchFilter filter, CancellationToken cancellationToken = default);
 }

@@ -1,6 +1,10 @@
+using GenclikMerkezi.Modules.Identity;
+using GenclikMerkezi.Modules.Identity.Application.Abstractions;
+using GenclikMerkezi.Modules.Identity.Domain;
 using GenclikMerkezi.Modules.Identity.Infrastructure;
 using GenclikMerkezi.Modules.Notification.Application.Abstractions;
 using GenclikMerkezi.Modules.Notification.Infrastructure;
+using GenclikMerkezi.SharedKernel.Abstractions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -58,6 +62,32 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
         {
             services.AddSingleton<IEmailSender>(EmailSender);
         });
+    }
+
+    // Admin cannot be created through the public register endpoint (RegisterUserCommandValidator
+    // only allows Candidate/Employer to self-register), so admin-only endpoint tests seed one
+    // directly against the same DbContext/repository the app itself uses. Email is pre-confirmed
+    // since that is orthogonal to what these tests exercise.
+    public async Task<Guid> SeedAdminUserAsync(string email, string password)
+    {
+        using var scope = Services.CreateScope();
+        var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
+        var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredKeyedService<IUnitOfWork>(IdentityModuleMarker.UnitOfWorkKey);
+
+        var user = User.Register(
+            Email.Create(email).Value,
+            PasswordHash.FromHashedValue(passwordHasher.Hash(password)),
+            UserRole.Admin);
+
+        var verificationTokenHash = $"seed-admin-verification-hash-{Guid.NewGuid():N}";
+        user.IssueEmailVerificationToken(verificationTokenHash, DateTime.UtcNow.AddDays(1));
+        user.ConfirmEmail(verificationTokenHash);
+
+        userRepository.Add(user);
+        await unitOfWork.SaveChangesAsync();
+
+        return user.Id;
     }
 
     protected override void Dispose(bool disposing)

@@ -1,3 +1,4 @@
+using GenclikMerkezi.Modules.Identity.Features.AdminGetUsers;
 using GenclikMerkezi.Modules.Identity.Features.ChangePassword;
 using GenclikMerkezi.Modules.Identity.Features.ChangeUserRole;
 using GenclikMerkezi.Modules.Identity.Features.ForgotPassword;
@@ -28,6 +29,7 @@ public static class IdentityModuleEndpointExtensions
         ChangeUserRoleEndpoint.Map(app);
         VerifyEmailEndpoint.Map(app);
         ResendVerificationEmailEndpoint.Map(app);
+        AdminGetUsersEndpoint.Map(app);
 
         return app;
     }
