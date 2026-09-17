@@ -1,5 +1,6 @@
 using GenclikMerkezi.BuildingBlocks.Infrastructure.Http;
 using GenclikMerkezi.Modules.Identity.Domain;
+using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -29,9 +30,11 @@ internal static class AdminGetUsersEndpoint
                         role,
                         status,
                         isLockedOut,
-                        emailConfirmed,
-                        page ?? 1,
-                        pageSize ?? 20);
+                        emailConfirmed)
+                    {
+                        Page = page ?? 1,
+                        PageSize = pageSize ?? PagedRequest.DefaultPageSize,
+                    };
 
                     var result = await sender.Send(query, cancellationToken);
 
@@ -39,6 +42,7 @@ internal static class AdminGetUsersEndpoint
                 })
             .RequireAuthorization(policy => policy.RequireRole(nameof(UserRole.Admin)))
             .RequireRateLimiting("authenticated")
+            .Produces<AdminGetUsersResponse>(StatusCodes.Status200OK)
             .WithName("AdminGetUsers")
             .WithTags("Auth");
     }

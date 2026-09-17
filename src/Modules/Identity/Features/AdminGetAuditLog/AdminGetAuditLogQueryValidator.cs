@@ -7,12 +7,8 @@ public sealed class AdminGetAuditLogQueryValidator : AbstractValidator<AdminGetA
 {
     public AdminGetAuditLogQueryValidator()
     {
-        RuleFor(q => q.Page)
-            .GreaterThanOrEqualTo(1);
-
-        RuleFor(q => q.PageSize)
-            .InclusiveBetween(1, 100);
-
+        // Page/PageSize are no longer validated here: PagedRequest (SharedKernel) clamps
+        // out-of-range values silently at construction instead of failing validation.
         RuleFor(q => q.ActionType)
             .Must(actionType => actionType is null || Enum.TryParse<AdminActionType>(actionType, ignoreCase: true, out _))
             .WithMessage("ActionType must be a valid admin action type.");

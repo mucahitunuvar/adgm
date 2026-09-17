@@ -5,4 +5,6 @@ public sealed record AdminGetUsersResponse(
     int TotalCount,
     int Page,
     int PageSize,
-    int TotalPages);
+    int TotalPages,
+    bool HasNextPage,
+    bool HasPreviousPage);

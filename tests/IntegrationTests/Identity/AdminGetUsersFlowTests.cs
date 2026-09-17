@@ -81,8 +81,10 @@ public class AdminGetUsersFlowTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    // PagedRequest (SharedKernel) clamps out-of-range Page/PageSize instead of failing validation
+    // (ARCHITECTURE.md §9 "Pagination Convention") - pageSize=0 is silently clamped to 1, not a 400.
     [Fact]
-    public async Task GetUsers_WithInvalidPageSize_ReturnsBadRequest()
+    public async Task GetUsers_WithOutOfRangePageSize_ClampsInsteadOfBadRequest()
     {
         var accessToken = await LoginAsAdminAsync();
 
@@ -91,7 +93,9 @@ public class AdminGetUsersFlowTests : IClassFixture<CustomWebApplicationFactory>
 
         var response = await _client.SendAsync(request);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<AdminGetUsersResponse>();
+        Assert.Equal(1, body!.PageSize);
     }
 
     [Fact]

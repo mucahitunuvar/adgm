@@ -7,6 +7,4 @@ public sealed record AdminGetAuditLogQuery(
     Guid? TargetUserId,
     string? ActionType,
     DateTime? FromUtc,
-    DateTime? ToUtc,
-    int Page,
-    int PageSize) : IRequest<Result<AdminGetAuditLogResponse>>;
+    DateTime? ToUtc) : PagedRequest, IRequest<Result<AdminGetAuditLogResponse>>;

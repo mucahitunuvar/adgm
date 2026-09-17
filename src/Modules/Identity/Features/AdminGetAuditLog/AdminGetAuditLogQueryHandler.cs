@@ -42,6 +42,8 @@ public sealed class AdminGetAuditLogQueryHandler(IAdminAuditLogRepository auditL
             pagedEntries.TotalCount,
             pagedEntries.Page,
             pagedEntries.PageSize,
-            pagedEntries.TotalPages));
+            pagedEntries.TotalPages,
+            pagedEntries.HasNextPage,
+            pagedEntries.HasPreviousPage));
     }
 }

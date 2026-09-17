@@ -40,6 +40,8 @@ public sealed class AdminGetUsersQueryHandler(IUserRepository userRepository)
             pagedUsers.TotalCount,
             pagedUsers.Page,
             pagedUsers.PageSize,
-            pagedUsers.TotalPages));
+            pagedUsers.TotalPages,
+            pagedUsers.HasNextPage,
+            pagedUsers.HasPreviousPage));
     }
 }

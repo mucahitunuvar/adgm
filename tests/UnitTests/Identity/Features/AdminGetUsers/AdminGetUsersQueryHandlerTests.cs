@@ -25,7 +25,7 @@ public class AdminGetUsersQueryHandlerTests
         AddUser("employer@example.com", UserRole.Employer);
 
         var result = await CreateHandler().Handle(
-            new AdminGetUsersQuery(null, null, null, null, null, 1, 20), CancellationToken.None);
+            new AdminGetUsersQuery(null, null, null, null, null), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(3, result.Value.TotalCount);
@@ -39,7 +39,7 @@ public class AdminGetUsersQueryHandlerTests
         AddUser("employer@example.com", UserRole.Employer);
 
         var result = await CreateHandler().Handle(
-            new AdminGetUsersQuery(null, "Employer", null, null, null, 1, 20), CancellationToken.None);
+            new AdminGetUsersQuery(null, "Employer", null, null, null), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value.Items);
@@ -53,7 +53,7 @@ public class AdminGetUsersQueryHandlerTests
         AddUser("employer@example.com", UserRole.Employer);
 
         var result = await CreateHandler().Handle(
-            new AdminGetUsersQuery("aday", null, null, null, null, 1, 20), CancellationToken.None);
+            new AdminGetUsersQuery("aday", null, null, null, null), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value.Items);
@@ -69,7 +69,7 @@ public class AdminGetUsersQueryHandlerTests
         AddUser("unconfirmed@example.com", UserRole.Candidate);
 
         var result = await CreateHandler().Handle(
-            new AdminGetUsersQuery(null, null, null, null, true, 1, 20), CancellationToken.None);
+            new AdminGetUsersQuery(null, null, null, null, true), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value.Items);
@@ -88,7 +88,7 @@ public class AdminGetUsersQueryHandlerTests
         AddUser("active@example.com", UserRole.Candidate);
 
         var result = await CreateHandler().Handle(
-            new AdminGetUsersQuery(null, null, null, true, null, 1, 20), CancellationToken.None);
+            new AdminGetUsersQuery(null, null, null, true, null), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value.Items);
@@ -104,7 +104,7 @@ public class AdminGetUsersQueryHandlerTests
         AddUser("active@example.com", UserRole.Candidate);
 
         var result = await CreateHandler().Handle(
-            new AdminGetUsersQuery(null, null, "Disabled", null, null, 1, 20), CancellationToken.None);
+            new AdminGetUsersQuery(null, null, "Disabled", null, null), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value.Items);
@@ -121,12 +121,32 @@ public class AdminGetUsersQueryHandlerTests
         }
 
         var result = await CreateHandler().Handle(
-            new AdminGetUsersQuery(null, null, null, null, null, 2, 2), CancellationToken.None);
+            new AdminGetUsersQuery(null, null, null, null, null) { Page = 2, PageSize = 2 }, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(5, result.Value.TotalCount);
         Assert.Equal(2, result.Value.Items.Count);
         Assert.Equal(3, result.Value.TotalPages);
         Assert.Equal(2, result.Value.Page);
+        Assert.True(result.Value.HasNextPage);
+        Assert.True(result.Value.HasPreviousPage);
+    }
+
+    [Fact]
+    public async Task Handle_WithOutOfRangePageAndPageSize_ClampsInsteadOfFailing()
+    {
+        for (var i = 0; i < 5; i++)
+        {
+            AddUser($"aday{i}@example.com", UserRole.Candidate);
+        }
+
+        var result = await CreateHandler().Handle(
+            new AdminGetUsersQuery(null, null, null, null, null) { Page = 0, PageSize = 500 },
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value.Page);
+        Assert.Equal(100, result.Value.PageSize);
+        Assert.Equal(5, result.Value.Items.Count);
     }
 }

@@ -24,7 +24,7 @@ public class AdminGetAuditLogQueryHandlerTests
         AddEntry(Guid.NewGuid(), AdminActionType.Reactivated);
 
         var result = await CreateHandler().Handle(
-            new AdminGetAuditLogQuery(null, null, null, null, 1, 20), CancellationToken.None);
+            new AdminGetAuditLogQuery(null, null, null, null), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(2, result.Value.TotalCount);
@@ -38,7 +38,7 @@ public class AdminGetAuditLogQueryHandlerTests
         AddEntry(Guid.NewGuid(), AdminActionType.Deactivated);
 
         var result = await CreateHandler().Handle(
-            new AdminGetAuditLogQuery(targetUserId, null, null, null, 1, 20), CancellationToken.None);
+            new AdminGetAuditLogQuery(targetUserId, null, null, null), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value.Items);
@@ -52,7 +52,7 @@ public class AdminGetAuditLogQueryHandlerTests
         AddEntry(Guid.NewGuid(), AdminActionType.ManuallyUnlocked);
 
         var result = await CreateHandler().Handle(
-            new AdminGetAuditLogQuery(null, "RoleChanged", null, null, 1, 20), CancellationToken.None);
+            new AdminGetAuditLogQuery(null, "RoleChanged", null, null), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value.Items);
@@ -69,7 +69,7 @@ public class AdminGetAuditLogQueryHandlerTests
         AddEntry(Guid.NewGuid(), AdminActionType.Reactivated);
 
         var result = await CreateHandler().Handle(
-            new AdminGetAuditLogQuery(null, null, oldEntry.OccurredAtUtc.AddMilliseconds(-1), boundary, 1, 20),
+            new AdminGetAuditLogQuery(null, null, oldEntry.OccurredAtUtc.AddMilliseconds(-1), boundary),
             CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -86,11 +86,31 @@ public class AdminGetAuditLogQueryHandlerTests
         }
 
         var result = await CreateHandler().Handle(
-            new AdminGetAuditLogQuery(null, null, null, null, 2, 2), CancellationToken.None);
+            new AdminGetAuditLogQuery(null, null, null, null) { Page = 2, PageSize = 2 }, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(5, result.Value.TotalCount);
         Assert.Equal(2, result.Value.Items.Count);
         Assert.Equal(3, result.Value.TotalPages);
+        Assert.True(result.Value.HasNextPage);
+        Assert.True(result.Value.HasPreviousPage);
+    }
+
+    [Fact]
+    public async Task Handle_WithOutOfRangePageAndPageSize_ClampsInsteadOfFailing()
+    {
+        for (var i = 0; i < 5; i++)
+        {
+            AddEntry(Guid.NewGuid(), AdminActionType.Deactivated);
+        }
+
+        var result = await CreateHandler().Handle(
+            new AdminGetAuditLogQuery(null, null, null, null) { Page = -1, PageSize = 0 },
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value.Page);
+        Assert.Equal(1, result.Value.PageSize);
+        Assert.Single(result.Value.Items);
     }
 }

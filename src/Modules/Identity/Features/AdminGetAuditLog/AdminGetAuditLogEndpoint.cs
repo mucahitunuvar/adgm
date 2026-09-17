@@ -1,5 +1,6 @@
 using GenclikMerkezi.BuildingBlocks.Infrastructure.Http;
 using GenclikMerkezi.Modules.Identity.Domain;
+using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -27,9 +28,11 @@ internal static class AdminGetAuditLogEndpoint
                         targetUserId,
                         actionType,
                         fromUtc,
-                        toUtc,
-                        page ?? 1,
-                        pageSize ?? 20);
+                        toUtc)
+                    {
+                        Page = page ?? 1,
+                        PageSize = pageSize ?? PagedRequest.DefaultPageSize,
+                    };
 
                     var result = await sender.Send(query, cancellationToken);
 
@@ -37,6 +40,7 @@ internal static class AdminGetAuditLogEndpoint
                 })
             .RequireAuthorization(policy => policy.RequireRole(nameof(UserRole.Admin)))
             .RequireRateLimiting("authenticated")
+            .Produces<AdminGetAuditLogResponse>(StatusCodes.Status200OK)
             .WithName("AdminGetAuditLog")
             .WithTags("Auth");
     }

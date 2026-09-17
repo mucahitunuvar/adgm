@@ -7,12 +7,8 @@ public sealed class AdminGetUsersQueryValidator : AbstractValidator<AdminGetUser
 {
     public AdminGetUsersQueryValidator()
     {
-        RuleFor(q => q.Page)
-            .GreaterThanOrEqualTo(1);
-
-        RuleFor(q => q.PageSize)
-            .InclusiveBetween(1, 100);
-
+        // Page/PageSize are no longer validated here: PagedRequest (SharedKernel) clamps
+        // out-of-range values silently at construction instead of failing validation.
         RuleFor(q => q.Role)
             .Must(role => role is null || Enum.TryParse<UserRole>(role, ignoreCase: true, out _))
             .WithMessage("Role must be a valid role name.");

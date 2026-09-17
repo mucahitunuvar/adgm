@@ -5,4 +5,6 @@ public sealed record AdminGetAuditLogResponse(
     int TotalCount,
     int Page,
     int PageSize,
-    int TotalPages);
+    int TotalPages,
+    bool HasNextPage,
+    bool HasPreviousPage);

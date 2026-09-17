@@ -8,6 +8,4 @@ public sealed record AdminGetUsersQuery(
     string? Role,
     string? Status,
     bool? IsLockedOut,
-    bool? EmailConfirmed,
-    int Page,
-    int PageSize) : IRequest<Result<AdminGetUsersResponse>>;
+    bool? EmailConfirmed) : PagedRequest, IRequest<Result<AdminGetUsersResponse>>;
