@@ -3,6 +3,7 @@ using GenclikMerkezi.Contracts.ReferenceData;
 using GenclikMerkezi.Modules.ReferenceData.Domain;
 using GenclikMerkezi.Modules.ReferenceData.Features.AdminLookupCrud;
 using GenclikMerkezi.Modules.ReferenceData.Features.GetLookupItems;
+using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -26,14 +27,24 @@ internal static class LookupEndpoints
     {
         app.MapGet(
                 $"{BasePath}/{routeSegment}",
-                async (bool? activeOnly, ISender sender, CancellationToken cancellationToken) =>
+                async (
+                    bool? activeOnly,
+                    int? page,
+                    int? pageSize,
+                    ISender sender,
+                    CancellationToken cancellationToken) =>
                 {
-                    var query = new GetLookupItemsQuery(lookupType, activeOnly ?? true);
+                    var query = new GetLookupItemsQuery(lookupType, activeOnly ?? true)
+                    {
+                        Page = page ?? 1,
+                        PageSize = pageSize ?? PagedRequest.DefaultPageSize,
+                    };
                     var result = await sender.Send(query, cancellationToken);
 
                     return result.ToOkOrProblem();
                 })
             .AllowAnonymous()
+            .Produces<PagedResult<LookupItemSummary>>(StatusCodes.Status200OK)
             .WithName($"Get{routeSegment}")
             .WithTags("ReferenceData");
     }

@@ -1,14 +1,20 @@
+using GenclikMerkezi.BuildingBlocks.Infrastructure.Persistence;
 using GenclikMerkezi.Contracts.ReferenceData;
 using GenclikMerkezi.Modules.ReferenceData.Application.Abstractions;
 using GenclikMerkezi.Modules.ReferenceData.Domain;
+using GenclikMerkezi.SharedKernel.Results;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace GenclikMerkezi.Modules.ReferenceData.Infrastructure;
 
-// The implementation behind ADR-016 Decision 2's published Contracts interface. ListAsync/
-// ListByParentAsync are cached (this data is small and rarely written) and invalidated by the
-// admin-managed CRUD handlers via ReferenceDataCacheKeys on every mutation.
+// The implementation behind ADR-016 Decision 2's published Contracts interface. ListAsync is
+// cached (this data is small and rarely written) and invalidated by the admin-managed CRUD
+// handlers via ReferenceDataCacheKeys on every mutation. Paging is applied in-memory over the
+// cached full list rather than caching per (type, activeOnly, page, pageSize) combination - that
+// would turn LookupCacheInvalidator's fixed two-key invalidation into an unbounded key space.
+// These lists are small (largest is District at ~975 rows), so caching the full list and paging
+// it in memory is both simpler and cheap.
 // ExistsAndActiveAsync is deliberately NOT cached: it backs write-time validation elsewhere (e.g.
 // "is this SectorId still active"), where staleness would be a correctness bug, not just a
 // slightly-stale dropdown.
@@ -24,36 +30,43 @@ public sealed class ReferenceDataLookupReader(ReferenceDataDbContext dbContext, 
         return await query.AnyAsync(l => l.Id == id && l.IsActive, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<LookupItemSummary>> ListAsync(
-        ReferenceDataLookupType type, bool activeOnly = true, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<LookupItemSummary>> ListAsync(
+        ReferenceDataLookupType type,
+        PagedRequest paging,
+        bool activeOnly = true,
+        CancellationToken cancellationToken = default)
     {
         var cacheKey = ReferenceDataCacheKeys.List(type, activeOnly);
 
-        if (cache.TryGetValue(cacheKey, out IReadOnlyList<LookupItemSummary>? cached) && cached is not null)
+        if (!cache.TryGetValue(cacheKey, out IReadOnlyList<LookupItemSummary>? all) || all is null)
         {
-            return cached;
+            var query = GetQueryable(type);
+
+            if (activeOnly)
+            {
+                query = query.Where(l => l.IsActive);
+            }
+
+            all = await query
+                .OrderBy(l => l.SortOrder)
+                .Select(l => new LookupItemSummary(l.Id, l.Code, l.DisplayName, l.IsActive, l.SortOrder))
+                .ToListAsync(cancellationToken);
+
+            cache.Set(cacheKey, all, CacheDuration);
         }
 
-        var query = GetQueryable(type);
+        var page = all
+            .Skip((paging.Page - 1) * paging.PageSize)
+            .Take(paging.PageSize)
+            .ToList();
 
-        if (activeOnly)
-        {
-            query = query.Where(l => l.IsActive);
-        }
-
-        var items = await query
-            .OrderBy(l => l.SortOrder)
-            .Select(l => new LookupItemSummary(l.Id, l.Code, l.DisplayName, l.IsActive, l.SortOrder))
-            .ToListAsync(cancellationToken);
-
-        cache.Set(cacheKey, (IReadOnlyList<LookupItemSummary>)items, CacheDuration);
-
-        return items;
+        return new PagedResult<LookupItemSummary>(page, all.Count, paging.Page, paging.PageSize);
     }
 
-    public async Task<IReadOnlyList<LookupItemSummary>> ListByParentAsync(
+    public Task<PagedResult<LookupItemSummary>> ListByParentAsync(
         ReferenceDataLookupType type,
         Guid parentId,
+        PagedRequest paging,
         bool activeOnly = true,
         CancellationToken cancellationToken = default)
     {
@@ -69,10 +82,10 @@ public sealed class ReferenceDataLookupReader(ReferenceDataDbContext dbContext, 
             query = query.Where(l => l.IsActive);
         }
 
-        return await query
+        return query
             .OrderBy(l => l.SortOrder)
             .Select(l => new LookupItemSummary(l.Id, l.Code, l.DisplayName, l.IsActive, l.SortOrder))
-            .ToListAsync(cancellationToken);
+            .ToPagedResultAsync(paging, cancellationToken);
     }
 
     private IQueryable<LookupItem> GetQueryable(ReferenceDataLookupType type) => type switch

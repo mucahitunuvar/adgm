@@ -6,4 +6,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- IReferenceDataLookupReader's list methods return PagedResult<T> (built from a PagedRequest) -
+         SharedKernel is the natural home for these generic, framework-independent result/request
+         primitives, and every module already depends on it. -->
+    <ProjectReference Include="..\SharedKernel\GenclikMerkezi.SharedKernel.csproj" />
+  </ItemGroup>
+
 </Project>

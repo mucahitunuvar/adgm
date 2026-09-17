@@ -1,4 +1,5 @@
 using GenclikMerkezi.Contracts.ReferenceData;
+using GenclikMerkezi.SharedKernel.Results;
 
 namespace GenclikMerkezi.UnitTests.ReferenceData.TestDoubles;
 
@@ -16,18 +17,24 @@ public sealed class FakeReferenceDataLookupReader : IReferenceDataLookupReader
         ReferenceDataLookupType type, Guid id, CancellationToken cancellationToken = default) =>
         Task.FromResult(_activeIds.Contains((type, id)));
 
-    public Task<IReadOnlyList<LookupItemSummary>> ListAsync(
-        ReferenceDataLookupType type, bool activeOnly = true, CancellationToken cancellationToken = default)
+    public Task<PagedResult<LookupItemSummary>> ListAsync(
+        ReferenceDataLookupType type,
+        PagedRequest paging,
+        bool activeOnly = true,
+        CancellationToken cancellationToken = default)
     {
         var items = _items.TryGetValue(type, out var list) ? list : [];
-        IReadOnlyList<LookupItemSummary> result = activeOnly ? items.Where(i => i.IsActive).ToList() : items;
-        return Task.FromResult(result);
+        var filtered = activeOnly ? items.Where(i => i.IsActive).ToList() : items;
+        var page = filtered.Skip((paging.Page - 1) * paging.PageSize).Take(paging.PageSize).ToList();
+
+        return Task.FromResult(new PagedResult<LookupItemSummary>(page, filtered.Count, paging.Page, paging.PageSize));
     }
 
-    public Task<IReadOnlyList<LookupItemSummary>> ListByParentAsync(
+    public Task<PagedResult<LookupItemSummary>> ListByParentAsync(
         ReferenceDataLookupType type,
         Guid parentId,
+        PagedRequest paging,
         bool activeOnly = true,
         CancellationToken cancellationToken = default) =>
-        Task.FromResult<IReadOnlyList<LookupItemSummary>>([]);
+        Task.FromResult(new PagedResult<LookupItemSummary>([], 0, paging.Page, paging.PageSize));
 }

@@ -1,3 +1,5 @@
+using GenclikMerkezi.SharedKernel.Results;
+
 namespace GenclikMerkezi.Contracts.ReferenceData;
 
 // The published, in-process read contract other modules depend on instead of ReferenceData's own
@@ -10,13 +12,17 @@ public interface IReferenceDataLookupReader
     Task<bool> ExistsAndActiveAsync(
         ReferenceDataLookupType type, Guid id, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<LookupItemSummary>> ListAsync(
-        ReferenceDataLookupType type, bool activeOnly = true, CancellationToken cancellationToken = default);
+    Task<PagedResult<LookupItemSummary>> ListAsync(
+        ReferenceDataLookupType type,
+        PagedRequest paging,
+        bool activeOnly = true,
+        CancellationToken cancellationToken = default);
 
     // For lookups scoped to a parent (District -> Province, TaxOffice -> Province).
-    Task<IReadOnlyList<LookupItemSummary>> ListByParentAsync(
+    Task<PagedResult<LookupItemSummary>> ListByParentAsync(
         ReferenceDataLookupType type,
         Guid parentId,
+        PagedRequest paging,
         bool activeOnly = true,
         CancellationToken cancellationToken = default);
 }

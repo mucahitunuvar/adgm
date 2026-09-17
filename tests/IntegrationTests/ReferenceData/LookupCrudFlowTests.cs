@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using GenclikMerkezi.Contracts.ReferenceData;
 using GenclikMerkezi.IntegrationTests.Identity;
 using GenclikMerkezi.Modules.Identity.Features.Login;
+using GenclikMerkezi.SharedKernel.Results;
 
 namespace GenclikMerkezi.IntegrationTests.ReferenceData;
 
@@ -34,24 +35,54 @@ public class LookupCrudFlowTests : IClassFixture<CustomWebApplicationFactory>
         return login!.AccessToken;
     }
 
+    private async Task<PagedResult<LookupItemSummary>> GetPageAsync(string route)
+    {
+        var response = await _client.GetAsync(route);
+        return (await response.Content.ReadFromJsonAsync<PagedResult<LookupItemSummary>>())!;
+    }
+
+    // Walks every page (server-side pageSize is capped at PagedRequest.MaxPageSize) and returns the
+    // full list - for tests that need to assert "this specific item is somewhere in the list", not
+    // just a total count, now that every list endpoint is paginated.
+    private async Task<List<LookupItemSummary>> GetAllItemsAsync(string route, bool includeInactive = false)
+    {
+        var items = new List<LookupItemSummary>();
+        var page = 1;
+
+        while (true)
+        {
+            var separator = route.Contains('?') ? "&" : "?";
+            var url = $"{route}{separator}page={page}&pageSize=100{(includeInactive ? "&activeOnly=false" : string.Empty)}";
+            var body = await GetPageAsync(url);
+            items.AddRange(body.Items);
+
+            if (!body.HasNextPage)
+            {
+                break;
+            }
+
+            page++;
+        }
+
+        return items;
+    }
+
     [Fact]
     public async Task GetCountries_IsAnonymousAndContainsTurkiye()
     {
         var response = await _client.GetAsync("/api/v1/reference-data/countries");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var items = await response.Content.ReadFromJsonAsync<List<LookupItemSummary>>();
-        Assert.NotNull(items);
-        Assert.Contains(items!, i => i.Code == "TR" && i.DisplayName == "Türkiye");
+        var items = await GetAllItemsAsync("/api/v1/reference-data/countries");
+        Assert.Contains(items, i => i.Code == "TR" && i.DisplayName == "Türkiye");
     }
 
     [Fact]
     public async Task GetDistricts_ReturnsAllSeededDistricts()
     {
-        var response = await _client.GetAsync("/api/v1/reference-data/districts");
-        var items = await response.Content.ReadFromJsonAsync<List<LookupItemSummary>>();
+        var body = await GetPageAsync("/api/v1/reference-data/districts");
 
-        Assert.Equal(975, items!.Count);
+        Assert.Equal(975, body.TotalCount);
     }
 
     [Theory]
@@ -68,10 +99,9 @@ public class LookupCrudFlowTests : IClassFixture<CustomWebApplicationFactory>
     [InlineData("skills", 0)]
     public async Task GetLookup_ReturnsExpectedSeededCount(string routeSegment, int expectedCount)
     {
-        var response = await _client.GetAsync($"/api/v1/reference-data/{routeSegment}");
-        var items = await response.Content.ReadFromJsonAsync<List<LookupItemSummary>>();
+        var body = await GetPageAsync($"/api/v1/reference-data/{routeSegment}");
 
-        Assert.Equal(expectedCount, items!.Count);
+        Assert.Equal(expectedCount, body.TotalCount);
     }
 
     [Fact]
@@ -79,9 +109,8 @@ public class LookupCrudFlowTests : IClassFixture<CustomWebApplicationFactory>
     {
         var accessToken = await LoginAsAdminAsync();
 
-        var provinces = await (await _client.GetAsync("/api/v1/reference-data/provinces"))
-            .Content.ReadFromJsonAsync<List<LookupItemSummary>>();
-        var istanbul = provinces!.Single(p => p.Code == "34");
+        var provinces = await GetAllItemsAsync("/api/v1/reference-data/provinces");
+        var istanbul = provinces.Single(p => p.Code == "34");
 
         var createRequest = new HttpRequestMessage(HttpMethod.Post, "/api/v1/reference-data/tax-offices")
         {
@@ -105,16 +134,14 @@ public class LookupCrudFlowTests : IClassFixture<CustomWebApplicationFactory>
 
         // Soft-delete: the row must still exist (not a real DELETE) so anything already holding
         // this id as a business reference can still resolve it - only IsActive changes.
-        var allTaxOffices = await (await _client.GetAsync("/api/v1/reference-data/tax-offices?activeOnly=false"))
-            .Content.ReadFromJsonAsync<List<LookupItemSummary>>();
-        var deactivated = allTaxOffices!.Single(t => t.Id == id);
+        var allTaxOffices = await GetAllItemsAsync("/api/v1/reference-data/tax-offices", includeInactive: true);
+        var deactivated = allTaxOffices.Single(t => t.Id == id);
         Assert.False(deactivated.IsActive);
         Assert.Equal("Referans Bütünlüğü Testi Vergi Dairesi", deactivated.DisplayName);
 
         // The parent Province itself must be entirely unaffected by a child TaxOffice's soft-delete.
-        var provincesAfter = await (await _client.GetAsync("/api/v1/reference-data/provinces"))
-            .Content.ReadFromJsonAsync<List<LookupItemSummary>>();
-        Assert.Contains(provincesAfter!, p => p.Id == istanbul.Id && p.IsActive);
+        var provincesAfter = await GetAllItemsAsync("/api/v1/reference-data/provinces");
+        Assert.Contains(provincesAfter, p => p.Id == istanbul.Id && p.IsActive);
     }
 
     [Fact]
@@ -145,9 +172,8 @@ public class LookupCrudFlowTests : IClassFixture<CustomWebApplicationFactory>
         var created = await createResponse.Content.ReadFromJsonAsync<Dictionary<string, Guid>>();
         var id = created!["id"];
 
-        var listResponse = await _client.GetAsync("/api/v1/reference-data/sectors");
-        var items = await listResponse.Content.ReadFromJsonAsync<List<LookupItemSummary>>();
-        Assert.Contains(items!, i => i.Id == id && i.DisplayName == "Test Sektörü");
+        var items = await GetAllItemsAsync("/api/v1/reference-data/sectors");
+        Assert.Contains(items, i => i.Id == id && i.DisplayName == "Test Sektörü");
 
         var updateRequest = new HttpRequestMessage(HttpMethod.Put, $"/api/v1/reference-data/sectors/{id}")
         {
@@ -157,22 +183,19 @@ public class LookupCrudFlowTests : IClassFixture<CustomWebApplicationFactory>
         var updateResponse = await _client.SendAsync(updateRequest);
         Assert.Equal(HttpStatusCode.NoContent, updateResponse.StatusCode);
 
-        var afterUpdate = await (await _client.GetAsync("/api/v1/reference-data/sectors"))
-            .Content.ReadFromJsonAsync<List<LookupItemSummary>>();
-        Assert.Contains(afterUpdate!, i => i.Id == id && i.DisplayName == "Güncellenmiş Sektör");
+        var afterUpdate = await GetAllItemsAsync("/api/v1/reference-data/sectors");
+        Assert.Contains(afterUpdate, i => i.Id == id && i.DisplayName == "Güncellenmiş Sektör");
 
         var deleteRequest = new HttpRequestMessage(HttpMethod.Delete, $"/api/v1/reference-data/sectors/{id}");
         deleteRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         var deleteResponse = await _client.SendAsync(deleteRequest);
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
 
-        var activeOnly = await (await _client.GetAsync("/api/v1/reference-data/sectors?activeOnly=true"))
-            .Content.ReadFromJsonAsync<List<LookupItemSummary>>();
-        Assert.DoesNotContain(activeOnly!, i => i.Id == id);
+        var activeOnly = await GetAllItemsAsync("/api/v1/reference-data/sectors");
+        Assert.DoesNotContain(activeOnly, i => i.Id == id);
 
-        var includingInactive = await (await _client.GetAsync("/api/v1/reference-data/sectors?activeOnly=false"))
-            .Content.ReadFromJsonAsync<List<LookupItemSummary>>();
-        Assert.Contains(includingInactive!, i => i.Id == id && !i.IsActive);
+        var includingInactive = await GetAllItemsAsync("/api/v1/reference-data/sectors", includeInactive: true);
+        Assert.Contains(includingInactive, i => i.Id == id && !i.IsActive);
     }
 
     [Fact]
@@ -239,9 +262,8 @@ public class LookupCrudFlowTests : IClassFixture<CustomWebApplicationFactory>
     {
         var accessToken = await LoginAsAdminAsync();
 
-        var provinces = await (await _client.GetAsync("/api/v1/reference-data/provinces"))
-            .Content.ReadFromJsonAsync<List<LookupItemSummary>>();
-        var istanbul = provinces!.Single(p => p.Code == "34");
+        var provinces = await GetAllItemsAsync("/api/v1/reference-data/provinces");
+        var istanbul = provinces.Single(p => p.Code == "34");
 
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/reference-data/tax-offices")
         {
@@ -280,5 +302,31 @@ public class LookupCrudFlowTests : IClassFixture<CustomWebApplicationFactory>
         var response = await _client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    // work-location-types (not sectors): always has 3 seeded rows regardless of test execution
+    // order, unlike sectors, which other tests in this class create/deactivate at runtime.
+    [Fact]
+    public async Task GetWorkLocationTypes_ResponseShape_MatchesPagedResultContract()
+    {
+        var body = await GetPageAsync("/api/v1/reference-data/work-location-types?page=1&pageSize=2");
+
+        Assert.Equal(1, body.Page);
+        Assert.Equal(2, body.PageSize);
+        Assert.Equal(3, body.TotalCount);
+        Assert.Equal(2, body.TotalPages);
+        Assert.Equal(2, body.Items.Count);
+        Assert.True(body.HasNextPage);
+        Assert.False(body.HasPreviousPage);
+    }
+
+    [Fact]
+    public async Task GetLookup_WithOutOfRangePageSize_ClampsInsteadOfBadRequest()
+    {
+        var response = await _client.GetAsync("/api/v1/reference-data/currencies?pageSize=0");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<PagedResult<LookupItemSummary>>();
+        Assert.Equal(1, body!.PageSize);
     }
 }
