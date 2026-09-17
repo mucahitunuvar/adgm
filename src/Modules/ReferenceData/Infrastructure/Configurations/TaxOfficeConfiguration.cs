@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.ReferenceData.Domain;
+using GenclikMerkezi.Modules.ReferenceData.Infrastructure.Seed;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -14,5 +15,15 @@ public sealed class TaxOfficeConfiguration : LookupItemConfiguration<TaxOffice>
 
         builder.Property(t => t.ProvinceId).IsRequired();
         builder.HasIndex(t => t.ProvinceId);
+
+        builder.HasData(TaxOfficeSeedData.All.Select((office, index) => new
+        {
+            Id = DeterministicGuid.Create($"TaxOffice:{office.Code}"),
+            office.Code,
+            DisplayName = office.Name,
+            IsActive = true,
+            SortOrder = index,
+            ProvinceId = DeterministicGuid.Create($"Province:{office.ProvinceCode}"),
+        }));
     }
 }
