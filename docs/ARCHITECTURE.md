@@ -369,15 +369,45 @@ Sorumlulukları:
 
 ## 8.2. Candidate
 
-Sorumlulukları:
+Adayın CV bilgilerini yönetir. Kapsam ve tasarım kararları **ADR-018** (aggregate
+tasarımı, kayıt orkestrasyonu, profil tamamlanma read-model'i) ve **ADR-019**
+(dosya yükleme altyapısı) ile karara bağlanmıştır; iş kuralları için bkz.
+DOMAIN.md §20.1.
 
-* Candidate
-* CandidateProfile
-* CV
-* Personal information
-* Candidate preferences
-* Candidate status
-* Candidate profile lifecycle
+İki aggregate'e bölünmüştür (kendi `CandidateDbContext`'i altında, database-per-
+module):
+
+```text
+CandidateCv            (header — nadiren değişen, liste/arama ekranlarında
+                         kullanılan İletişim/Kişisel Bilgiler + DisabilityInfo?
+                         owned value object + CompletionPercentage)
+
+CandidateCvContent      (detay — sık güncellenen, koleksiyon ağırlıklı: Deneyim,
+                         Eğitim, Diller, Sertifikalar, Referanslar + Özet/
+                         BilgisayarBilgisi/Hobiler/CvDosyası)
+```
+
+Ayrım gerekçesi: liste/arama sorgularının `CandidateCvContent`'in ağır
+koleksiyonlarını join etmeden çalışabilmesi (bkz. ADR-018 Karar §1).
+
+Diğer notlar:
+
+* Kayıt (`RegisterCandidateCommand`), Identity'nin public contract'ı üzerinden
+  senkron `CreateUserAsync` çağrısı + telafi (compensation) ile orkestre edilir
+  — cross-module erişim ADR-016 Decision 2 pattern'ini kullanır, Identity'nin
+  DbContext'ine doğrudan erişmez.
+* Fotoğraf ve CV dosyası yüklemeleri SharedKernel'in `IFileStorageService`'i
+  (ADR-019) üzerinden yapılır; modül kendi dosya sağlayıcısını implemente etmez.
+* `CompletionPercentage`, CAP/RabbitMQ Outbox'ı değil, modül-içi (in-process)
+  MediatR domain event dispatch'i ile güncellenir — CAP process başına tek
+  instance'a (Identity'nin `IdentityDbContext`'i) sabitlendiği için (ADR-014)
+  Candidate kendi transactional outbox'ını kuramaz; bu kısıt AGENTS.md §6
+  (Architectural Conflict Rule) kapsamında değerlendirilip bu şekilde çözülmüştür.
+* Yetkilendirme, kaynak sahipliği (resource ownership) üzerinden sunucu
+  tarafında yapılır: bir aday yalnızca kendi `CandidateCv`'sine erişebilir
+  (`ICurrentUserContext` — bkz. §34.1); Admin/CareerAdvisor için genel erişim,
+  CareerAdvisor modülü kurulana kadar yalnızca liste/arama endpoint'inde rol
+  bazlı olarak sağlanır.
 
 ---
 

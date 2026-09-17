@@ -740,6 +740,107 @@ algoritmasının bir parçası değildir.
 
 ---
 
+# 20.1 Candidate CV (Aday CV'si)
+
+İş arayan gençlerin platformda kendilerini tanıtacakları CV bilgilerini oluşturup
+yönetmelerini sağlayan modüldür. Kayıt olan her aday, Identity modülündeki
+`User` hesabına 1-1 bağlı bir `CandidateCv`'ye sahip olur. Bu bölüm, §3/§4'te
+tanımlanan Candidate/CandidateProfile kavramlarının somut aggregate seviyesindeki
+karşılığını (gerçekte uygulanan veri modelini) açıklar. Alan bazlı ayrıntılar için
+bkz. `docs/db/Candidate.md`; tasarım kararları için bkz. **ADR-018**.
+
+## CandidateCv (header)
+
+Adayın CV'sinin durağan/nadiren değişen kısmıdır; liste ve arama ekranlarında bu
+veri kullanılır.
+
+**İletişim Bilgileri:** Fotoğraf (`IFileStorageService` üzerinden), Ad, Soyad,
+Email, Telefon — bu dördü kayıt anında `User`'dan bir kerelik seed edilir, sonra
+bağımsız düzenlenebilir (senkron kalmaz) —, Ülke, İl, İlçe, Adres, Sosyal Medya
+Linkleri (Platform + Url koleksiyonu).
+
+**Kişisel Bilgiler:** Ünvan, Cinsiyet, Doğum Tarihi, Sürücü Belgesi, Uyruk, Net
+Maaş Beklentisi, Askerlik Durumu.
+
+**Engellilik Alt-Bloğu** (`DisabilityInfo?` — nullable owned value object):
+Kategori, Yüzde, Açıklama, Sağlık Raporu Var Mı, İlaç Kullanımı Var Mı, Kronik
+Rahatsızlık Var Mı, Bulaşıcı Hastalık Var Mı, Bilinç Kaybı Durumu.
+
+**Sistem alanları:** `UserId` (Identity.User FK, 1-1), `CareerAdvisorId`
+(nullable — CareerAdvisor modülü henüz yok, bkz. §6), `CompletionPercentage`
+(int, aşağıdaki read-model tarafından güncellenir).
+
+## CandidateCvContent (detay)
+
+Adayın CV içeriğinin sık güncellenen, koleksiyon ağırlıklı kısmıdır.
+`CandidateCvId` ile `CandidateCv`'ye bağlıdır. `CandidateCv` ile aynı aggregate'te
+tutulmaması, liste/arama sorgularının bu ağır koleksiyonları taşımadan
+çalışabilmesi içindir (bkz. ADR-018 Karar §1).
+
+* **Özet, Bilgisayar Bilgisi, Hobiler:** serbest metin.
+* **Deneyim** (koleksiyon): Firma Adı (serbest metin — Employer modülü geldiğinde
+  eşleştirme/autocomplete iyileştirmesi ertelendi), Pozisyon, Başlangıç Tarihi,
+  Bitiş Tarihi (Halen Çalışıyorum ise pasif), Halen Çalışıyorum, Sektör, İş
+  Alanı, Çalışma Şekli, Ülke, Şehir, İş Tanımı.
+* **Eğitim** (koleksiyon): Eğitim Durumu, Başlangıç Tarihi, Devam Ediyorum/Terk,
+  Bitiş Tarihi (Terk ise pasif), Diploma Not Sistemi (Terk ise pasif), Diploma
+  Notu (Terk ise pasif), Okul Adı (School lookup + veritabanında yoksa serbest
+  metin fallback), Şehir, Açıklama.
+* **Diller** (koleksiyon): Dil (mevcut Language lookup'ı), Seviye, Anadil Mi.
+* **Sertifikalar** (koleksiyon): Ad, Alındığı Kurum, Sertifika Tarihi, Açıklama.
+* **Referanslar** (koleksiyon): Referans Tipi, Referans Dili (mevcut Language
+  lookup'ı), Ad, Soyad, Çalıştığı Firma (opsiyonel), Pozisyon, Email, Telefon.
+* **CV Dosyası:** dosya (PDF/DOCX), `IFileStorageService` üzerinden.
+
+## Kayıt Akışı
+
+Aday kaydı, Candidate modülündeki `RegisterCandidateCommand` üzerinden orkestre
+edilir: önce Identity'nin public contract'ı üzerinden senkron olarak bir `User`
+oluşturulur, ardından `CandidateCv` (Ad/Soyad/Email/Telefon `User`'dan seed
+edilmiş olarak) ve boş `CandidateCvContent` oluşturulur. `CandidateCv` oluşturma
+adımı başarısız olursa, oluşturulan `User` telafi (compensation) olarak
+deaktive edilir — dağıtık transaction yerine try/catch + compensating action
+(saga-lite) kullanılır. Detaylar için bkz. ADR-018 Karar §2.
+
+## Profil Tamamlanma Yüzdesi
+
+`CandidateCv`/`CandidateCvContent` üzerindeki güncellemeler bir domain event
+(`CandidateCvUpdatedDomainEvent` / `CandidateCvContentUpdatedDomainEvent`)
+yayınlar; Candidate modülü **içinde** (modül-içi, in-process MediatR ile) çalışan
+bir handler bu event'i dinleyip aşağıdaki sekiz kriteri eşit ağırlıkla
+değerlendirerek `CandidateCv.CompletionPercentage`'ı yeniden hesaplar: Fotoğraf,
+Adres, en az 1 Sosyal Medya Linki, Özet, en az 1 Deneyim, en az 1 Eğitim, en az 1
+Dil, CV Dosyası.
+
+Bu mekanizma **CAP/RabbitMQ tabanlı Outbox değildir** — CAP, ADR-014 gereği
+process başına tek instance'a (Identity'nin `IdentityDbContext`'ine) sabitlenmiş
+olduğundan, Candidate modülü kendi transactional outbox'ını kuramaz; bu, AGENTS.md
+§6 (Architectural Conflict Rule) kapsamında değerlendirilip modül-içi MediatR
+domain event dispatch'i (mevcut `DomainEventDispatcher` + `INotificationHandler`
+altyapısı, Identity'nin audit-log handler'larıyla aynı pattern) ile çözülmüştür.
+Dispatch aynı istek/transaction sınırları içinde senkron çalışır (eventual
+consistency değildir) — diğer modüller arası senaryolarda kullanılan
+Outbox/RabbitMQ entegrasyon event modeliyle karıştırılmamalıdır (bkz. §31
+Domain Events).
+
+## Yeni ReferenceData Lookup'ları
+
+Bu modülle birlikte ReferenceData'ya eklenen lookup'lar: Sektör (`Sector`),
+İşAlanı (`WorkField`), EğitimDurumu (`EducationLevel`), DiplomaNotSistemi
+(`DiplomaGradingSystem`), DilSeviyesi (`LanguageLevel`), EngelliKategorisi
+(`DisabilityCategory`), ReferansTipi (`ReferenceType`), Okul (`School` — admin
+seed listesi + Candidate tarafında opsiyonel referans + serbest metin fallback).
+Ülke/İl/İlçe, Dil ve Uyruk (Country) zaten mevcuttu, yeniden kullanıldı — bkz.
+§29.1 ReferenceData.
+
+## Henüz Karara Bağlanmamış / Ertelenmiş Noktalar
+
+* Firma adı autocomplete (Employer modülü bağımlılığı) — ertelendi, ilerideki
+  bir ADR'de ele alınacak.
+* CareerAdvisor ataması — CareerAdvisor modülü kurulunca aktifleşecek.
+
+---
+
 # 21. Event
 
 Event, Gençlik Merkezi tarafından düzenlenen etkinlikleri temsil eder.
@@ -1173,6 +1274,16 @@ UserRoleChangedDomainEvent
 UserPasswordChangedDomainEvent
 UserPasswordResetDomainEvent
 UserEmailVerifiedDomainEvent
+```
+
+Candidate modülünün `CandidateCv`/`CandidateCvContent` aggregate'lerine ait
+domain event'leri de zaten uygulanmıştır — bunlar §20.1'de açıklanan profil
+tamamlanma yüzdesi read-model'ini modül-içi (in-process MediatR) olarak besler,
+Outbox/RabbitMQ üzerinden yayınlanmazlar:
+
+```text
+CandidateCvUpdatedDomainEvent
+CandidateCvContentUpdatedDomainEvent
 ```
 
 Domain event ile integration event aynı kavram değildir.
