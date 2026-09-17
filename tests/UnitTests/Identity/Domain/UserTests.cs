@@ -15,7 +15,7 @@ public class UserTests
         var email = CreateEmail();
         var passwordHash = CreatePasswordHash();
 
-        var user = User.Register(email, passwordHash, UserRole.Candidate);
+        var user = User.Register(email, passwordHash, "Test", "User", null, UserRole.Candidate);
 
         Assert.NotEqual(Guid.Empty, user.Id);
         Assert.Equal(email, user.Email);
@@ -34,7 +34,7 @@ public class UserTests
     [Fact]
     public void IssueRefreshToken_AddsTokenToCollectionWithExpectedValues()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         var expiresAtUtc = DateTime.UtcNow.AddDays(7);
 
         var token = user.IssueRefreshToken("token-hash", expiresAtUtc);
@@ -50,7 +50,7 @@ public class UserTests
     [Fact]
     public void FindRefreshToken_WithMatchingHash_ReturnsToken()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         var issued = user.IssueRefreshToken("token-hash", DateTime.UtcNow.AddDays(7));
 
         var found = user.FindRefreshToken("token-hash");
@@ -61,7 +61,7 @@ public class UserTests
     [Fact]
     public void FindRefreshToken_WithUnknownHash_ReturnsNull()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         user.IssueRefreshToken("token-hash", DateTime.UtcNow.AddDays(7));
 
         var found = user.FindRefreshToken("unknown-hash");
@@ -72,7 +72,7 @@ public class UserTests
     [Fact]
     public void RevokeRefreshToken_WithMatchingHash_RevokesTokenAndSetsReplacement()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         var token = user.IssueRefreshToken("token-hash", DateTime.UtcNow.AddDays(7));
 
         user.RevokeRefreshToken("token-hash", "new-token-hash");
@@ -85,7 +85,7 @@ public class UserTests
     [Fact]
     public void RevokeRefreshToken_WithUnknownHash_DoesNotThrowAndChangesNothing()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         var token = user.IssueRefreshToken("token-hash", DateTime.UtcNow.AddDays(7));
 
         var exception = Record.Exception(() => user.RevokeRefreshToken("unknown-hash"));
@@ -97,7 +97,7 @@ public class UserTests
     [Fact]
     public void RevokeAllActiveRefreshTokens_OnlyRevokesTokensThatAreCurrentlyActive()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         var active = user.IssueRefreshToken("active-hash", DateTime.UtcNow.AddDays(7));
         var alreadyExpired = user.IssueRefreshToken("expired-hash", DateTime.UtcNow.AddMinutes(-1));
         var alreadyRevoked = user.IssueRefreshToken("revoked-hash", DateTime.UtcNow.AddDays(7));
@@ -113,7 +113,7 @@ public class UserTests
     [Fact]
     public void RegisterFailedLoginAttempt_BelowThreshold_IncrementsCounterAndDoesNotLock()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
 
         user.RegisterFailedLoginAttempt();
         user.RegisterFailedLoginAttempt();
@@ -127,7 +127,7 @@ public class UserTests
     [Fact]
     public void RegisterFailedLoginAttempt_AtThreshold_LocksAccountAndRaisesDomainEvent()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
 
         for (var i = 0; i < 5; i++)
         {
@@ -146,7 +146,7 @@ public class UserTests
     [Fact]
     public void RegisterSuccessfulLogin_ResetsFailedAttemptCounterAndLock()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         user.RegisterFailedLoginAttempt();
         user.RegisterFailedLoginAttempt();
 
@@ -159,7 +159,7 @@ public class UserTests
     [Fact]
     public void UnlockIfLockoutExpired_BeforeLockWindowElapses_StaysLocked()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         for (var i = 0; i < 5; i++)
         {
             user.RegisterFailedLoginAttempt();
@@ -174,7 +174,7 @@ public class UserTests
     [Fact]
     public void ChangePassword_UpdatesHashAndRevokesActiveRefreshTokensAndRaisesDomainEvent()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash("old-hash"), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash("old-hash"), "Test", "User", null, UserRole.Candidate);
         var activeToken = user.IssueRefreshToken("token-hash", DateTime.UtcNow.AddDays(7));
         var newPasswordHash = CreatePasswordHash("new-hash");
 
@@ -188,7 +188,7 @@ public class UserTests
     [Fact]
     public void ChangeRole_ToDifferentRole_UpdatesRoleAndRaisesDomainEvent()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
 
         user.ChangeRole(UserRole.CareerAdvisor);
 
@@ -201,7 +201,7 @@ public class UserTests
     [Fact]
     public void ChangeRole_ToSameRole_DoesNotRaiseDomainEvent()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
 
         user.ChangeRole(UserRole.Candidate);
 
@@ -211,7 +211,7 @@ public class UserTests
     [Fact]
     public void IssuePasswordResetToken_ThenResetPassword_UpdatesPasswordAndConsumesToken()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash("old-hash"), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash("old-hash"), "Test", "User", null, UserRole.Candidate);
         var activeRefreshToken = user.IssueRefreshToken("refresh-hash", DateTime.UtcNow.AddDays(7));
         var resetToken = user.IssuePasswordResetToken("reset-hash", DateTime.UtcNow.AddMinutes(30));
         var newPasswordHash = CreatePasswordHash("new-hash");
@@ -228,7 +228,7 @@ public class UserTests
     [Fact]
     public void ResetPassword_WithUnknownToken_ReturnsFailure()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash("old-hash"), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash("old-hash"), "Test", "User", null, UserRole.Candidate);
 
         var result = user.ResetPassword("unknown-hash", CreatePasswordHash("new-hash"));
 
@@ -240,7 +240,7 @@ public class UserTests
     [Fact]
     public void ResetPassword_WithAlreadyUsedToken_ReturnsFailure()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash("old-hash"), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash("old-hash"), "Test", "User", null, UserRole.Candidate);
         user.IssuePasswordResetToken("reset-hash", DateTime.UtcNow.AddMinutes(30));
         user.ResetPassword("reset-hash", CreatePasswordHash("first-new-hash"));
 
@@ -253,7 +253,7 @@ public class UserTests
     [Fact]
     public void ResetPassword_WithExpiredToken_ReturnsFailure()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash("old-hash"), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash("old-hash"), "Test", "User", null, UserRole.Candidate);
         user.IssuePasswordResetToken("reset-hash", DateTime.UtcNow.AddSeconds(-1));
 
         var result = user.ResetPassword("reset-hash", CreatePasswordHash("new-hash"));
@@ -265,7 +265,7 @@ public class UserTests
     [Fact]
     public void IssueEmailVerificationToken_ThenConfirmEmail_SetsEmailConfirmedAndConsumesToken()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         var token = user.IssueEmailVerificationToken("verify-hash", DateTime.UtcNow.AddHours(48));
 
         var result = user.ConfirmEmail("verify-hash");
@@ -279,7 +279,7 @@ public class UserTests
     [Fact]
     public void ConfirmEmail_WithUnknownToken_ReturnsFailure()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
 
         var result = user.ConfirmEmail("unknown-hash");
 
@@ -291,7 +291,7 @@ public class UserTests
     [Fact]
     public void ConfirmEmail_WithExpiredToken_ReturnsFailure()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         user.IssueEmailVerificationToken("verify-hash", DateTime.UtcNow.AddSeconds(-1));
 
         var result = user.ConfirmEmail("verify-hash");
@@ -303,7 +303,7 @@ public class UserTests
     [Fact]
     public void ConfirmEmail_WhenAlreadyConfirmed_IsIdempotentAndSucceeds()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         user.IssueEmailVerificationToken("verify-hash", DateTime.UtcNow.AddHours(48));
         user.ConfirmEmail("verify-hash");
 
@@ -315,7 +315,7 @@ public class UserTests
     [Fact]
     public void RequestEmailVerificationResend_WithNoPriorToken_IssuesNewToken()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
 
         var token = user.RequestEmailVerificationResend("new-hash", DateTime.UtcNow.AddHours(48), TimeSpan.FromMinutes(1));
 
@@ -326,7 +326,7 @@ public class UserTests
     [Fact]
     public void RequestEmailVerificationResend_InvalidatesPreviousActiveToken()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         var oldToken = user.IssueEmailVerificationToken(
             "old-hash", DateTime.UtcNow.AddHours(48) - TimeSpan.FromMinutes(2));
 
@@ -340,7 +340,7 @@ public class UserTests
     [Fact]
     public void RequestEmailVerificationResend_WithinCooldown_ReturnsNullAndIssuesNoNewToken()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         user.IssueEmailVerificationToken("recent-hash", DateTime.UtcNow.AddHours(48));
 
         var token = user.RequestEmailVerificationResend("new-hash", DateTime.UtcNow.AddHours(48), TimeSpan.FromMinutes(1));
@@ -353,7 +353,7 @@ public class UserTests
     [Fact]
     public void RequestEmailVerificationResend_WhenAlreadyConfirmed_ReturnsNull()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         user.IssueEmailVerificationToken("verify-hash", DateTime.UtcNow.AddHours(48));
         user.ConfirmEmail("verify-hash");
 
@@ -365,7 +365,7 @@ public class UserTests
     [Fact]
     public void ManuallyUnlock_WhenLocked_ReactivatesAndRaisesDomainEvent()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         for (var i = 0; i < 5; i++)
         {
             user.RegisterFailedLoginAttempt();
@@ -385,7 +385,7 @@ public class UserTests
     [Fact]
     public void ManuallyUnlock_WhenNotLocked_IsNoOp()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
 
         user.ManuallyUnlock();
 
@@ -396,7 +396,7 @@ public class UserTests
     [Fact]
     public void Deactivate_SetsStatusDisabledAndRaisesDomainEvent()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         var refreshToken = user.IssueRefreshToken("refresh-hash", DateTime.UtcNow.AddDays(7));
 
         user.Deactivate();
@@ -409,7 +409,7 @@ public class UserTests
     [Fact]
     public void Deactivate_WhenAlreadyDisabled_IsNoOp()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         user.Deactivate();
         user.ClearDomainEvents();
 
@@ -422,7 +422,7 @@ public class UserTests
     [Fact]
     public void Reactivate_WhenDisabled_SetsStatusActiveAndRaisesDomainEvent()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
         user.Deactivate();
 
         user.Reactivate();
@@ -434,7 +434,7 @@ public class UserTests
     [Fact]
     public void Reactivate_WhenNotDisabled_IsNoOp()
     {
-        var user = User.Register(CreateEmail(), CreatePasswordHash(), UserRole.Candidate);
+        var user = User.Register(CreateEmail(), CreatePasswordHash(), "Test", "User", null, UserRole.Candidate);
 
         user.Reactivate();
 

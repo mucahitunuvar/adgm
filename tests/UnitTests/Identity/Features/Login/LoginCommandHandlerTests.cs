@@ -20,7 +20,7 @@ public class LoginCommandHandlerTests
     {
         var user = User.Register(
             Email.Create(email).Value,
-            PasswordHash.FromHashedValue(_passwordHasher.Hash(password)),
+            PasswordHash.FromHashedValue(_passwordHasher.Hash(password)), "Test", "User", null,
             role);
         _userRepository.Add(user);
         return user;

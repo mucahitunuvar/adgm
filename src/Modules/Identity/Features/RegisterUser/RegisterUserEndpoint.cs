@@ -12,7 +12,8 @@ internal static class RegisterUserEndpoint
     {
         app.MapPost("/api/v1/auth/register", async (RegisterUserRequest request, ISender sender, CancellationToken cancellationToken) =>
             {
-                var command = new RegisterUserCommand(request.Email, request.Password, request.Role);
+                var command = new RegisterUserCommand(
+                    request.Email, request.Password, request.FirstName, request.LastName, request.PhoneNumber, request.Role);
                 var result = await sender.Send(command, cancellationToken);
 
                 return result.IsSuccess

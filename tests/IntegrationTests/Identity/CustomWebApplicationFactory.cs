@@ -86,7 +86,7 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
         var user = User.Register(
             Email.Create(email).Value,
-            PasswordHash.FromHashedValue(passwordHasher.Hash(password)),
+            PasswordHash.FromHashedValue(passwordHasher.Hash(password)), "Test", "User", null,
             UserRole.Admin);
 
         var verificationTokenHash = $"seed-admin-verification-hash-{Guid.NewGuid():N}";

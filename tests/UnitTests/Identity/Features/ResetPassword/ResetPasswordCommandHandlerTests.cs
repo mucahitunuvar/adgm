@@ -19,7 +19,7 @@ public class ResetPasswordCommandHandlerTests
     {
         var user = User.Register(
             Email.Create("aday@example.com").Value,
-            PasswordHash.FromHashedValue(_passwordHasher.Hash("OldPass123")),
+            PasswordHash.FromHashedValue(_passwordHasher.Hash("OldPass123")), "Test", "User", null,
             UserRole.Candidate);
 
         const string plainToken = "known-reset-token";

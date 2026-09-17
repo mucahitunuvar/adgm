@@ -17,7 +17,7 @@ public class ResendVerificationEmailCommandHandlerTests
 
     private User AddUnverifiedUser(string email = "aday@example.com")
     {
-        var user = User.Register(Email.Create(email).Value, PasswordHash.FromHashedValue("hash"), UserRole.Candidate);
+        var user = User.Register(Email.Create(email).Value, PasswordHash.FromHashedValue("hash"), "Test", "User", null, UserRole.Candidate);
         _userRepository.Add(user);
         return user;
     }

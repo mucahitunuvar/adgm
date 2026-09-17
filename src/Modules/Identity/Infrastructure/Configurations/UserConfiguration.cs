@@ -21,6 +21,20 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.HasIndex(u => u.Email).IsUnique();
 
+        builder.Property(u => u.FirstName)
+            .HasColumnName("FirstName")
+            .HasMaxLength(100)
+            .IsRequired();
+
+        builder.Property(u => u.LastName)
+            .HasColumnName("LastName")
+            .HasMaxLength(100)
+            .IsRequired();
+
+        builder.Property(u => u.PhoneNumber)
+            .HasColumnName("PhoneNumber")
+            .HasMaxLength(20);
+
         builder.Property(u => u.PasswordHash)
             .HasConversion(hash => hash.Value, value => PasswordHash.FromHashedValue(value))
             .HasColumnName("PasswordHash")

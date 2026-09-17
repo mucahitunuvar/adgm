@@ -1,4 +1,5 @@
 using System.Text;
+using GenclikMerkezi.Contracts.Identity;
 using GenclikMerkezi.Modules.Identity;
 using GenclikMerkezi.Modules.Identity.Application.Abstractions;
 using GenclikMerkezi.Modules.Identity.Infrastructure.Persistence;
@@ -43,6 +44,10 @@ public static class IdentityModuleServiceCollectionExtensions
         services.AddScoped<IRefreshTokenGenerator, RefreshTokenGenerator>();
         services.AddScoped<IPasswordResetTokenGenerator, PasswordResetTokenGenerator>();
         services.AddScoped<IEmailVerificationTokenGenerator, EmailVerificationTokenGenerator>();
+
+        // Published Contracts interface (ADR-016 Decision 2, Option C) - the in-process read path
+        // other modules (e.g. Candidate's registration orchestration) use instead of IdentityDbContext.
+        services.AddScoped<IIdentityService, IdentityService>();
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();

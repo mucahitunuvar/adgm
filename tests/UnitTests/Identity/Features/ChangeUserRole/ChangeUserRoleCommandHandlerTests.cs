@@ -14,7 +14,7 @@ public class ChangeUserRoleCommandHandlerTests
 
     private User AddUser(UserRole role = UserRole.Candidate)
     {
-        var user = User.Register(Email.Create("aday@example.com").Value, PasswordHash.FromHashedValue("hash"), role);
+        var user = User.Register(Email.Create("aday@example.com").Value, PasswordHash.FromHashedValue("hash"), "Test", "User", null, role);
         _userRepository.Add(user);
         return user;
     }

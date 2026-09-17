@@ -16,6 +16,12 @@ public sealed class User : AggregateRoot
 
     public PasswordHash PasswordHash { get; private set; }
 
+    public string FirstName { get; private set; }
+
+    public string LastName { get; private set; }
+
+    public string? PhoneNumber { get; private set; }
+
     public UserRole Role { get; private set; }
 
     public UserStatus Status { get; private set; }
@@ -36,11 +42,14 @@ public sealed class User : AggregateRoot
 
     public bool IsLockedOut => Status == UserStatus.Locked && LockedUntilUtc is not null && DateTime.UtcNow < LockedUntilUtc;
 
-    private User(Guid id, Email email, PasswordHash passwordHash, UserRole role)
+    private User(Guid id, Email email, PasswordHash passwordHash, string firstName, string lastName, string? phoneNumber, UserRole role)
         : base(id)
     {
         Email = email;
         PasswordHash = passwordHash;
+        FirstName = firstName;
+        LastName = lastName;
+        PhoneNumber = phoneNumber;
         Role = role;
         Status = UserStatus.Active;
         CreatedAtUtc = DateTime.UtcNow;
@@ -50,11 +59,14 @@ public sealed class User : AggregateRoot
     {
         Email = null!;
         PasswordHash = null!;
+        FirstName = null!;
+        LastName = null!;
     }
 
-    public static User Register(Email email, PasswordHash passwordHash, UserRole role)
+    public static User Register(
+        Email email, PasswordHash passwordHash, string firstName, string lastName, string? phoneNumber, UserRole role)
     {
-        var user = new User(Guid.NewGuid(), email, passwordHash, role);
+        var user = new User(Guid.NewGuid(), email, passwordHash, firstName, lastName, phoneNumber, role);
 
         user.RaiseDomainEvent(new UserRegisteredDomainEvent(user.Id, email.Value, role));
 

@@ -18,7 +18,7 @@ public class AdminUnlockUserCommandHandlerTests
     public async Task Handle_WithLockedUser_UnlocksAndSavesChanges()
     {
         var user = User.Register(
-            Email.Create("aday@example.com").Value, PasswordHash.FromHashedValue("hash"), UserRole.Candidate);
+            Email.Create("aday@example.com").Value, PasswordHash.FromHashedValue("hash"), "Test", "User", null, UserRole.Candidate);
         for (var i = 0; i < 5; i++)
         {
             user.RegisterFailedLoginAttempt();

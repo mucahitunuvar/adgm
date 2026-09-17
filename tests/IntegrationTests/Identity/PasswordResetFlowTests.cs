@@ -20,7 +20,8 @@ public class PasswordResetFlowTests : IClassFixture<CustomWebApplicationFactory>
     {
         var email = $"aday-{Guid.NewGuid():N}@example.com";
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/register", new { email, password = "OldPass123", role = "Candidate" });
+            "/api/v1/auth/register",
+            new { email, password = "OldPass123", firstName = "Test", lastName = "User", role = "Candidate" });
 
         var forgotResponse = await _client.PostAsJsonAsync("/api/v1/auth/forgot-password", new { email });
         Assert.Equal(HttpStatusCode.NoContent, forgotResponse.StatusCode);

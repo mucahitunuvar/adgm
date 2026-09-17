@@ -20,7 +20,7 @@ public class ForgotPasswordCommandHandlerTests
 
     private User AddUser(string email, UserStatus status)
     {
-        var user = User.Register(Email.Create(email).Value, PasswordHash.FromHashedValue("hash"), UserRole.Candidate);
+        var user = User.Register(Email.Create(email).Value, PasswordHash.FromHashedValue("hash"), "Test", "User", null, UserRole.Candidate);
 
         for (var i = 0; status == UserStatus.Locked && i < 5; i++)
         {

@@ -36,7 +36,7 @@ public class AdminGetUserByIdFlowTests : IClassFixture<CustomWebApplicationFacto
         var candidateEmail = $"aday-{Guid.NewGuid():N}@example.com";
 
         var registerResponse = await _client.PostAsJsonAsync(
-            "/api/v1/auth/register", new { email = candidateEmail, password = "Sifre123", role = "Candidate" });
+            "/api/v1/auth/register", new { email = candidateEmail, password = "Sifre123", firstName = "Test", lastName = "User", role = "Candidate" });
         var registered = await registerResponse.Content.ReadFromJsonAsync<RegisterUserResponse>();
 
         var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/auth/admin/users/{registered!.UserId}");
@@ -73,7 +73,7 @@ public class AdminGetUserByIdFlowTests : IClassFixture<CustomWebApplicationFacto
     {
         var email = $"aday-{Guid.NewGuid():N}@example.com";
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/register", new { email, password = "Sifre123", role = "Candidate" });
+            "/api/v1/auth/register", new { email, password = "Sifre123", firstName = "Test", lastName = "User", role = "Candidate" });
         var loginResponse = await _client.PostAsJsonAsync("/api/v1/auth/login", new { email, password = "Sifre123" });
         var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
 

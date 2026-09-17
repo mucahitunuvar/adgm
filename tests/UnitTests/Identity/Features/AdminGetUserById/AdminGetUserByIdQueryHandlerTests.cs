@@ -14,7 +14,7 @@ public class AdminGetUserByIdQueryHandlerTests
     public async Task Handle_WithExistingUser_ReturnsDetail()
     {
         var user = User.Register(
-            Email.Create("aday@example.com").Value, PasswordHash.FromHashedValue("hash"), UserRole.Candidate);
+            Email.Create("aday@example.com").Value, PasswordHash.FromHashedValue("hash"), "Test", "User", null, UserRole.Candidate);
         _userRepository.Add(user);
 
         var result = await CreateHandler().Handle(new AdminGetUserByIdQuery(user.Id), CancellationToken.None);
@@ -33,7 +33,7 @@ public class AdminGetUserByIdQueryHandlerTests
     public async Task Handle_WithLockedUser_ReturnsLockoutDetails()
     {
         var user = User.Register(
-            Email.Create("aday@example.com").Value, PasswordHash.FromHashedValue("hash"), UserRole.Candidate);
+            Email.Create("aday@example.com").Value, PasswordHash.FromHashedValue("hash"), "Test", "User", null, UserRole.Candidate);
         for (var i = 0; i < 5; i++)
         {
             user.RegisterFailedLoginAttempt();

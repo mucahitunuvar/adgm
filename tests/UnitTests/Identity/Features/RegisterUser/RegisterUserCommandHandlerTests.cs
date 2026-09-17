@@ -20,7 +20,7 @@ public class RegisterUserCommandHandlerTests
     [Fact]
     public async Task Handle_WithValidInput_CreatesUserAndReturnsSuccess()
     {
-        var command = new RegisterUserCommand("aday@example.com", "Sifre123", "Candidate");
+        var command = new RegisterUserCommand("aday@example.com", "Sifre123", "Ahmet", "Yılmaz", "05551234567", "Candidate");
 
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
@@ -28,13 +28,16 @@ public class RegisterUserCommandHandlerTests
         Assert.Equal("aday@example.com", result.Value.Email);
         Assert.Equal("Candidate", result.Value.Role);
         Assert.Single(_userRepository.Users);
+        Assert.Equal("Ahmet", _userRepository.Users.Single().FirstName);
+        Assert.Equal("Yılmaz", _userRepository.Users.Single().LastName);
+        Assert.Equal("05551234567", _userRepository.Users.Single().PhoneNumber);
         Assert.Equal(1, _unitOfWork.SaveChangesCallCount);
     }
 
     [Fact]
     public async Task Handle_WithValidInput_IssuesVerificationTokenAndPublishesIntegrationEvent()
     {
-        var command = new RegisterUserCommand("aday@example.com", "Sifre123", "Candidate");
+        var command = new RegisterUserCommand("aday@example.com", "Sifre123", "Ahmet", "Yılmaz", "05551234567", "Candidate");
 
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
@@ -53,7 +56,7 @@ public class RegisterUserCommandHandlerTests
     [Fact]
     public async Task Handle_WithInvalidEmail_ReturnsValidationFailure_AndDoesNotPersist()
     {
-        var command = new RegisterUserCommand("not-an-email", "Sifre123", "Candidate");
+        var command = new RegisterUserCommand("not-an-email", "Sifre123", "Ahmet", "Yılmaz", null, "Candidate");
 
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
@@ -69,11 +72,11 @@ public class RegisterUserCommandHandlerTests
     {
         var existingUser = User.Register(
             Email.Create("aday@example.com").Value,
-            PasswordHash.FromHashedValue("hash"),
+            PasswordHash.FromHashedValue("hash"), "Test", "User", null,
             UserRole.Candidate);
         _userRepository.Add(existingUser);
 
-        var command = new RegisterUserCommand("aday@example.com", "Sifre123", "Candidate");
+        var command = new RegisterUserCommand("aday@example.com", "Sifre123", "Ahmet", "Yılmaz", null, "Candidate");
 
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 

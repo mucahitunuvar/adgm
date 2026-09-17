@@ -17,7 +17,7 @@ public class GetCurrentUserQueryHandlerTests
     {
         var user = User.Register(
             Email.Create("aday@example.com").Value,
-            PasswordHash.FromHashedValue("hash"),
+            PasswordHash.FromHashedValue("hash"), "Test", "User", null,
             UserRole.Candidate);
         _userRepository.Add(user);
         _currentUserService.UserId = user.Id;

@@ -25,7 +25,7 @@ public class QueryablePagingExtensionsTests(CustomWebApplicationFactory factory)
         {
             var user = User.Register(
                 Email.Create($"paging-{suffix}-{i}@example.com").Value,
-                PasswordHash.FromHashedValue("hash"),
+                PasswordHash.FromHashedValue("hash"), "Test", "User", null,
                 UserRole.Candidate);
             dbContext.Users.Add(user);
             ids.Add(user.Id);

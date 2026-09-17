@@ -23,7 +23,8 @@ public class EmailVerificationFlowTests : IClassFixture<CustomWebApplicationFact
         var email = $"aday-{Guid.NewGuid():N}@example.com";
 
         var registerResponse = await _client.PostAsJsonAsync(
-            "/api/v1/auth/register", new { email, password = "Sifre123", role = "Candidate" });
+            "/api/v1/auth/register",
+            new { email, password = "Sifre123", firstName = "Test", lastName = "User", role = "Candidate" });
         Assert.Equal(HttpStatusCode.Created, registerResponse.StatusCode);
         var registered = await registerResponse.Content.ReadFromJsonAsync<RegisterUserResponse>();
 
@@ -72,7 +73,8 @@ public class EmailVerificationFlowTests : IClassFixture<CustomWebApplicationFact
     {
         var email = $"aday-{Guid.NewGuid():N}@example.com";
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/register", new { email, password = "Sifre123", role = "Candidate" });
+            "/api/v1/auth/register",
+            new { email, password = "Sifre123", firstName = "Test", lastName = "User", role = "Candidate" });
         await WaitForEmailAsync(email, "doğrulayın");
 
         // Called immediately after registration, still within the one-per-minute-per-account
@@ -90,7 +92,8 @@ public class EmailVerificationFlowTests : IClassFixture<CustomWebApplicationFact
     {
         var email = $"aday-{Guid.NewGuid():N}@example.com";
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/register", new { email, password = "Sifre123", role = "Candidate" });
+            "/api/v1/auth/register",
+            new { email, password = "Sifre123", firstName = "Test", lastName = "User", role = "Candidate" });
 
         var sentEmail = await WaitForEmailAsync(email, "doğrulayın");
         var token = ExtractTokenFromLink(sentEmail.Body);

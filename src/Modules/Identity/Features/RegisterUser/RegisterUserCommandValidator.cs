@@ -24,6 +24,18 @@ public sealed class RegisterUserCommandValidator : AbstractValidator<RegisterUse
             .Matches("[A-Za-z]").WithMessage("Password must contain at least one letter.")
             .Matches("[0-9]").WithMessage("Password must contain at least one digit.");
 
+        RuleFor(c => c.FirstName)
+            .NotEmpty()
+            .MaximumLength(100);
+
+        RuleFor(c => c.LastName)
+            .NotEmpty()
+            .MaximumLength(100);
+
+        RuleFor(c => c.PhoneNumber)
+            .MaximumLength(20)
+            .When(c => c.PhoneNumber is not null);
+
         RuleFor(c => c.Role)
             .NotEmpty()
             .Must(role => SelfRegistrableRoles.Contains(role, StringComparer.OrdinalIgnoreCase))

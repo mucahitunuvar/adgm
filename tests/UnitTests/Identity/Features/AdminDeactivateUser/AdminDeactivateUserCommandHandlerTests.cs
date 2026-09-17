@@ -18,7 +18,7 @@ public class AdminDeactivateUserCommandHandlerTests
     public async Task Handle_WithActiveUser_DeactivatesAndSavesChanges()
     {
         var user = User.Register(
-            Email.Create("aday@example.com").Value, PasswordHash.FromHashedValue("hash"), UserRole.Candidate);
+            Email.Create("aday@example.com").Value, PasswordHash.FromHashedValue("hash"), "Test", "User", null, UserRole.Candidate);
         _userRepository.Add(user);
 
         var result = await CreateHandler().Handle(new AdminDeactivateUserCommand(user.Id), CancellationToken.None);

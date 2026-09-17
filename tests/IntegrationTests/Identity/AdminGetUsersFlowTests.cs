@@ -38,9 +38,9 @@ public class AdminGetUsersFlowTests : IClassFixture<CustomWebApplicationFactory>
         var employerEmail = $"employer-{uniqueSuffix}@example.com";
 
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/register", new { email = candidateEmail, password = "Sifre123", role = "Candidate" });
+            "/api/v1/auth/register", new { email = candidateEmail, password = "Sifre123", firstName = "Test", lastName = "User", role = "Candidate" });
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/register", new { email = employerEmail, password = "Sifre123", role = "Employer" });
+            "/api/v1/auth/register", new { email = employerEmail, password = "Sifre123", firstName = "Test", lastName = "User", role = "Employer" });
 
         var request = new HttpRequestMessage(
             HttpMethod.Get, $"/api/v1/auth/admin/users?email={uniqueSuffix}&role=Candidate");
@@ -61,7 +61,7 @@ public class AdminGetUsersFlowTests : IClassFixture<CustomWebApplicationFactory>
     {
         var email = $"aday-{Guid.NewGuid():N}@example.com";
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/register", new { email, password = "Sifre123", role = "Candidate" });
+            "/api/v1/auth/register", new { email, password = "Sifre123", firstName = "Test", lastName = "User", role = "Candidate" });
         var loginResponse = await _client.PostAsJsonAsync("/api/v1/auth/login", new { email, password = "Sifre123" });
         var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
 
@@ -82,7 +82,7 @@ public class AdminGetUsersFlowTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     // PagedRequest (SharedKernel) clamps out-of-range Page/PageSize instead of failing validation
-    // (ARCHITECTURE.md §9 "Pagination Convention") - pageSize=0 is silently clamped to 1, not a 400.
+    // (ARCHITECTURE.md Â§9 "Pagination Convention") - pageSize=0 is silently clamped to 1, not a 400.
     [Fact]
     public async Task GetUsers_WithOutOfRangePageSize_ClampsInsteadOfBadRequest()
     {
@@ -132,7 +132,7 @@ public class AdminGetUsersFlowTests : IClassFixture<CustomWebApplicationFactory>
         var candidateEmail = $"aday-{uniqueSuffix}@example.com";
 
         var registerResponse = await _client.PostAsJsonAsync(
-            "/api/v1/auth/register", new { email = candidateEmail, password = "Sifre123", role = "Candidate" });
+            "/api/v1/auth/register", new { email = candidateEmail, password = "Sifre123", firstName = "Test", lastName = "User", role = "Candidate" });
         var registered = await registerResponse.Content.ReadFromJsonAsync<RegisterUserResponse>();
 
         var deactivateRequest = new HttpRequestMessage(

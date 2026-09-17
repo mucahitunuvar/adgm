@@ -18,7 +18,7 @@ public class VerifyEmailCommandHandlerTests
     {
         var user = User.Register(
             Email.Create("aday@example.com").Value,
-            PasswordHash.FromHashedValue("hash"),
+            PasswordHash.FromHashedValue("hash"), "Test", "User", null,
             UserRole.Candidate);
 
         const string plainToken = "known-verification-token";

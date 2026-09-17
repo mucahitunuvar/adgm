@@ -5,7 +5,7 @@ namespace GenclikMerkezi.UnitTests.Identity.Domain;
 public class EmailVerificationTokenTests
 {
     private static User CreateUser() =>
-        User.Register(Email.Create("aday@example.com").Value, PasswordHash.FromHashedValue("hash"), UserRole.Candidate);
+        User.Register(Email.Create("aday@example.com").Value, PasswordHash.FromHashedValue("hash"), "Test", "User", null, UserRole.Candidate);
 
     [Fact]
     public void IsActive_WhenNeverExpiredOrUsed_ReturnsTrue()

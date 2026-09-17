@@ -12,7 +12,7 @@ public class AdminGetUsersQueryHandlerTests
 
     private User AddUser(string email, UserRole role)
     {
-        var user = User.Register(Email.Create(email).Value, PasswordHash.FromHashedValue("hash"), role);
+        var user = User.Register(Email.Create(email).Value, PasswordHash.FromHashedValue("hash"), "Test", "User", null, role);
         _userRepository.Add(user);
         return user;
     }

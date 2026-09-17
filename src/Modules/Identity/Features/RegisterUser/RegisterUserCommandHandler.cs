@@ -41,7 +41,7 @@ public sealed class RegisterUserCommandHandler(
         var role = Enum.Parse<UserRole>(request.Role, ignoreCase: true);
         var passwordHash = PasswordHash.FromHashedValue(passwordHasher.Hash(request.Password));
 
-        var user = User.Register(email, passwordHash, role);
+        var user = User.Register(email, passwordHash, request.FirstName, request.LastName, request.PhoneNumber, role);
         userRepository.Add(user);
 
         var plainVerificationToken = verificationTokenGenerator.GenerateToken();

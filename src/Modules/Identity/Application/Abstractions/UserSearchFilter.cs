@@ -2,9 +2,10 @@ using GenclikMerkezi.Modules.Identity.Domain;
 
 namespace GenclikMerkezi.Modules.Identity.Application.Abstractions;
 
-// Email is matched as a case-insensitive substring. Name-based search is not offered here: the
-// User aggregate owns no name data (Identity is auth-only, per AGENTS.md §9's database-per-module
-// rule Identity cannot query the Candidate/Employer databases where a profile name would live).
+// Email is matched as a case-insensitive substring. Name-based search is not offered here even
+// though User now carries FirstName/LastName (added for Candidate registration seeding) - this
+// filter backs the admin user-management screen, which is Identity's own auth-focused concern;
+// name search belongs on the consuming module's own profile screen (e.g. Candidate's CV search).
 public sealed record UserSearchFilter(
     string? Email,
     UserRole? Role,

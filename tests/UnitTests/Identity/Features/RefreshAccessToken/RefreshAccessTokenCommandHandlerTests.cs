@@ -22,7 +22,7 @@ public class RefreshAccessTokenCommandHandlerTests
     {
         var user = User.Register(
             Email.Create("aday@example.com").Value,
-            PasswordHash.FromHashedValue("hash"),
+            PasswordHash.FromHashedValue("hash"), "Test", "User", null,
             role);
 
         var plainToken = "known-plain-token";

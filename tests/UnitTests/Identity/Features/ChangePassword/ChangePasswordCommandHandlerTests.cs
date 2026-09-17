@@ -19,7 +19,7 @@ public class ChangePasswordCommandHandlerTests
     {
         var user = User.Register(
             Email.Create("aday@example.com").Value,
-            PasswordHash.FromHashedValue(_passwordHasher.Hash(password)),
+            PasswordHash.FromHashedValue(_passwordHasher.Hash(password)), "Test", "User", null,
             UserRole.Candidate);
         _userRepository.Add(user);
         _currentUserService.UserId = user.Id;
