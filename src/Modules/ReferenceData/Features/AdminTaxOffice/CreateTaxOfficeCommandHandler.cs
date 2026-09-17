@@ -4,7 +4,6 @@ using GenclikMerkezi.Modules.ReferenceData.Application.Abstractions;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using TaxOffice = GenclikMerkezi.Modules.ReferenceData.Domain.TaxOffice;
 
@@ -13,7 +12,7 @@ namespace GenclikMerkezi.Modules.ReferenceData.Features.AdminTaxOffice;
 public sealed class CreateTaxOfficeCommandHandler(
     IAdminLookupCrudService<TaxOffice> crudService,
     IReferenceDataLookupReader lookupReader,
-    IMemoryCache cache,
+    ICacheService cacheService,
     [FromKeyedServices(ReferenceDataModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<CreateTaxOfficeCommand, Result<Guid>>
 {
@@ -40,7 +39,7 @@ public sealed class CreateTaxOfficeCommandHandler(
         crudService.Add(entity);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        LookupCacheInvalidator.Invalidate(cache, ReferenceDataLookupType.TaxOffice);
+        LookupCacheInvalidator.Invalidate(cacheService, ReferenceDataLookupType.TaxOffice);
 
         return Result.Success(entity.Id);
     }

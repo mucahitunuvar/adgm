@@ -4,14 +4,13 @@ using GenclikMerkezi.Modules.ReferenceData.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GenclikMerkezi.Modules.ReferenceData.Features.AdminLookupCrud;
 
 public sealed class CreateLookupItemCommandHandler<TLookup>(
     IAdminLookupCrudService<TLookup> crudService,
-    IMemoryCache cache,
+    ICacheService cacheService,
     [FromKeyedServices(ReferenceDataModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<CreateLookupItemCommand<TLookup>, Result<Guid>>
     where TLookup : LookupItem, ILookupItemFactory<TLookup>
@@ -30,7 +29,7 @@ public sealed class CreateLookupItemCommandHandler<TLookup>(
         crudService.Add(entity);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        LookupCacheInvalidator.Invalidate(cache, TLookup.LookupType);
+        LookupCacheInvalidator.Invalidate(cacheService, TLookup.LookupType);
 
         return Result.Success(entity.Id);
     }

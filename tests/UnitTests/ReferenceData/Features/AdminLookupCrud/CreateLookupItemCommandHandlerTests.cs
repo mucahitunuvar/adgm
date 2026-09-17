@@ -1,17 +1,21 @@
+using GenclikMerkezi.BuildingBlocks.Infrastructure.Caching;
 using GenclikMerkezi.Modules.ReferenceData.Domain;
 using GenclikMerkezi.Modules.ReferenceData.Features.AdminLookupCrud;
+using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.UnitTests.ReferenceData.TestDoubles;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 
 namespace GenclikMerkezi.UnitTests.ReferenceData.Features.AdminLookupCrud;
 
 public class CreateLookupItemCommandHandlerTests
 {
     private readonly FakeAdminLookupCrudService<Sector> _crudService = new();
-    private readonly IMemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
+    private readonly ICacheService _cacheService =
+        new MemoryCacheService(new MemoryCache(new MemoryCacheOptions()), Options.Create(new CacheSettings()));
     private readonly FakeUnitOfWork _unitOfWork = new();
 
-    private CreateLookupItemCommandHandler<Sector> CreateHandler() => new(_crudService, _cache, _unitOfWork);
+    private CreateLookupItemCommandHandler<Sector> CreateHandler() => new(_crudService, _cacheService, _unitOfWork);
 
     [Fact]
     public async Task Handle_WithNewCode_AddsEntityAndSavesChanges()

@@ -1,7 +1,10 @@
+using GenclikMerkezi.BuildingBlocks.Infrastructure.Caching;
 using GenclikMerkezi.Contracts.ReferenceData;
 using GenclikMerkezi.Modules.ReferenceData.Features.AdminTaxOffice;
+using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.UnitTests.ReferenceData.TestDoubles;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using TaxOffice = GenclikMerkezi.Modules.ReferenceData.Domain.TaxOffice;
 
 namespace GenclikMerkezi.UnitTests.ReferenceData.Features.AdminTaxOffice;
@@ -10,10 +13,11 @@ public class CreateTaxOfficeCommandHandlerTests
 {
     private readonly FakeAdminLookupCrudService<TaxOffice> _crudService = new();
     private readonly FakeReferenceDataLookupReader _lookupReader = new();
-    private readonly IMemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
+    private readonly ICacheService _cacheService =
+        new MemoryCacheService(new MemoryCache(new MemoryCacheOptions()), Options.Create(new CacheSettings()));
     private readonly FakeUnitOfWork _unitOfWork = new();
 
-    private CreateTaxOfficeCommandHandler CreateHandler() => new(_crudService, _lookupReader, _cache, _unitOfWork);
+    private CreateTaxOfficeCommandHandler CreateHandler() => new(_crudService, _lookupReader, _cacheService, _unitOfWork);
 
     [Fact]
     public async Task Handle_WithActiveProvinceAndNewCode_CreatesTaxOffice()

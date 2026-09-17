@@ -33,7 +33,8 @@ public static class ReferenceDataModuleServiceCollectionExtensions
             ReferenceDataModuleMarker.UnitOfWorkKey,
             (sp, _) => sp.GetRequiredService<ReferenceDataDbContext>());
 
-        services.AddMemoryCache();
+        // ICacheService (which ReferenceDataLookupReader depends on) is registered centrally by
+        // AddCaching at the Host composition root (ADR-017) - no per-module cache registration here.
         services.AddScoped<IReferenceDataLookupReader, ReferenceDataLookupReader>();
 
         // Open generic registration: resolves IAdminLookupCrudService<TLookup> for any TLookup at
