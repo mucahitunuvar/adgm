@@ -7,11 +7,15 @@ public sealed class FakeReferenceDataLookupReader : IReferenceDataLookupReader
 {
     private readonly HashSet<(ReferenceDataLookupType Type, Guid Id)> _activeIds = [];
     private readonly Dictionary<ReferenceDataLookupType, List<LookupItemSummary>> _items = [];
+    private readonly Dictionary<(ReferenceDataLookupType Type, Guid ParentId), List<LookupItemSummary>> _itemsByParent = [];
 
     public void SeedActive(ReferenceDataLookupType type, Guid id) => _activeIds.Add((type, id));
 
     public void SeedList(ReferenceDataLookupType type, params LookupItemSummary[] items) =>
         _items[type] = [.. items];
+
+    public void SeedListByParent(ReferenceDataLookupType type, Guid parentId, params LookupItemSummary[] items) =>
+        _itemsByParent[(type, parentId)] = [.. items];
 
     public Task<bool> ExistsAndActiveAsync(
         ReferenceDataLookupType type, Guid id, CancellationToken cancellationToken = default) =>
@@ -35,6 +39,12 @@ public sealed class FakeReferenceDataLookupReader : IReferenceDataLookupReader
         Guid parentId,
         PagedRequest paging,
         bool activeOnly = true,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult(new PagedResult<LookupItemSummary>([], 0, paging.Page, paging.PageSize));
+        CancellationToken cancellationToken = default)
+    {
+        var items = _itemsByParent.TryGetValue((type, parentId), out var list) ? list : [];
+        var filtered = activeOnly ? items.Where(i => i.IsActive).ToList() : items;
+        var page = filtered.Skip((paging.Page - 1) * paging.PageSize).Take(paging.PageSize).ToList();
+
+        return Task.FromResult(new PagedResult<LookupItemSummary>(page, filtered.Count, paging.Page, paging.PageSize));
+    }
 }

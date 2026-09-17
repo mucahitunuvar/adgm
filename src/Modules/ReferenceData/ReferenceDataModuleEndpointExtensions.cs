@@ -1,6 +1,7 @@
 using GenclikMerkezi.Contracts.ReferenceData;
 using GenclikMerkezi.Modules.ReferenceData.Domain;
 using GenclikMerkezi.Modules.ReferenceData.Features.AdminTaxOffice;
+using GenclikMerkezi.Modules.ReferenceData.Features.GetDistricts;
 using Microsoft.AspNetCore.Routing;
 
 namespace GenclikMerkezi.Modules.ReferenceData;
@@ -12,7 +13,9 @@ public static class ReferenceDataModuleEndpointExtensions
         // SEED (ADR-016 Decision 1): read-only, no admin CRUD endpoint of any kind.
         LookupEndpoints.MapReadOnly(app, "countries", ReferenceDataLookupType.Country);
         LookupEndpoints.MapReadOnly(app, "provinces", ReferenceDataLookupType.Province);
-        LookupEndpoints.MapReadOnly(app, "districts", ReferenceDataLookupType.District);
+        // Bespoke (not LookupEndpoints.MapReadOnly): District needs a ProvinceId filter, same
+        // reason TaxOffice below is bespoke rather than generic.
+        GetDistrictsEndpoint.Map(app);
         LookupEndpoints.MapReadOnly(app, "languages", ReferenceDataLookupType.Language);
 
         // ADMIN-MANAGED, plain shape (generic CRUD via ILookupItemFactory<TLookup>).
