@@ -1,3 +1,4 @@
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -13,6 +14,15 @@ public sealed class CandidateDbContextFactory : IDesignTimeDbContextFactory<Cand
         var optionsBuilder = new DbContextOptionsBuilder<CandidateDbContext>();
         optionsBuilder.UseSqlServer(connectionString);
 
-        return new CandidateDbContext(optionsBuilder.Options);
+        return new CandidateDbContext(optionsBuilder.Options, new DesignTimePublisher());
+    }
+
+    private sealed class DesignTimePublisher : IPublisher
+    {
+        public Task Publish(object notification, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default)
+            where TNotification : INotification
+            => Task.CompletedTask;
     }
 }

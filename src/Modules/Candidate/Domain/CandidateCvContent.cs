@@ -45,27 +45,38 @@ public sealed class CandidateCvContent : AggregateRoot
     public void UpdateSummary(string? summary)
     {
         Summary = summary;
+
+        RaiseContentUpdatedEvent();
     }
 
     public void UpdateComputerSkills(string? computerSkills)
     {
         ComputerSkills = computerSkills;
+
+        RaiseContentUpdatedEvent();
     }
 
     public void UpdateHobbies(string? hobbies)
     {
         Hobbies = hobbies;
+
+        RaiseContentUpdatedEvent();
     }
 
     public void SetCvFile(FileAttachment? cvFile)
     {
         CvFile = cvFile;
+
+        RaiseContentUpdatedEvent();
     }
 
     public Experience AddExperience(string companyName, DateOnly startDate)
     {
         var experience = Experience.Create(Id, companyName, startDate);
         _experiences.Add(experience);
+
+        RaiseContentUpdatedEvent();
+
         return experience;
     }
 
@@ -76,6 +87,7 @@ public sealed class CandidateCvContent : AggregateRoot
         if (experience is not null)
         {
             _experiences.Remove(experience);
+            RaiseContentUpdatedEvent();
         }
     }
 
@@ -83,6 +95,9 @@ public sealed class CandidateCvContent : AggregateRoot
     {
         var education = Education.Create(Id, educationLevelId, startDate);
         _educations.Add(education);
+
+        RaiseContentUpdatedEvent();
+
         return education;
     }
 
@@ -93,6 +108,7 @@ public sealed class CandidateCvContent : AggregateRoot
         if (education is not null)
         {
             _educations.Remove(education);
+            RaiseContentUpdatedEvent();
         }
     }
 
@@ -100,6 +116,9 @@ public sealed class CandidateCvContent : AggregateRoot
     {
         var language = CandidateLanguage.Create(Id, languageId, languageLevelId, isNativeLanguage);
         _languages.Add(language);
+
+        RaiseContentUpdatedEvent();
+
         return language;
     }
 
@@ -110,6 +129,7 @@ public sealed class CandidateCvContent : AggregateRoot
         if (language is not null)
         {
             _languages.Remove(language);
+            RaiseContentUpdatedEvent();
         }
     }
 
@@ -117,6 +137,9 @@ public sealed class CandidateCvContent : AggregateRoot
     {
         var certificate = Certificate.Create(Id, name, issuingInstitution);
         _certificates.Add(certificate);
+
+        RaiseContentUpdatedEvent();
+
         return certificate;
     }
 
@@ -127,6 +150,7 @@ public sealed class CandidateCvContent : AggregateRoot
         if (certificate is not null)
         {
             _certificates.Remove(certificate);
+            RaiseContentUpdatedEvent();
         }
     }
 
@@ -135,6 +159,9 @@ public sealed class CandidateCvContent : AggregateRoot
     {
         var reference = CandidateReference.Create(Id, referenceTypeId, referenceLanguageId, firstName, lastName);
         _references.Add(reference);
+
+        RaiseContentUpdatedEvent();
+
         return reference;
     }
 
@@ -145,6 +172,12 @@ public sealed class CandidateCvContent : AggregateRoot
         if (reference is not null)
         {
             _references.Remove(reference);
+            RaiseContentUpdatedEvent();
         }
+    }
+
+    private void RaiseContentUpdatedEvent()
+    {
+        RaiseDomainEvent(new CandidateCvContentUpdatedDomainEvent(Id, CandidateCvId));
     }
 }

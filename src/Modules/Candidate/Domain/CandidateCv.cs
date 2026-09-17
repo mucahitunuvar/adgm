@@ -94,6 +94,8 @@ public sealed class CandidateCv : AggregateRoot
         ProvinceId = provinceId;
         DistrictId = districtId;
         Address = address;
+
+        RaiseDomainEvent(new CandidateCvUpdatedDomainEvent(Id));
     }
 
     public void UpdatePersonalInfo(
@@ -112,22 +114,31 @@ public sealed class CandidateCv : AggregateRoot
         NationalityId = nationalityId;
         NetSalaryExpectation = netSalaryExpectation;
         MilitaryStatusId = militaryStatusId;
+
+        RaiseDomainEvent(new CandidateCvUpdatedDomainEvent(Id));
     }
 
     public void UpdateDisabilityInfo(DisabilityInfo? disabilityInfo)
     {
         DisabilityInfo = disabilityInfo;
+
+        RaiseDomainEvent(new CandidateCvUpdatedDomainEvent(Id));
     }
 
     public void SetPhoto(FileAttachment? photo)
     {
         Photo = photo;
+
+        RaiseDomainEvent(new CandidateCvUpdatedDomainEvent(Id));
     }
 
     public SocialMediaLink AddSocialMediaLink(string platform, string url)
     {
         var link = SocialMediaLink.Create(Id, platform, url);
         _socialMediaLinks.Add(link);
+
+        RaiseDomainEvent(new CandidateCvUpdatedDomainEvent(Id));
+
         return link;
     }
 
@@ -138,6 +149,7 @@ public sealed class CandidateCv : AggregateRoot
         if (link is not null)
         {
             _socialMediaLinks.Remove(link);
+            RaiseDomainEvent(new CandidateCvUpdatedDomainEvent(Id));
         }
     }
 
@@ -145,9 +157,13 @@ public sealed class CandidateCv : AggregateRoot
     public void AssignCareerAdvisor(Guid? careerAdvisorId)
     {
         CareerAdvisorId = careerAdvisorId;
+
+        RaiseDomainEvent(new CandidateCvUpdatedDomainEvent(Id));
     }
 
-    // Görev 6'daki profil tamamlanma read-model handler'ı tarafından çağrılacak.
+    // Görev 6'daki profil tamamlanma read-model handler'ı tarafından çağrılır. Bilerek
+    // CandidateCvUpdatedDomainEvent raise ETMEZ - aksi halde handler kendi kendini sonsuz döngüde
+    // tekrar tetikler (recalculate -> UpdateCompletionPercentage -> event -> recalculate -> ...).
     public void UpdateCompletionPercentage(int percentage)
     {
         CompletionPercentage = percentage;
