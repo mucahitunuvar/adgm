@@ -27,6 +27,9 @@ builder.Services.AddSharedApplicationServices(
 // so it is registered here rather than inside any single AddXModule().
 builder.Services.AddCaching(builder.Configuration);
 
+// ADR-019: IFileStorageService - shared, not per-module, same reasoning as AddCaching above.
+builder.Services.AddFileStorage(builder.Configuration);
+
 builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddNotificationModule(builder.Configuration);
 builder.Services.AddReferenceDataModule(builder.Configuration);
