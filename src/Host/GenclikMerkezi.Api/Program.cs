@@ -23,6 +23,10 @@ builder.Services.AddSharedApplicationServices(
     typeof(NotificationModuleMarker).Assembly,
     typeof(ReferenceDataModuleMarker).Assembly);
 
+// ADR-017: ICacheService (and, once registered, IUserScopedCacheService) - shared, not per-module,
+// so it is registered here rather than inside any single AddXModule().
+builder.Services.AddCaching(builder.Configuration);
+
 builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddNotificationModule(builder.Configuration);
 builder.Services.AddReferenceDataModule(builder.Configuration);
