@@ -631,6 +631,24 @@ DATA DELETE
 
 gibi işlemler özel dikkat gerektirir.
 
+## 22.1 Seed Data (HasData) ve Deterministic Id'ler
+
+Statik/az değişen referans verisi (ReferenceData'nın Country/Province/District/Language'ı ve
+admin-managed lookup'ların başlangıç verisi) EF Core'un `HasData()` mekanizmasıyla, migration'ın
+bir parçası olarak seed edilir - runtime'da elle `INSERT` çalıştırılmaz.
+
+`HasData()` her satır için **sabit** bir Id ister (migration diff'inin doğru çalışması için -
+`Guid.NewGuid()` her migration üretiminde farklı bir Id vereceğinden kullanılamaz).
+`ReferenceData.Infrastructure.Seed.DeterministicGuid.Create(string)` bu ihtiyacı karşılar: aynı
+girdi (örn. `"Province:34"`) her zaman aynı Guid'i üretir - kriptografik bir amacı yoktur, yalnızca
+kararlılık sağlar.
+
+Büyük/gerçek dünya seed verisi (81 il, ~975 ilçe, vergi daireleri gibi) mümkünse **elle
+yazılmamalı**, güvenilir bir kaynaktan (bkz. ReferenceData'nın commit mesajlarındaki kaynaklar)
+çekilip doğrulanmalıdır - bkz. AGENTS.md §55 (Definition of Done) ve bu modülün seed migration'larının
+her biri gerçek bir LocalDB'ye uygulanıp sorgulanarak (yalnızca migration dosyasına bakılarak değil)
+doğrulanmıştır.
+
 ---
 
 # 23. Cross-Module Development

@@ -1041,6 +1041,48 @@ Bu nedenle Candidate ve Employer arasındaki ilişki tek bir entity veya tek bir
 
 ---
 
+# 29.1 ReferenceData
+
+Candidate'in CV formu (`docs/db/Candidate.md`) ve Employer'ın firma/ilan/personel ihtiyacı
+formları (`docs/db/Employer.md`), Select alanı olarak sunulan çok sayıda standart lookup değerine
+ihtiyaç duyar (ülke, il/ilçe, sektör, pozisyon, eğitim durumu, dil, vb.). Bu değerler
+**ReferenceData** modülünde, kendi veritabanında (database-per-module) tutulur - kapsam, seed/
+admin-managed ayrımı ve modüller arası erişim yöntemi **ADR-016**'da karara bağlanmıştır.
+
+İki kategori vardır:
+
+```text
+SEED (değişmez, migration ile gelir)
+Country, Province ("İl"), District ("İlçe"), Language
+
+ADMIN-MANAGED (seed başlangıç verisiyle gelir, admin sonradan ekleyip/pasifleştirebilir)
+Sector, Position, Department, WorkLocationType, EmploymentType, EducationLevel,
+Gender, MilitaryStatus, DriversLicenseType, LanguageLevel, ExperienceLevel,
+Nationality, DisabilityCategory, DiplomaGradingSystem, ReferenceType, Currency,
+Skill, SchoolCategory, TaxOffice
+```
+
+Önemli ayrım (ADR-008'den beri geçerli):
+
+```text
+ReferenceData.Skill
+        ≠
+Candidate.CandidateSkill
+```
+
+`ReferenceData.Skill` standart skill tanımıdır (şu an kasıtlı olarak boş - Candidate modülü
+geldiğinde birlikte doldurulacaktır). `CandidateSkill` ise adayın bu skill ile ilişkisini/
+proficiency bilgisini temsil eder; bu ikisi birbirine karıştırılmamalıdır.
+
+Candidate/Employer, bu lookup'lara yalnızca ID ile referans verir (fiziksel foreign key değil,
+business reference - bkz. §13 Cross-Module References) ve değerleri `IReferenceDataLookupReader`
+üzerinden okur, ReferenceData'nın veritabanına asla doğrudan erişmez (bkz. ARCHITECTURE.md §14).
+
+`İsme göre arama` (admin panelinde kullanıcı arama) ReferenceData lookup'ları için değil,
+Identity.User için geçerlidir ve o da desteklenmez - bkz. DOMAIN.md §2.1.
+
+---
+
 # 30. Notification
 
 Notification, sistem içerisinde kullanıcıları önemli olaylardan haberdar etmek için kullanılan domain/capability kavramıdır.

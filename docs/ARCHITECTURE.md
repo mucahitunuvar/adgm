@@ -550,19 +550,29 @@ Sorumlulukları:
 ## 8.13. ReferenceData
 
 Sistem içerisinde birçok modül tarafından kullanılabilecek standart referans verilerini yönetir.
+Kapsam, seed/admin-managed ayrımı ve cross-module erişim yöntemi **ADR-016**'da karara bağlanmıştır.
 
-Örnek:
+İki kategori (ADR-016 Decision 1):
 
-* Country
-* City
-* District
-* TaxOffice
-* School
-* University
-* Sector
-* Profession
-* Hobby
-* Skill definitions
+```text
+SEED (migration ile gelir, admin CRUD yok, sadece GET)
+├── Country
+├── Province   ("İl")
+├── District   ("İlçe", Province'e bağlı)
+└── Language
+
+ADMIN-MANAGED (seed başlangıç verisiyle gelir, admin CRUD var)
+├── Sector, Position, Department
+├── WorkLocationType, EmploymentType
+├── EducationLevel, SchoolCategory, DiplomaGradingSystem
+├── Gender, MilitaryStatus, DriversLicenseType
+├── LanguageLevel, ExperienceLevel, Nationality
+├── DisabilityCategory, ReferenceType
+├── Currency, Skill (bu ikisi hariç hepsi başlangıç seed verisiyle gelir - Skill,
+│   Candidate modülü geldiğinde doldurulacak şekilde bilinçli olarak boş bırakılmıştır)
+└── TaxOffice  (Province'e bağlı, ProvinceId taşıdığı için kendi bespoke feature'ına
+    sahiptir - diğerleri gibi tamamen generic CRUD pattern'ini kullanmaz)
+```
 
 ReferenceData, SharedKernel değildir.
 
@@ -810,9 +820,18 @@ ReferenceDataDbContext
 
 kullanmamalıdır.
 
-Referans veriler için uygun contract/query abstraction kullanılmalıdır.
+**Somut çözüm (ADR-016 Decision 2):** `GenclikMerkezi.Contracts.ReferenceData` içinde yayınlanan
+`IReferenceDataLookupReader` arayüzü - `ExistsAndActiveAsync` (yazma-zamanı validasyon için),
+`ListAsync` ve `ListByParentAsync` (District/TaxOffice gibi Province'e bağlı olanlar için).
+Implementasyonu `ReferenceData.Infrastructure`'da yaşar ve host composition root'ta bir kez
+register edilir; tüketen modüller bunu doğrudan enjekte eder - **network çağrısı değil, in-process
+bir metot çağrısıdır** (her modül aynı process içinde çalışır, ID+snapshot pattern'i de
+kullanılmaz - ADR-016'da gerekçesiyle birlikte reddedilmiştir). ReferenceData modülü kendi ayrıca
+extraction edilirse, değişmesi gereken tek şey bu arayüzün implementasyonudur.
 
-ReferenceData verileri yüksek oranda cache'lenebilir.
+ReferenceData verileri yüksek oranda cache'lenebilir - `ListAsync`/`ListByParentAsync` zaten
+`IMemoryCache` ile cache'lidir, admin-managed CRUD her mutation'da ilgili cache key'i invalidate
+eder.
 
 Örnek:
 
