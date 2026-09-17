@@ -54,6 +54,69 @@ public class LookupCrudFlowTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(975, items!.Count);
     }
 
+    [Theory]
+    [InlineData("provinces", 81)]
+    [InlineData("languages", 30)]
+    [InlineData("currencies", 3)]
+    [InlineData("work-location-types", 3)]
+    [InlineData("employment-types", 2)]
+    [InlineData("disability-categories", 7)]
+    [InlineData("diploma-grading-systems", 2)]
+    [InlineData("reference-types", 5)]
+    [InlineData("school-categories", 4)]
+    [InlineData("tax-offices", 161)]
+    [InlineData("skills", 0)]
+    public async Task GetLookup_ReturnsExpectedSeededCount(string routeSegment, int expectedCount)
+    {
+        var response = await _client.GetAsync($"/api/v1/reference-data/{routeSegment}");
+        var items = await response.Content.ReadFromJsonAsync<List<LookupItemSummary>>();
+
+        Assert.Equal(expectedCount, items!.Count);
+    }
+
+    [Fact]
+    public async Task DeactivateTaxOffice_PreservesRowAndProvinceLink()
+    {
+        var accessToken = await LoginAsAdminAsync();
+
+        var provinces = await (await _client.GetAsync("/api/v1/reference-data/provinces"))
+            .Content.ReadFromJsonAsync<List<LookupItemSummary>>();
+        var istanbul = provinces!.Single(p => p.Code == "34");
+
+        var createRequest = new HttpRequestMessage(HttpMethod.Post, "/api/v1/reference-data/tax-offices")
+        {
+            Content = JsonContent.Create(new
+            {
+                code = $"TO-{Guid.NewGuid():N}"[..20],
+                displayName = "Referans Bütünlüğü Testi Vergi Dairesi",
+                sortOrder = 0,
+                provinceId = istanbul.Id,
+            }),
+        };
+        createRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        var createResponse = await _client.SendAsync(createRequest);
+        var created = await createResponse.Content.ReadFromJsonAsync<Dictionary<string, Guid>>();
+        var id = created!["id"];
+
+        var deleteRequest = new HttpRequestMessage(HttpMethod.Delete, $"/api/v1/reference-data/tax-offices/{id}");
+        deleteRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        var deleteResponse = await _client.SendAsync(deleteRequest);
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        // Soft-delete: the row must still exist (not a real DELETE) so anything already holding
+        // this id as a business reference can still resolve it - only IsActive changes.
+        var allTaxOffices = await (await _client.GetAsync("/api/v1/reference-data/tax-offices?activeOnly=false"))
+            .Content.ReadFromJsonAsync<List<LookupItemSummary>>();
+        var deactivated = allTaxOffices!.Single(t => t.Id == id);
+        Assert.False(deactivated.IsActive);
+        Assert.Equal("Referans Bütünlüğü Testi Vergi Dairesi", deactivated.DisplayName);
+
+        // The parent Province itself must be entirely unaffected by a child TaxOffice's soft-delete.
+        var provincesAfter = await (await _client.GetAsync("/api/v1/reference-data/provinces"))
+            .Content.ReadFromJsonAsync<List<LookupItemSummary>>();
+        Assert.Contains(provincesAfter!, p => p.Id == istanbul.Id && p.IsActive);
+    }
+
     [Fact]
     public async Task SeedType_HasNoMutationEndpoint()
     {
