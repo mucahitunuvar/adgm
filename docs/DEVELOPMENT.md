@@ -1212,6 +1212,12 @@ Measure again
 
 şeklindedir.
 
+Bir şeyi cache'lemeden önce gerçekten tekrar tekrar okunduğunu ve pahalı olduğunu doğrula
+(AGENTS.md §33: "Do not add caching simply because a query exists"). Cache'lemeye karar verirsen kendi
+`IMemoryCache` enjekte etme — `SharedKernel.Abstractions.ICacheService` (global) veya
+`IUserScopedCacheService` (kullanıcıya özel) kullan; bkz. ARCHITECTURE.md §34.1 (Caching Convention)
+ve `ReferenceDataLookupReader.ListAsync` (gerçek kullanım örneği).
+
 ---
 
 # 47. Security During Development

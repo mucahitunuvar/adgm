@@ -1479,6 +1479,60 @@ Gerektiğinde Redis'e geçilebilir.
 
 Redis ilk günden zorunlu değildir.
 
+## 34.1. Caching Convention
+
+Yukarıdaki `IMemoryCache` prensibinin somut, tek soyutlaması (ADR-017): her modül, kendi cache
+ihtiyacı için doğrudan `IMemoryCache` enjekte etmek yerine `SharedKernel.Abstractions.ICacheService`
+kullanır.
+
+```text
+SharedKernel/
+└── Abstractions/
+    ├── ICacheService.cs          (GetOrCreateAsync/Remove/RemoveByPrefix — global/module-level cache)
+    ├── ICurrentUserContext.cs    (Guid? UserId — sadece IUserScopedCacheService'in ihtiyacı kadar)
+    └── IUserScopedCacheService.cs (GetOrCreateForCurrentUserAsync — kullanıcıya-özel cache)
+```
+
+İmplementasyonları (`MemoryCacheService`, `UserScopedCacheService`, `HttpContextCurrentUserContext`)
+`BuildingBlocks.Infrastructure`'da yaşar, Host composition root'ta `AddCaching(configuration)` ile
+bir kez register edilir (`Program.cs`) — hiçbir modül kendi `IMemoryCache`/`ICacheService` kaydını
+yapmaz. **Redis'e geçiş ihtiyacı doğarsa** sadece `MemoryCacheService`'in yerini `RedisCacheService`
+gibi başka bir implementasyon alır; `ICacheService`'i tüketen hiçbir kod değişmez (`IReferenceDataLookupReader`in
+ADR-016 Decision 2'deki "sadece implementasyon değişir" deseninin aynısı).
+
+**Ne zaman global (`ICacheService`), ne zaman kullanıcıya-özel (`IUserScopedCacheService`):**
+
+```text
+Veri her kullanıcı için aynıysa (referans veri, herkese açık liste, konfigürasyon)
+    → ICacheService doğrudan
+
+Veri çağıran kullanıcıya özelse (örn. "bu adayın kendi önerilen iş ilanları",
+"bu işverenin kendi bekleyen başvuruları")
+    → IUserScopedCacheService (key'i otomatik "user:{userId}:{key}" yapar)
+```
+
+`IUserScopedCacheService`, mevcut kullanıcı yoksa (anonim istek) **cache'lemeden** doğrudan factory'yi
+çağırır — bir anonim isteğin sonucu başka bir anonim çağırana asla sızmaz.
+
+**Örnek (gerçek kullanım — `ReferenceDataLookupReader.ListAsync`):**
+
+```csharp
+public Task<PagedResult<LookupItemSummary>> ListAsync(
+    ReferenceDataLookupType type, PagedRequest paging, bool activeOnly, CancellationToken cancellationToken)
+{
+    var cacheKey = ReferenceDataCacheKeys.List(type, activeOnly, paging); // page/pageSize key'e dahil
+    var ttl = IsSeedType(type) ? TimeSpan.FromHours(24) : null;           // null → servisin configure edilebilir default'u
+
+    return cacheService.GetOrCreateAsync(cacheKey, async ct => await QueryFromDbAsync(...), ttl, cancellationToken);
+}
+```
+
+Sayfalanmış bir sonucu cache'lerken **sayfa/filtre parametreleri key'e dahil edilmelidir** (yukarıdaki
+gibi) — aksi halde farklı `page`/`pageSize`/filtre kombinasyonları birbirinin cache girdisinin üstüne
+yazar. Bir mutation sonrası **o tipin tüm key'lerini** temizlemek için `ICacheService.RemoveByPrefix`
+kullanılır (`LookupCacheInvalidator.Invalidate` örneği) — tek tek her sayfa/filtre kombinasyonunun
+key'ini bilmeye gerek yoktur.
+
 ---
 
 # 35. File Storage
