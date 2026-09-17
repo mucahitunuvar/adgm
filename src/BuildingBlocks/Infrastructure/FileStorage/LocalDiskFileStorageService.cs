@@ -6,20 +6,29 @@ using Microsoft.Extensions.Options;
 namespace GenclikMerkezi.BuildingBlocks.Infrastructure.FileStorage;
 
 // First IFileStorageService implementation (ADR-019): writes to a configurable root directory on
-// local disk. File names are GUID-generated to avoid collisions; the caller-supplied original file
-// name is preserved only in the returned FileAttachment, never used as the on-disk name.
-public sealed class LocalDiskFileStorageService(IOptions<FileStorageSettings> settings) : IFileStorageService
+// local disk, under UploadedFiles/{category}/{yyyy}/{MM}/{dd}/{guid}.{ext} (UTC date). File names
+// are GUID-generated to avoid collisions; the caller-supplied original file name is preserved only
+// in the returned FileAttachment, never used as the on-disk name. TimeProvider (rather than
+// DateTime.UtcNow directly) makes the date partition deterministically testable.
+public sealed class LocalDiskFileStorageService(IOptions<FileStorageSettings> settings, TimeProvider timeProvider)
+    : IFileStorageService
 {
     public async Task<Result<FileAttachment>> UploadAsync(
         Stream content,
         string fileName,
         string contentType,
-        string folder,
+        FileCategory category,
         string ownerEntityType,
         Guid ownerEntityId,
         FileValidationPolicy validationPolicy,
         CancellationToken cancellationToken = default)
     {
+        if (!category.TryGetFolderSegment(out var folderSegment))
+        {
+            return Result.Failure<FileAttachment>(Error.Validation(
+                "FileStorage.InvalidCategory", $"'{category}' is not a recognized file category."));
+        }
+
         var validationResult = validationPolicy.Validate(fileName, contentType, content.Length);
 
         if (validationResult.IsFailure)
@@ -27,8 +36,9 @@ public sealed class LocalDiskFileStorageService(IOptions<FileStorageSettings> se
             return Result.Failure<FileAttachment>(validationResult.Error);
         }
 
+        var utcNow = timeProvider.GetUtcNow();
         var extension = Path.GetExtension(fileName);
-        var fileKey = $"{folder}/{Guid.NewGuid():N}{extension}";
+        var fileKey = $"{folderSegment}/{utcNow:yyyy}/{utcNow:MM}/{utcNow:dd}/{Guid.NewGuid():N}{extension}";
         var fullPath = ToFullPath(fileKey);
 
         Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
@@ -39,7 +49,7 @@ public sealed class LocalDiskFileStorageService(IOptions<FileStorageSettings> se
         }
 
         var attachment = FileAttachment.Create(
-            fileKey, fileName, contentType, content.Length, DateTime.UtcNow, ownerEntityType, ownerEntityId);
+            fileKey, fileName, contentType, content.Length, utcNow.UtcDateTime, ownerEntityType, ownerEntityId);
 
         return Result.Success(attachment);
     }

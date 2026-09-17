@@ -10,14 +10,16 @@ namespace GenclikMerkezi.SharedKernel.Abstractions;
 public interface IFileStorageService
 {
     // Validates content against validationPolicy before writing anything, so a rejected upload
-    // never touches storage. folder namespaces the underlying storage location (e.g.
-    // "candidate-photos", "candidate-cv-files"); ownerEntityType/ownerEntityId become part of the
-    // returned FileAttachment so the caller's aggregate can persist an auditable owner tag.
+    // never touches storage. category namespaces the underlying storage location (ADR-019's
+    // {category}/{yyyy}/{MM}/{dd}/{guid}.{ext} folder structure - see FileCategoryExtensions for the
+    // category-to-folder-segment mapping); an out-of-range category value fails validation rather
+    // than creating a stray folder. ownerEntityType/ownerEntityId become part of the returned
+    // FileAttachment so the caller's aggregate can persist an auditable owner tag.
     Task<Result<FileAttachment>> UploadAsync(
         Stream content,
         string fileName,
         string contentType,
-        string folder,
+        FileCategory category,
         string ownerEntityType,
         Guid ownerEntityId,
         FileValidationPolicy validationPolicy,

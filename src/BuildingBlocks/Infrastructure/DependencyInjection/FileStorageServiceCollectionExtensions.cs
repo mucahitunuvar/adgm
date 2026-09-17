@@ -13,6 +13,7 @@ public static class FileStorageServiceCollectionExtensions
     public static IServiceCollection AddFileStorage(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<FileStorageSettings>(configuration.GetSection(FileStorageSettings.SectionName));
+        services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IFileStorageService, LocalDiskFileStorageService>();
 
         return services;

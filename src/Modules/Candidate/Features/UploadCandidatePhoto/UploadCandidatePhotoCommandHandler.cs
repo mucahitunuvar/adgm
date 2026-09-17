@@ -36,7 +36,7 @@ public sealed class UploadCandidatePhotoCommandHandler(
             request.Content,
             request.FileName,
             request.ContentType,
-            "candidate-photos",
+            FileCategory.CandidatePhoto,
             "CandidateCv",
             candidateCv.Id,
             PhotoPolicy,

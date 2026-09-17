@@ -47,7 +47,7 @@ public sealed class UploadCandidateCvFileCommandHandler(
             request.Content,
             request.FileName,
             request.ContentType,
-            "candidate-cv-files",
+            FileCategory.CandidateCv,
             "CandidateCvContent",
             content.Id,
             CvFilePolicy,
