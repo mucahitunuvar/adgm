@@ -1,3 +1,4 @@
+using GenclikMerkezi.Modules.Candidate.Infrastructure;
 using GenclikMerkezi.Modules.Identity;
 using GenclikMerkezi.Modules.Identity.Application.Abstractions;
 using GenclikMerkezi.Modules.Identity.Domain;
@@ -21,13 +22,18 @@ namespace GenclikMerkezi.IntegrationTests.Identity;
 // ADR-014's amendment), and CAP's SqlServer storage package cannot target a Sqlite connection.
 // ReferenceData has no such constraint (ADR-012's Sqlite switch would work for it) but uses
 // LocalDB too here, simply for consistency with the other two in this shared test factory.
-public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
+//
+// Not sealed: BrokenCandidateDatabaseWebApplicationFactory (Candidate's registration-compensation
+// test) subclasses this to point only the Candidate connection at an unreachable server, reusing
+// everything else here rather than duplicating LocalDB provisioning/cleanup for one test.
+public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
     private const string LocalDbServer = "Server=(localdb)\\mssqllocaldb;Trusted_Connection=True;TrustServerCertificate=True;";
 
     private readonly string _identityDatabaseName = $"GenclikMerkezi.Identity.Test.{Guid.NewGuid():N}";
     private readonly string _notificationDatabaseName = $"GenclikMerkezi.Notification.Test.{Guid.NewGuid():N}";
     private readonly string _referenceDataDatabaseName = $"GenclikMerkezi.ReferenceData.Test.{Guid.NewGuid():N}";
+    private readonly string _candidateDatabaseName = $"GenclikMerkezi.Candidate.Test.{Guid.NewGuid():N}";
 
     private string IdentityConnectionString =>
         $"{LocalDbServer}Database={_identityDatabaseName};";
@@ -37,6 +43,12 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
     private string ReferenceDataConnectionString =>
         $"{LocalDbServer}Database={_referenceDataDatabaseName};";
+
+    // Overridable so BrokenCandidateDatabaseWebApplicationFactory can point this at an unreachable
+    // server instead, to test RegisterCandidateCommand's compensation path against a real
+    // (deliberately broken) connection rather than a mock.
+    protected virtual string CandidateConnectionString =>
+        $"{LocalDbServer}Database={_candidateDatabaseName};";
 
     public FakeEmailSender EmailSender { get; } = new();
 
@@ -51,6 +63,7 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("ConnectionStrings:IdentityDatabase", IdentityConnectionString);
         builder.UseSetting("ConnectionStrings:NotificationDatabase", NotificationConnectionString);
         builder.UseSetting("ConnectionStrings:ReferenceDataDatabase", ReferenceDataConnectionString);
+        builder.UseSetting("ConnectionStrings:CandidateDatabase", CandidateConnectionString);
         builder.UseSetting("Jwt:Issuer", "GenclikMerkezi.Tests");
         builder.UseSetting("Jwt:Audience", "GenclikMerkezi.Tests");
         builder.UseSetting("Jwt:SigningKey", "integration-test-signing-key-do-not-use-in-prod");
@@ -63,6 +76,7 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
             scope.ServiceProvider.GetRequiredService<IdentityDbContext>().Database.EnsureCreated();
             scope.ServiceProvider.GetRequiredService<NotificationDbContext>().Database.EnsureCreated();
             scope.ServiceProvider.GetRequiredService<ReferenceDataDbContext>().Database.EnsureCreated();
+            EnsureCandidateDatabaseCreated(scope.ServiceProvider);
         });
 
         // Runs after Program.cs's own AddNotificationModule() registration, so this replaces the
@@ -71,6 +85,14 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
         {
             services.AddSingleton<IEmailSender>(EmailSender);
         });
+    }
+
+    // Overridden by BrokenCandidateDatabaseWebApplicationFactory to no-op: EnsureCreated against an
+    // unreachable server would throw here, at host startup, before any test gets to run - the point
+    // of that factory is for the failure to surface later, from a real request's SaveChangesAsync.
+    protected virtual void EnsureCandidateDatabaseCreated(IServiceProvider services)
+    {
+        services.GetRequiredService<CandidateDbContext>().Database.EnsureCreated();
     }
 
     // Admin cannot be created through the public register endpoint (RegisterUserCommandValidator
@@ -115,11 +137,14 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
         DropDatabase(_identityDatabaseName);
         DropDatabase(_notificationDatabaseName);
         DropDatabase(_referenceDataDatabaseName);
+        DropDatabase(_candidateDatabaseName);
     }
 
     // Best-effort cleanup of the throwaway LocalDB databases - EF Core's connection pool may
     // still hold a pooled (but idle) connection open at this point, so this can occasionally
     // fail; that would only leak one small test-run-specific database, not fail the test run.
+    // Also harmless (and expected) to no-op for a database that was never actually created, e.g.
+    // BrokenCandidateDatabaseWebApplicationFactory's deliberately-unreachable connection.
     private static void DropDatabase(string databaseName)
     {
         try
