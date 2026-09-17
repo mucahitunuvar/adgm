@@ -514,9 +514,13 @@ Query mümkün olduğunca:
 
 olmalıdır.
 
-Sayfalanmış bir liste sorgusu `PagedResult<TItem>` (SharedKernel/Results) döndürmelidir — ilk
-kullanım örneği `AdminGetUsersQuery` (`IUserRepository.SearchAsync`). Bir Value Object'e
-(`HasConversion` ile map edilmiş, örn. `Email`) göre substring arama gerekiyorsa
+Sayfalanmış bir liste sorgusu `PagedRequest`'ten türemeli (kendi filtre alanlarını ekleyerek) ve
+`Result<PagedResult<TItem>>` döndürmelidir — bkz. ARCHITECTURE.md §9.1 (Pagination Convention),
+`AdminGetUsersQuery`/`AdminGetAuditLogQuery` (Identity) ve `GetDistrictsQuery` (ReferenceData, kendi
+`ProvinceId` filtresini ekleyen örnek). DB sorgusunu sayfalayan taraf
+`QueryablePagingExtensions.ToPagedResultAsync` (`BuildingBlocks.Infrastructure.Persistence`) — bunu
+her zaman bir repository/reader çağırır, Feature handler değil (§9.1'de gerekçesi var). Bir Value
+Object'e (`HasConversion` ile map edilmiş, örn. `Email`) göre substring arama gerekiyorsa
 ARCHITECTURE.md §21.1'i oku: `u.Email.Value` gibi bir member access EF Core tarafından translate
 edilmez (Where'de derleme-zamanı hatası değil, çalışma-zamanı "could not be translated"; Select'te
 ise `InvalidCastException`) — bu yüzden `AdminGetUsers`'ın implementasyonu diğer filtreleri DB'de

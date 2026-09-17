@@ -595,16 +595,82 @@ SharedKernel/
 ├── Results/
 │   ├── Result.cs
 │   ├── Error.cs
+│   ├── PagedRequest.cs
 │   └── PagedResult.cs
 │
 └── Abstractions/
     └── ...
 ```
 
-`PagedResult<TItem>` (Items, TotalCount, Page, PageSize, TotalPages) sayfalanmış herhangi bir liste
-sorgusunun dönüş şeklidir — Identity'nin admin kullanıcı listesi ilk kullanıcısıdır, ama module-
-specific değildir; ileride başka modüllerin (Job, Candidate, ...) liste endpoint'leri de bunu
-kullanabilir.
+## 9.1. Pagination Convention
+
+Her sayfalanmış liste sorgusu (mevcut ve gelecekteki tüm modüller — Identity'nin admin kullanıcı
+listesi/audit log'u ve ReferenceData'nın 23 lookup tipi ilk kullanıcılarıdır, ama module-specific
+değildir) aynı iki tipi kullanır:
+
+* **`PagedRequest`** (`SharedKernel.Results`) — `Page` (1-index, min 1) ve `PageSize` (varsayılan
+  20, min 1, max 100). Sınır dışı bir değer **hata fırlatmaz, sessizce clamp edilir**
+  (PERFORMANCE.md §11'in "pageSize server-side maksimum değerle sınırlandırılmalı" kuralı böyle
+  uygulanır). `sealed` değildir: bir feature'ın kendi Query/Request tipi, ek filtre alanları
+  taşımak için ondan türeyebilir — filtreler `PagedRequest`'e değil, o feature'ın kendi tipine
+  eklenir (aşağıdaki örnek).
+* **`PagedResult<TItem>`** (`SharedKernel.Results`) — `Items`, `TotalCount`, `Page`, `PageSize`,
+  hesaplanan `TotalPages`, `HasNextPage`, `HasPreviousPage`. Küçük bir liste (örn. 10 kayıtlı bir
+  lookup) de aynı şekli döner — sadece `TotalPages=1` olur; tüketen taraf tek bir sözleşmeye
+  güvenebilir.
+
+Sorguyu gerçek DB verisine çeviren taraf **`QueryablePagingExtensions.ToPagedResultAsync`**
+(`GenclikMerkezi.BuildingBlocks.Infrastructure.Persistence`) — bir `IQueryable<T>` üzerinde
+`Count` + `Skip`/`Take` uygulayıp `PagedResult<T>` döndürür. Bu extension **SharedKernel'de değil**,
+bilinçli olarak `BuildingBlocks.Infrastructure`'dadır: SharedKernel her modülün Domain'i tarafından
+referans edilir, ve AGENTS.md §16/§18 `IQueryable<T>`'i ve EF Core'u bir modülün kendi
+`Infrastructure`'ı dışında yasaklar (`FeatureDbContextTests` bunu otomatik doğrular) — SharedKernel'e
+EF Core bağımlılığı eklemek bu kuralı proje genelinde ihlal ederdi. Bu yüzden `ToPagedResultAsync`
+her zaman bir **repository/reader**'ın (Feature handler'ın değil) içinde çağrılır; handler'a yalnızca
+materialize edilmiş `PagedResult<T>` döner (bkz. `UserRepository.SearchAsync`,
+`ReferenceDataLookupReader.ListByParentAsync`).
+
+**Yeni bir modülün liste endpoint'i yazarken** (`GetDistrictsQuery` — ReferenceData'nın District'e
+`ProvinceId` filtresi eklediği feature — tam olarak bu örnektir):
+
+```csharp
+// Features/GetBlogPosts/GetBlogPostsQuery.cs
+public sealed record GetBlogPostsQuery(Guid? CategoryId, string? SearchTerm)
+    : PagedRequest, IRequest<Result<PagedResult<BlogPostSummary>>>;
+
+// Features/GetBlogPosts/GetBlogPostsQueryHandler.cs
+public sealed class GetBlogPostsQueryHandler(IBlogPostRepository repository)
+    : IRequestHandler<GetBlogPostsQuery, Result<PagedResult<BlogPostSummary>>>
+{
+    public async Task<Result<PagedResult<BlogPostSummary>>> Handle(
+        GetBlogPostsQuery request, CancellationToken cancellationToken) =>
+        Result.Success(await repository.SearchAsync(request, cancellationToken));
+}
+
+// Infrastructure/Persistence/BlogPostRepository.cs (Infrastructure - EF Core/IQueryable serbest)
+public async Task<PagedResult<BlogPostSummary>> SearchAsync(
+    GetBlogPostsQuery filter, CancellationToken cancellationToken)
+{
+    var query = dbContext.BlogPosts.AsNoTracking();
+
+    if (filter.CategoryId is not null)
+    {
+        query = query.Where(p => p.CategoryId == filter.CategoryId);
+    }
+
+    return await query
+        .OrderByDescending(p => p.PublishedAtUtc)
+        .Select(p => new BlogPostSummary(p.Id, p.Title, p.PublishedAtUtc))
+        .ToPagedResultAsync(filter, cancellationToken);
+}
+```
+
+Endpoint tarafı, `page`/`pageSize`'ı diğer query parametreleriyle birlikte okuyup Query'yi object
+initializer ile kurar (bkz. `AdminGetUsersEndpoint`, `GetDistrictsEndpoint`):
+
+```csharp
+var query = new GetBlogPostsQuery(categoryId, searchTerm) { Page = page ?? 1, PageSize = pageSize ?? PagedRequest.DefaultPageSize };
+```
 
 SharedKernel içerisine:
 
