@@ -1,3 +1,4 @@
+using GenclikMerkezi.BuildingBlocks.Infrastructure.Persistence;
 using GenclikMerkezi.Modules.Identity.Application.Abstractions;
 using GenclikMerkezi.Modules.Identity.Domain;
 using GenclikMerkezi.SharedKernel.Results;
@@ -108,17 +109,13 @@ public sealed class UserRepository(IdentityDbContext dbContext) : IUserRepositor
             query = query.Where(u => matchingIds.Contains(u.Id));
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
-
         // Projected as the natural Email-typed property (its HasConversion applies normally here,
         // same as any other read of u.Email) and mapped to UserSummary's plain string only after
         // materialization - unlike the Where clause above, Select requires the CLR type it declares
         // to match the property's model type, so EF.Property<string> would throw an InvalidCastException
         // here instead of just failing to translate.
-        var rows = await query
+        var pagedRows = await query
             .OrderByDescending(u => u.CreatedAtUtc)
-            .Skip((filter.Page - 1) * filter.PageSize)
-            .Take(filter.PageSize)
             .Select(u => new
             {
                 u.Id,
@@ -129,9 +126,9 @@ public sealed class UserRepository(IdentityDbContext dbContext) : IUserRepositor
                 u.LockedUntilUtc,
                 u.CreatedAtUtc,
             })
-            .ToListAsync(cancellationToken);
+            .ToPagedResultAsync(new PagedRequest { Page = filter.Page, PageSize = filter.PageSize }, cancellationToken);
 
-        var items = rows
+        var items = pagedRows.Items
             .Select(u => new UserSummary(
                 u.Id,
                 u.Email.Value,
@@ -142,6 +139,6 @@ public sealed class UserRepository(IdentityDbContext dbContext) : IUserRepositor
                 u.CreatedAtUtc))
             .ToList();
 
-        return new PagedResult<UserSummary>(items, totalCount, filter.Page, filter.PageSize);
+        return new PagedResult<UserSummary>(items, pagedRows.TotalCount, pagedRows.Page, pagedRows.PageSize);
     }
 }

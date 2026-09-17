@@ -1,3 +1,4 @@
+using GenclikMerkezi.BuildingBlocks.Infrastructure.Persistence;
 using GenclikMerkezi.Modules.Identity.Application.Abstractions;
 using GenclikMerkezi.Modules.Identity.Domain;
 using GenclikMerkezi.SharedKernel.Results;
@@ -38,14 +39,8 @@ public sealed class AdminAuditLogRepository(IdentityDbContext dbContext) : IAdmi
             query = query.Where(e => e.OccurredAtUtc <= filter.ToUtc);
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        var items = await query
+        return await query
             .OrderByDescending(e => e.OccurredAtUtc)
-            .Skip((filter.Page - 1) * filter.PageSize)
-            .Take(filter.PageSize)
-            .ToListAsync(cancellationToken);
-
-        return new PagedResult<AdminAuditLogEntry>(items, totalCount, filter.Page, filter.PageSize);
+            .ToPagedResultAsync(new PagedRequest { Page = filter.Page, PageSize = filter.PageSize }, cancellationToken);
     }
 }
