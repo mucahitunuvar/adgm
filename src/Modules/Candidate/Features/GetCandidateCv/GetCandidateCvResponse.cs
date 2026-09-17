@@ -1,0 +1,25 @@
+namespace GenclikMerkezi.Modules.Candidate.Features.GetCandidateCv;
+
+public sealed record GetCandidateCvResponse(
+    Guid Id,
+    Guid UserId,
+    string? PhotoUrl,
+    string FirstName,
+    string LastName,
+    string Email,
+    string? PhoneNumber,
+    Guid? CountryId,
+    Guid? ProvinceId,
+    Guid? DistrictId,
+    string? Address,
+    IReadOnlyList<SocialMediaLinkResponse> SocialMediaLinks,
+    string? Title,
+    Guid? GenderId,
+    DateOnly? BirthDate,
+    Guid? DriversLicenseTypeId,
+    Guid? NationalityId,
+    decimal? NetSalaryExpectation,
+    Guid? MilitaryStatusId,
+    DisabilityInfoResponse? DisabilityInfo,
+    Guid? CareerAdvisorId,
+    int CompletionPercentage);
