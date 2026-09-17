@@ -71,6 +71,8 @@ public static class ReferenceDataModuleServiceCollectionExtensions
         services.AddLookupCrudHandlers<Currency>();
         services.AddLookupCrudHandlers<Skill>();
         services.AddLookupCrudHandlers<SchoolCategory>();
+        services.AddLookupCrudHandlers<WorkField>();
+        services.AddLookupCrudHandlers<School>();
 
         return services;
     }

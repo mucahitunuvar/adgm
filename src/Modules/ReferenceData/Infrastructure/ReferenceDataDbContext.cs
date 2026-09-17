@@ -55,6 +55,10 @@ public sealed class ReferenceDataDbContext(DbContextOptions<ReferenceDataDbConte
 
     public DbSet<TaxOffice> TaxOffices => Set<TaxOffice>();
 
+    public DbSet<WorkField> WorkFields => Set<WorkField>();
+
+    public DbSet<School> Schools => Set<School>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ReferenceDataDbContext).Assembly);

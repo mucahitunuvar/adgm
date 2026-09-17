@@ -97,6 +97,8 @@ public class LookupCrudFlowTests : IClassFixture<CustomWebApplicationFactory>
     [InlineData("school-categories", 4)]
     [InlineData("tax-offices", 161)]
     [InlineData("skills", 0)]
+    [InlineData("work-fields", 0)]
+    [InlineData("schools", 0)]
     public async Task GetLookup_ReturnsExpectedSeededCount(string routeSegment, int expectedCount)
     {
         var body = await GetPageAsync($"/api/v1/reference-data/{routeSegment}");

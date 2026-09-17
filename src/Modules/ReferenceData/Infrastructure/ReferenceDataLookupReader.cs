@@ -128,6 +128,8 @@ public sealed class ReferenceDataLookupReader(ReferenceDataDbContext dbContext, 
         ReferenceDataLookupType.Skill => dbContext.Skills,
         ReferenceDataLookupType.SchoolCategory => dbContext.SchoolCategories,
         ReferenceDataLookupType.TaxOffice => dbContext.TaxOffices,
+        ReferenceDataLookupType.WorkField => dbContext.WorkFields,
+        ReferenceDataLookupType.School => dbContext.Schools,
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown ReferenceData lookup type."),
     };
 }

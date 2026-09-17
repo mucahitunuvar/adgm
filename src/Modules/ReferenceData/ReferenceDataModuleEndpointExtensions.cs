@@ -37,6 +37,8 @@ public static class ReferenceDataModuleEndpointExtensions
         LookupEndpoints.MapWithCrud<Currency>(app, "currencies", ReferenceDataLookupType.Currency);
         LookupEndpoints.MapWithCrud<Skill>(app, "skills", ReferenceDataLookupType.Skill);
         LookupEndpoints.MapWithCrud<SchoolCategory>(app, "school-categories", ReferenceDataLookupType.SchoolCategory);
+        LookupEndpoints.MapWithCrud<WorkField>(app, "work-fields", ReferenceDataLookupType.WorkField);
+        LookupEndpoints.MapWithCrud<School>(app, "schools", ReferenceDataLookupType.School);
 
         // ADMIN-MANAGED, bespoke shape (ProvinceId - does not implement ILookupItemFactory<TaxOffice>).
         TaxOfficeEndpoints.Map(app);

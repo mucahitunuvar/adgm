@@ -28,4 +28,6 @@ public enum ReferenceDataLookupType
     Skill,
     SchoolCategory,
     TaxOffice,
+    WorkField,
+    School,
 }
