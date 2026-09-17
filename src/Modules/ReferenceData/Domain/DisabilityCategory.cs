@@ -1,8 +1,10 @@
+using GenclikMerkezi.Contracts.ReferenceData;
+
 namespace GenclikMerkezi.Modules.ReferenceData.Domain;
 
 // ADMIN-MANAGED: seeded starting data, Admin CRUD available (ADR-016 Decision 1). Engelli
 // kategorisi.
-public sealed class DisabilityCategory : LookupItem
+public sealed class DisabilityCategory : LookupItem, ILookupItemFactory<DisabilityCategory>
 {
     private DisabilityCategory(Guid id, string code, string displayName, int sortOrder)
         : base(id, code, displayName, sortOrder)
@@ -12,6 +14,8 @@ public sealed class DisabilityCategory : LookupItem
     private DisabilityCategory()
     {
     }
+
+    public static ReferenceDataLookupType LookupType => ReferenceDataLookupType.DisabilityCategory;
 
     public static DisabilityCategory Create(string code, string displayName, int sortOrder) =>
         new(Guid.NewGuid(), code, displayName, sortOrder);

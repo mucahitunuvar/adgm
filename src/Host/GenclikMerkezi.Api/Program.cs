@@ -8,6 +8,7 @@ using GenclikMerkezi.Modules.Identity.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.Notification;
 using GenclikMerkezi.Modules.Notification.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.ReferenceData;
+using GenclikMerkezi.Modules.ReferenceData.Infrastructure.DependencyInjection;
 using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -97,6 +98,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapIdentityModuleEndpoints();
+app.MapReferenceDataModuleEndpoints();
 
 app.Run();
 

@@ -125,12 +125,25 @@ built the way ADR-009 itself endorses:
   `IsActive`, `SortOrder`, and an `Activate()`/`Deactivate()` behavior pair — each concrete lookup
   (`Sector`, `Position`, ...) is its own class, its own EF-mapped table, no shared table/
   discriminator.
-* **Generic MediatR command/query types** — `CreateLookupItemCommand<TLookup>`,
-  `DeactivateLookupItemCommand<TLookup>`, `GetLookupItemsQuery<TLookup>` — whose handlers operate
-  directly on `ReferenceDataDbContext.Set<TLookup>()`. This is EF Core's own generic accessor, not
-  a hand-rolled `IRepository<T>` sitting in front of it; nothing here is a *repository*
-  abstraction, so ADR-009 is not violated, only the "write one handler per lookup type" tax is
-  avoided.
+* **Generic MediatR command types** — `CreateLookupItemCommand<TLookup>`,
+  `UpdateLookupItemCommand<TLookup>`, `DeactivateLookupItemCommand<TLookup>`. Reading uses a single
+  *non-generic* `GetLookupItemsQuery` (it takes a `ReferenceDataLookupType` value, not a `TLookup`
+  type parameter) that delegates to Decision 2's `IReferenceDataLookupReader` — one query handler
+  serves all 23 lookup types, generic or not.
+* **Correction (post-approval):** this ADR originally said these handlers "operate directly on
+  `ReferenceDataDbContext.Set<TLookup>()`". That is unbuildable as written: `FeatureDbContextTests`
+  (already enforced, passing for Identity/Notification today) forbids any type under a module's
+  `.Features` namespace from depending on `Microsoft.EntityFrameworkCore` at all (AGENTS.md §18) -
+  discovered only once implementation started. The actual mechanism is
+  `IAdminLookupCrudService<TLookup>` (`CodeExistsAsync`, `FindByIdAsync`, `Add`), declared in
+  `ReferenceData.Application.Abstractions` and implemented in `ReferenceData.Infrastructure`
+  against `DbSet<TLookup>()` there. This is still not the repository ADR-009 forbids: it is not a
+  general-purpose `IRepository<T>` usable for arbitrary entities, only a `LookupItem`-constrained
+  service for the one bounded concern this ADR already scoped (admin-managed lookup CRUD) - the
+  same "a real, scoped domain need" carve-out ADR-009 itself names for `ICandidateRepository`-style
+  repositories, just parameterized over `TLookup` instead of hard-coded to one type. Handlers
+  depend only on this interface (and `IMemoryCache`/`IUnitOfWork`), never on `DbContext`/`DbSet<T>`
+  directly - `FeatureDbContextTests` passes.
 * One generic endpoint-mapping helper (`LookupEndpoints.Map<TLookup>(app, routeSegment)`) registers
   the GET/POST/PUT/soft-delete routes for a given `TLookup`, called once per lookup type from the
   module's endpoint extension — the routes themselves stay explicit and inspectable in the

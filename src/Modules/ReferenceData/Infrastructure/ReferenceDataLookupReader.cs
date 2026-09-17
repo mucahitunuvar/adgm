@@ -1,4 +1,5 @@
 using GenclikMerkezi.Contracts.ReferenceData;
+using GenclikMerkezi.Modules.ReferenceData.Application.Abstractions;
 using GenclikMerkezi.Modules.ReferenceData.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;

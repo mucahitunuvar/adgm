@@ -1,0 +1,35 @@
+using GenclikMerkezi.Contracts.ReferenceData;
+using GenclikMerkezi.Modules.ReferenceData;
+using GenclikMerkezi.Modules.ReferenceData.Application.Abstractions;
+using GenclikMerkezi.SharedKernel.Abstractions;
+using GenclikMerkezi.SharedKernel.Results;
+using MediatR;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
+using TaxOffice = GenclikMerkezi.Modules.ReferenceData.Domain.TaxOffice;
+
+namespace GenclikMerkezi.Modules.ReferenceData.Features.AdminTaxOffice;
+
+public sealed class DeactivateTaxOfficeCommandHandler(
+    IAdminLookupCrudService<TaxOffice> crudService,
+    IMemoryCache cache,
+    [FromKeyedServices(ReferenceDataModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
+    : IRequestHandler<DeactivateTaxOfficeCommand, Result>
+{
+    public async Task<Result> Handle(DeactivateTaxOfficeCommand request, CancellationToken cancellationToken)
+    {
+        var entity = await crudService.FindByIdAsync(request.Id, cancellationToken);
+
+        if (entity is null)
+        {
+            return Result.Failure(Error.NotFound("Lookup.NotFound", "The specified TaxOffice could not be found."));
+        }
+
+        entity.Deactivate();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        LookupCacheInvalidator.Invalidate(cache, ReferenceDataLookupType.TaxOffice);
+
+        return Result.Success();
+    }
+}

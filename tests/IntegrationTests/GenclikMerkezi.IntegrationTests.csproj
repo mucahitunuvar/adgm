@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Host\GenclikMerkezi.Api\GenclikMerkezi.Api.csproj" />
     <ProjectReference Include="..\..\src\Modules\Identity\GenclikMerkezi.Modules.Identity.csproj" />
+    <ProjectReference Include="..\..\src\Modules\ReferenceData\GenclikMerkezi.Modules.ReferenceData.csproj" />
   </ItemGroup>
 
 </Project>
