@@ -5,11 +5,14 @@ using GenclikMerkezi.SharedKernel.Abstractions;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace GenclikMerkezi.Modules.Candidate.Features.RecalculateCompletionPercentage;
+namespace GenclikMerkezi.Modules.Candidate.Features.SyncCandidateReadModels;
 
-public sealed class CandidateCvContentUpdatedRecalculatesCompletionPercentageHandler(
+// See CandidateCvUpdatedSyncsReadModelsHandler for why CompletionPercentage recalculation and
+// CandidateSearchIndex refresh are combined in one handler per event.
+public sealed class CandidateCvContentUpdatedSyncsReadModelsHandler(
     ICandidateCvRepository candidateCvRepository,
     ICandidateCvContentRepository candidateCvContentRepository,
+    ICandidateSearchIndexRepository candidateSearchIndexRepository,
     [FromKeyedServices(CandidateModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : INotificationHandler<DomainEventNotification<CandidateCvContentUpdatedDomainEvent>>
 {
@@ -28,6 +31,17 @@ public sealed class CandidateCvContentUpdatedRecalculatesCompletionPercentageHan
 
         var percentage = CandidateCvCompletionCalculator.Calculate(candidateCv, candidateCvContent);
         candidateCv.UpdateCompletionPercentage(percentage);
+
+        var updatedAtUtc = DateTime.UtcNow;
+        var searchIndex = await candidateSearchIndexRepository.GetByCandidateCvIdAsync(candidateCv.Id, cancellationToken);
+
+        if (searchIndex is null)
+        {
+            searchIndex = CandidateSearchIndexProjector.CreateInitial(candidateCv, updatedAtUtc);
+            candidateSearchIndexRepository.Add(searchIndex);
+        }
+
+        CandidateSearchIndexProjector.Project(searchIndex, candidateCv, candidateCvContent, updatedAtUtc);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }

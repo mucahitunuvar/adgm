@@ -16,6 +16,7 @@ public sealed class RegisterCandidateCommandHandler(
     IIdentityService identityService,
     ICandidateCvRepository candidateCvRepository,
     ICandidateCvContentRepository candidateCvContentRepository,
+    ICandidateSearchIndexRepository candidateSearchIndexRepository,
     [FromKeyedServices(CandidateModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<RegisterCandidateCommand, Result<RegisterCandidateResponse>>
 {
@@ -42,6 +43,12 @@ public sealed class RegisterCandidateCommandHandler(
 
             var candidateCvContent = CandidateCvContent.Create(candidateCv.Id);
             candidateCvContentRepository.Add(candidateCvContent);
+
+            // CandidateCv.Create raises no domain event, so without this the candidate would have no
+            // CandidateSearchIndex row (ADR-020) - and would be missing from the admin/advisor listing -
+            // until their first profile edit triggered the sync handler.
+            var searchIndex = CandidateSearchIndexProjector.CreateInitial(candidateCv, DateTime.UtcNow);
+            candidateSearchIndexRepository.Add(searchIndex);
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
 

@@ -34,6 +34,7 @@ public static class CandidateModuleServiceCollectionExtensions
 
         services.AddScoped<ICandidateCvRepository, CandidateCvRepository>();
         services.AddScoped<ICandidateCvContentRepository, CandidateCvContentRepository>();
+        services.AddScoped<ICandidateSearchIndexRepository, CandidateSearchIndexRepository>();
 
         return services;
     }

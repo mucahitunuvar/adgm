@@ -14,6 +14,8 @@ public sealed class CandidateDbContext(DbContextOptions<CandidateDbContext> opti
 
     public DbSet<CandidateCvContent> CandidateCvContents => Set<CandidateCvContent>();
 
+    public DbSet<CandidateSearchIndex> CandidateSearchIndexes => Set<CandidateSearchIndex>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(CandidateDbContext).Assembly);

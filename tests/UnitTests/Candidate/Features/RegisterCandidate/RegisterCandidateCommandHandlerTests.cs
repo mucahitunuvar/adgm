@@ -9,10 +9,11 @@ public class RegisterCandidateCommandHandlerTests
     private readonly FakeIdentityService _identityService = new();
     private readonly FakeCandidateCvRepository _candidateCvRepository = new();
     private readonly FakeCandidateCvContentRepository _candidateCvContentRepository = new();
+    private readonly FakeCandidateSearchIndexRepository _candidateSearchIndexRepository = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
 
     private RegisterCandidateCommandHandler CreateHandler() =>
-        new(_identityService, _candidateCvRepository, _candidateCvContentRepository, _unitOfWork);
+        new(_identityService, _candidateCvRepository, _candidateCvContentRepository, _candidateSearchIndexRepository, _unitOfWork);
 
     private static RegisterCandidateCommand ValidCommand() =>
         new("aday@example.com", "Sifre123", "Ahmet", "Yılmaz", "05551234567");
@@ -39,6 +40,11 @@ public class RegisterCandidateCommandHandlerTests
         var candidateCvContent = Assert.Single(_candidateCvContentRepository.CandidateCvContents);
         Assert.Equal(candidateCv.Id, candidateCvContent.CandidateCvId);
 
+        var searchIndex = Assert.Single(_candidateSearchIndexRepository.SearchIndexes);
+        Assert.Equal(candidateCv.Id, searchIndex.Id);
+        Assert.Equal("AHMET YILMAZ", searchIndex.FullNameNormalized);
+        Assert.Equal("aday@example.com", searchIndex.Email);
+
         Assert.Equal(1, _unitOfWork.SaveChangesCallCount);
         Assert.False(_identityService.DeactivateUserAsyncCalled);
     }
@@ -55,6 +61,7 @@ public class RegisterCandidateCommandHandlerTests
         Assert.Equal(error, result.Error);
         Assert.Empty(_candidateCvRepository.CandidateCvs);
         Assert.Empty(_candidateCvContentRepository.CandidateCvContents);
+        Assert.Empty(_candidateSearchIndexRepository.SearchIndexes);
         Assert.Equal(0, _unitOfWork.SaveChangesCallCount);
         Assert.False(_identityService.DeactivateUserAsyncCalled);
     }
