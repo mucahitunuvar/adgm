@@ -4,6 +4,8 @@ using GenclikMerkezi.BuildingBlocks.Infrastructure.DependencyInjection;
 using GenclikMerkezi.BuildingBlocks.Infrastructure.ExceptionHandling;
 using GenclikMerkezi.Modules.Candidate;
 using GenclikMerkezi.Modules.Candidate.Infrastructure.DependencyInjection;
+using GenclikMerkezi.Modules.CareerAdvisor;
+using GenclikMerkezi.Modules.CareerAdvisor.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.Identity;
 using GenclikMerkezi.Modules.Identity.Infrastructure;
 using GenclikMerkezi.Modules.Identity.Infrastructure.DependencyInjection;
@@ -24,7 +26,8 @@ builder.Services.AddSharedApplicationServices(
     typeof(IdentityModuleMarker).Assembly,
     typeof(NotificationModuleMarker).Assembly,
     typeof(ReferenceDataModuleMarker).Assembly,
-    typeof(CandidateModuleMarker).Assembly);
+    typeof(CandidateModuleMarker).Assembly,
+    typeof(CareerAdvisorModuleMarker).Assembly);
 
 // ADR-017: ICacheService (and, once registered, IUserScopedCacheService) - shared, not per-module,
 // so it is registered here rather than inside any single AddXModule().
@@ -37,6 +40,7 @@ builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddNotificationModule(builder.Configuration);
 builder.Services.AddReferenceDataModule(builder.Configuration);
 builder.Services.AddCandidateModule(builder.Configuration);
+builder.Services.AddCareerAdvisorModule(builder.Configuration);
 
 // CAP supports exactly one instance per process, so it is registered exactly once here rather
 // than inside each module's own AddXModule() - IdentityDbContext is the transactional outbox
@@ -111,6 +115,7 @@ app.UseAuthorization();
 app.MapIdentityModuleEndpoints();
 app.MapReferenceDataModuleEndpoints();
 app.MapCandidateModuleEndpoints();
+app.MapCareerAdvisorModuleEndpoints();
 
 app.Run();
 

@@ -26,6 +26,22 @@ public interface IIdentityService
         string role,
         CancellationToken cancellationToken = default);
 
+    // Drives Identity's own CreateStaffUserCommand - a separate command from RegisterUserCommand
+    // because RegisterUserCommandValidator hard-restricts its Role parameter to self-registrable
+    // roles (Candidate/Employer), since that command is also bound to the anonymous
+    // /api/v1/auth/register endpoint. Staff roles (e.g. CareerAdvisor) must never be reachable from
+    // that public, unauthenticated endpoint, so provisioning them goes through this separate,
+    // endpoint-less command instead (only reachable from admin-triggered module flows via this
+    // contract method).
+    Task<Result<Guid>> CreateStaffUserAsync(
+        string email,
+        string password,
+        string firstName,
+        string lastName,
+        string? phoneNumber,
+        string role,
+        CancellationToken cancellationToken = default);
+
     // Compensating action for a saga-lite registration orchestration (e.g. ADR-017 Decision 2): when
     // a consuming module's own aggregate fails to persist after CreateUserAsync already committed,
     // the caller uses this to roll the just-created account back rather than leave an orphaned User

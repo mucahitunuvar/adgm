@@ -448,6 +448,8 @@ Sorumlulukları:
 * Advisor notes
 * Advisor activities
 
+Not: Danışman notları (`CandidateNote`/`CompanyNote`), aday-başlatmalı görüşme talebi (`MeetingRequest`), genel havuz atama/kabul akışı ve danışman deaktivasyonunda Host-seviyesi yeniden atama orkestrasyonu, ADR-022 ile Faz 1 kapsamına alınmıştır; bkz. `docs/DECISIONS/ADR-022-Careeradvisor-Matching-Design.md`.
+
 ---
 
 ## 8.4. CareerDevelopment
@@ -507,6 +509,8 @@ Sorumlulukları:
 * Matching criteria
 
 Matching algoritmaları ileride AI/ML tabanlı hale getirilebilir.
+
+Not: `CandidateSuggestion` aggregate'i ile sınırlı ilk kapsamıyla Matching modülü, ADR-022 kararıyla planlanandan erken (Faz 1 içinde, Faz 1.5 olarak) devreye alınmıştır; bkz. `docs/DECISIONS/ADR-022-Careeradvisor-Matching-Design.md`. Tam eşleştirme skorlama sistemi hâlâ ileri faz kapsamındadır.
 
 ---
 

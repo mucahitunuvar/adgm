@@ -1,7 +1,7 @@
 using GenclikMerkezi.Contracts.Identity;
 using GenclikMerkezi.SharedKernel.Results;
 
-namespace GenclikMerkezi.UnitTests.Candidate.TestDoubles;
+namespace GenclikMerkezi.UnitTests.CareerAdvisor.TestDoubles;
 
 public sealed class FakeIdentityService : IIdentityService
 {

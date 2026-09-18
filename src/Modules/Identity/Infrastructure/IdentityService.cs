@@ -1,5 +1,6 @@
 using GenclikMerkezi.Contracts.Identity;
 using GenclikMerkezi.Modules.Identity.Application.Abstractions;
+using GenclikMerkezi.Modules.Identity.Features.CreateStaffUser;
 using GenclikMerkezi.Modules.Identity.Features.RegisterUser;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Results;
@@ -38,6 +39,23 @@ public sealed class IdentityService(
         CancellationToken cancellationToken = default)
     {
         var command = new RegisterUserCommand(email, password, firstName, lastName, phoneNumber, role);
+        var result = await sender.Send(command, cancellationToken);
+
+        return result.IsSuccess
+            ? Result.Success(result.Value.UserId)
+            : Result.Failure<Guid>(result.Error);
+    }
+
+    public async Task<Result<Guid>> CreateStaffUserAsync(
+        string email,
+        string password,
+        string firstName,
+        string lastName,
+        string? phoneNumber,
+        string role,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new CreateStaffUserCommand(email, password, firstName, lastName, phoneNumber, role);
         var result = await sender.Send(command, cancellationToken);
 
         return result.IsSuccess
