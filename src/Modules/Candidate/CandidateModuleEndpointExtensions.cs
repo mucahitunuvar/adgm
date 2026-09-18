@@ -3,6 +3,7 @@ using GenclikMerkezi.Modules.Candidate.Features.AddCandidateReference;
 using GenclikMerkezi.Modules.Candidate.Features.AddCertificate;
 using GenclikMerkezi.Modules.Candidate.Features.AddEducation;
 using GenclikMerkezi.Modules.Candidate.Features.AddExperience;
+using GenclikMerkezi.Modules.Candidate.Features.ExportCandidateCvPdf;
 using GenclikMerkezi.Modules.Candidate.Features.GetCandidateCv;
 using GenclikMerkezi.Modules.Candidate.Features.GetCandidateCvContent;
 using GenclikMerkezi.Modules.Candidate.Features.RegisterCandidate;
@@ -37,6 +38,7 @@ public static class CandidateModuleEndpointExtensions
         UpdateCandidateCvContactInfoEndpoint.Map(app);
         UpdateCandidateCvPersonalInfoEndpoint.Map(app);
         UploadCandidatePhotoEndpoint.Map(app);
+        ExportCandidateCvPdfEndpoint.Map(app);
 
         // CandidateCvContent
         GetCandidateCvContentEndpoint.Map(app);

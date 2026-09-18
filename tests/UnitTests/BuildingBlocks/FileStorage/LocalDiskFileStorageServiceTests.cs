@@ -113,6 +113,30 @@ public sealed class LocalDiskFileStorageServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task ReadAsync_WithUploadedFile_ReturnsItsBytes()
+    {
+        var service = CreateService();
+        var originalBytes = Encoding.UTF8.GetBytes("fake-image-bytes");
+        using var content = new MemoryStream(originalBytes);
+        var uploaded = await service.UploadAsync(
+            content, "photo.jpg", "image/jpeg", FileCategory.CandidatePhoto, "CandidateCv", Guid.NewGuid(), CreatePhotoPolicy());
+
+        var readBytes = await service.ReadAsync(uploaded.Value.FileKey);
+
+        Assert.Equal(originalBytes, readBytes);
+    }
+
+    [Fact]
+    public async Task ReadAsync_WithUnknownKey_ReturnsNull()
+    {
+        var service = CreateService();
+
+        var readBytes = await service.ReadAsync("candidate-photos/2026/09/17/does-not-exist.jpg");
+
+        Assert.Null(readBytes);
+    }
+
+    [Fact]
     public async Task DeleteAsync_RemovesUploadedFile()
     {
         var service = CreateService();

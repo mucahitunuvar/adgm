@@ -1,9 +1,11 @@
 using GenclikMerkezi.Modules.Candidate.Application.Abstractions;
+using GenclikMerkezi.Modules.Candidate.Infrastructure.Pdf;
 using GenclikMerkezi.Modules.Candidate.Infrastructure.Persistence;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using QuestPDF.Infrastructure;
 
 namespace GenclikMerkezi.Modules.Candidate.Infrastructure.DependencyInjection;
 
@@ -11,6 +13,11 @@ public static class CandidateModuleServiceCollectionExtensions
 {
     public static IServiceCollection AddCandidateModule(this IServiceCollection services, IConfiguration configuration)
     {
+        // QuestPDF requires its license to be set once, process-wide, before any document is
+        // generated (ADR-021: Community License - the project's annual revenue is under $1M and it
+        // is not a public company, so no paid tier is required).
+        QuestPDF.Settings.License = LicenseType.Community;
+
         services.AddDbContext<CandidateDbContext>(options =>
         {
             var connectionString = configuration.GetConnectionString("CandidateDatabase");
@@ -35,6 +42,7 @@ public static class CandidateModuleServiceCollectionExtensions
         services.AddScoped<ICandidateCvRepository, CandidateCvRepository>();
         services.AddScoped<ICandidateCvContentRepository, CandidateCvContentRepository>();
         services.AddScoped<ICandidateSearchIndexRepository, CandidateSearchIndexRepository>();
+        services.AddScoped<ICandidateCvPdfExportService, QuestPdfCandidateCvExportService>();
 
         return services;
     }

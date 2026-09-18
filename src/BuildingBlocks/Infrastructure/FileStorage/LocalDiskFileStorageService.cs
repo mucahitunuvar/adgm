@@ -72,6 +72,18 @@ public sealed class LocalDiskFileStorageService(IOptions<FileStorageSettings> se
         return Task.FromResult($"{baseUrl}/{fileKey}");
     }
 
+    public async Task<byte[]?> ReadAsync(string fileKey, CancellationToken cancellationToken = default)
+    {
+        var fullPath = ToFullPath(fileKey);
+
+        if (!File.Exists(fullPath))
+        {
+            return null;
+        }
+
+        return await File.ReadAllBytesAsync(fullPath, cancellationToken);
+    }
+
     private string ToFullPath(string fileKey) =>
         Path.Combine(settings.Value.RootDirectory, fileKey.Replace('/', Path.DirectorySeparatorChar));
 }

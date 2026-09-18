@@ -28,4 +28,10 @@ public interface IFileStorageService
     Task DeleteAsync(string fileKey, CancellationToken cancellationToken = default);
 
     Task<string> GetUrlAsync(string fileKey, CancellationToken cancellationToken = default);
+
+    // For callers that need the file's bytes directly (e.g. embedding a candidate's photo into a
+    // generated PDF) rather than a public URL a browser would fetch. Null if fileKey doesn't exist -
+    // mirrors DeleteAsync's "missing is not an error" semantics, not a Result: a missing file here is
+    // an ordinary, expected case for the caller to branch on, not a failure to report.
+    Task<byte[]?> ReadAsync(string fileKey, CancellationToken cancellationToken = default);
 }
