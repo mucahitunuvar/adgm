@@ -1,3 +1,4 @@
+using GenclikMerkezi.Contracts.CareerAdvisor;
 using GenclikMerkezi.Contracts.Identity;
 using GenclikMerkezi.Modules.Candidate.Application.Abstractions;
 using GenclikMerkezi.Modules.Candidate.Domain;
@@ -14,6 +15,7 @@ namespace GenclikMerkezi.Modules.Candidate.Features.RegisterCandidate;
 // başarısız olursa adım 1'de oluşturulan User, telafi (compensation) olarak Deactivate edilir.
 public sealed class RegisterCandidateCommandHandler(
     IIdentityService identityService,
+    ICareerAdvisorModuleContract careerAdvisorModuleContract,
     ICandidateCvRepository candidateCvRepository,
     ICandidateCvContentRepository candidateCvContentRepository,
     ICandidateSearchIndexRepository candidateSearchIndexRepository,
@@ -37,8 +39,17 @@ public sealed class RegisterCandidateCommandHandler(
 
         try
         {
+            // En-az-yüklü danışman ataması (Görev 2/ADR-022 §2). Hiç aktif danışman yoksa
+            // CareerAdvisorId null kalır ve kayıt yine de başarılı olur (ADR-018 §6: alan zaten
+            // CareerAdvisor modülü gelene kadar "deferred" olarak tasarlandı; ReassignOrphanedCandidatesCommand
+            // ileride yeniden atamayı üstlenebilir).
+            var activeAdvisors = await careerAdvisorModuleContract.GetActiveAdvisorsAsync(cancellationToken);
+            var workloadCounts = await candidateCvRepository.GetCandidateCountsByCareerAdvisorAsync(cancellationToken);
+            var chosenCareerAdvisorId = CareerAdvisorAssignmentSelector.SelectLeastLoaded(
+                activeAdvisors.Select(a => a.CareerAdvisorId).ToList(), workloadCounts);
+
             var candidateCv = CandidateCv.Create(
-                userId, request.FirstName, request.LastName, request.Email, request.PhoneNumber);
+                userId, request.FirstName, request.LastName, request.Email, request.PhoneNumber, chosenCareerAdvisorId);
             candidateCvRepository.Add(candidateCv);
 
             var candidateCvContent = CandidateCvContent.Create(candidateCv.Id);

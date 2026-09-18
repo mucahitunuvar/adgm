@@ -61,7 +61,8 @@ public sealed class CandidateCv : AggregateRoot
 
     public int CompletionPercentage { get; private set; }
 
-    private CandidateCv(Guid id, Guid userId, string firstName, string lastName, string email, string? phoneNumber)
+    private CandidateCv(
+        Guid id, Guid userId, string firstName, string lastName, string email, string? phoneNumber, Guid? careerAdvisorId)
         : base(id)
     {
         UserId = userId;
@@ -69,12 +70,20 @@ public sealed class CandidateCv : AggregateRoot
         LastName = lastName;
         Email = email;
         PhoneNumber = phoneNumber;
+        CareerAdvisorId = careerAdvisorId;
     }
 
     // Kayıt anında Identity.User'dan bir kerelik seed edilir (ADR-017 Decision 2); sonrasında
     // UpdateContactInfo ile bağımsız olarak düzenlenebilir, User'la senkron kalmaz.
-    public static CandidateCv Create(Guid userId, string firstName, string lastName, string email, string? phoneNumber) =>
-        new(Guid.NewGuid(), userId, firstName, lastName, email, phoneNumber);
+    // careerAdvisorId de aynı şekilde kayıt anında seed edilir (Görev 2/ADR-022 §2'nin en-az-yüklü
+    // ataması) - AssignCareerAdvisor mutator'ı yerine burada set edilir ki Create() var olan
+    // "seed-time alanlar event tetiklemez" kuralını korusun (arama indeksinin elle oluşturulmasıyla
+    // aynı gerekçe): aksi halde her kayıtta gereksiz bir CandidateCvUpdatedDomainEvent,
+    // CandidateCvUpdatedSyncsReadModelsHandler'ın nested bir SaveChangesAsync daha çalıştırmasına
+    // yol açardı.
+    public static CandidateCv Create(
+        Guid userId, string firstName, string lastName, string email, string? phoneNumber, Guid? careerAdvisorId = null) =>
+        new(Guid.NewGuid(), userId, firstName, lastName, email, phoneNumber, careerAdvisorId);
 
     public void UpdateContactInfo(
         string firstName,
@@ -153,7 +162,9 @@ public sealed class CandidateCv : AggregateRoot
         }
     }
 
-    // CareerAdvisor modülü henüz yok; alan nullable/deferred (ADR-017 Decision 6).
+    // Kayıt sonrası yeniden atama için (Görev 3/ADR-022 §1: danışman deaktivasyonunda Host-seviyesi
+    // ReassignOrphanedCandidatesCommand). Alan nullable/deferred kalmaya devam ediyor (ADR-018 §6) -
+    // hiç aktif danışman yoksa null geçilebilir.
     public void AssignCareerAdvisor(Guid? careerAdvisorId)
     {
         CareerAdvisorId = careerAdvisorId;

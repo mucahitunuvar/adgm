@@ -20,6 +20,16 @@ public sealed class CandidateCvRepository(CandidateDbContext dbContext) : ICandi
             .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
     }
 
+    public async Task<IReadOnlyDictionary<Guid, int>> GetCandidateCountsByCareerAdvisorAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.CandidateCvs
+            .AsNoTracking()
+            .Where(c => c.CareerAdvisorId != null)
+            .GroupBy(c => c.CareerAdvisorId!.Value)
+            .ToDictionaryAsync(g => g.Key, g => g.Count(), cancellationToken);
+    }
+
     public void Add(CandidateCv candidateCv)
     {
         dbContext.CandidateCvs.Add(candidateCv);
