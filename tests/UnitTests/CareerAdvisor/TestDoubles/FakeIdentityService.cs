@@ -9,12 +9,14 @@ public sealed class FakeIdentityService : IIdentityService
 
     public Result<Guid> CreateStaffUserResult { get; set; } = Result.Success(Guid.NewGuid());
 
+    public IdentityUserProfile? UserProfileResult { get; set; }
+
     public bool DeactivateUserAsyncCalled { get; private set; }
 
     public Guid? DeactivatedUserId { get; private set; }
 
     public Task<IdentityUserProfile?> GetUserProfileAsync(Guid userId, CancellationToken cancellationToken = default) =>
-        Task.FromResult<IdentityUserProfile?>(null);
+        Task.FromResult(UserProfileResult);
 
     public Task<Result<Guid>> CreateUserAsync(
         string email,

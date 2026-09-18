@@ -1,3 +1,4 @@
+using GenclikMerkezi.Contracts.Notification;
 using GenclikMerkezi.Modules.Notification;
 using GenclikMerkezi.Modules.Notification.Application;
 using GenclikMerkezi.Modules.Notification.Application.Abstractions;
@@ -41,6 +42,8 @@ public static class NotificationModuleServiceCollectionExtensions
             NotificationModuleMarker.UnitOfWorkKey,
             (sp, _) => sp.GetRequiredService<NotificationDbContext>());
         services.AddScoped<IEmailNotificationRepository, EmailNotificationRepository>();
+        services.AddScoped<IInAppNotificationRepository, InAppNotificationRepository>();
+        services.AddScoped<INotificationModuleContract, NotificationModuleContract>();
 
         services.Configure<SmtpSettings>(configuration.GetSection(SmtpSettings.SectionName));
         services.AddScoped<IEmailSender, SmtpEmailSender>();

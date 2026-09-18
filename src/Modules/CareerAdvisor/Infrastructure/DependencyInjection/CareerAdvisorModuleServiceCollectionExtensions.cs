@@ -31,6 +31,7 @@ public static class CareerAdvisorModuleServiceCollectionExtensions
             (sp, _) => sp.GetRequiredService<CareerAdvisorDbContext>());
 
         services.AddScoped<ICareerAdvisorRepository, CareerAdvisorRepository>();
+        services.AddScoped<ICandidateNoteRepository, CandidateNoteRepository>();
         services.AddScoped<ICareerAdvisorModuleContract, CareerAdvisorModuleContract>();
 
         return services;

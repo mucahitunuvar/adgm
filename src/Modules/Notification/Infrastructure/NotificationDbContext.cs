@@ -12,6 +12,8 @@ public sealed class NotificationDbContext(DbContextOptions<NotificationDbContext
 {
     public DbSet<EmailNotification> EmailNotifications => Set<EmailNotification>();
 
+    public DbSet<InAppNotification> InAppNotifications => Set<InAppNotification>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(NotificationDbContext).Assembly);
