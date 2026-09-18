@@ -30,6 +30,14 @@ public sealed class CandidateCvRepository(CandidateDbContext dbContext) : ICandi
             .ToDictionaryAsync(g => g.Key, g => g.Count(), cancellationToken);
     }
 
+    public async Task<IReadOnlyList<CandidateCv>> GetByCareerAdvisorIdAsync(
+        Guid careerAdvisorId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.CandidateCvs
+            .Where(c => c.CareerAdvisorId == careerAdvisorId)
+            .ToListAsync(cancellationToken);
+    }
+
     public void Add(CandidateCv candidateCv)
     {
         dbContext.CandidateCvs.Add(candidateCv);

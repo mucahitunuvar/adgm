@@ -1,27 +1,28 @@
 using GenclikMerkezi.BuildingBlocks.Infrastructure.Http;
-using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-namespace GenclikMerkezi.Modules.CareerAdvisor.Features.DeactivateCareerAdvisor;
+namespace GenclikMerkezi.Admin;
 
-internal static class DeactivateCareerAdvisorEndpoint
+public static class AdminCareerAdvisorEndpoints
 {
     private const string AdminRole = "Admin";
 
-    public static void Map(IEndpointRouteBuilder app)
+    public static IEndpointRouteBuilder MapAdminCareerAdvisorEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPut(
+        app.MapPost(
                 "/api/v1/admin/career-advisors/{careerAdvisorId:guid}/deactivate",
-                async (Guid careerAdvisorId, ISender sender, CancellationToken cancellationToken) =>
+                async (Guid careerAdvisorId, CareerAdvisorDeactivationOrchestrator orchestrator, CancellationToken cancellationToken) =>
                 {
-                    var result = await sender.Send(new DeactivateCareerAdvisorCommand(careerAdvisorId), cancellationToken);
+                    var result = await orchestrator.DeactivateAndReassignAsync(careerAdvisorId, cancellationToken);
                     return result.ToNoContentOrProblem();
                 })
             .RequireAuthorization(policy => policy.RequireRole(AdminRole))
             .RequireRateLimiting("authenticated")
-            .WithName("DeactivateCareerAdvisor")
+            .WithName("DeactivateCareerAdvisorAndReassign")
             .WithTags("CareerAdvisor");
+
+        return app;
     }
 }

@@ -25,6 +25,13 @@ public sealed class FakeCandidateCvRepository : ICandidateCvRepository
         return Task.FromResult(counts);
     }
 
+    public Task<IReadOnlyList<CandidateCv>> GetByCareerAdvisorIdAsync(
+        Guid careerAdvisorId, CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<CandidateCv> matches = _candidateCvs.Where(c => c.CareerAdvisorId == careerAdvisorId).ToList();
+        return Task.FromResult(matches);
+    }
+
     public void Add(CandidateCv candidateCv)
     {
         _candidateCvs.Add(candidateCv);

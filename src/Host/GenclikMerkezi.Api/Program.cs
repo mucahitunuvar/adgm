@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Threading.RateLimiting;
+using GenclikMerkezi.Admin;
 using GenclikMerkezi.BuildingBlocks.Infrastructure.DependencyInjection;
 using GenclikMerkezi.BuildingBlocks.Infrastructure.ExceptionHandling;
 using GenclikMerkezi.Modules.Candidate;
@@ -41,6 +42,10 @@ builder.Services.AddNotificationModule(builder.Configuration);
 builder.Services.AddReferenceDataModule(builder.Configuration);
 builder.Services.AddCandidateModule(builder.Configuration);
 builder.Services.AddCareerAdvisorModule(builder.Configuration);
+
+// Host-seviyesi çok-modüllü orkestrasyon (ADR-022 §1) - herhangi bir modüle ait değil, bu yüzden
+// modüllerin AddXModule() metotlarının hiçbirinde değil, burada kaydediliyor.
+builder.Services.AddScoped<CareerAdvisorDeactivationOrchestrator>();
 
 // CAP supports exactly one instance per process, so it is registered exactly once here rather
 // than inside each module's own AddXModule() - IdentityDbContext is the transactional outbox
@@ -116,6 +121,7 @@ app.MapIdentityModuleEndpoints();
 app.MapReferenceDataModuleEndpoints();
 app.MapCandidateModuleEndpoints();
 app.MapCareerAdvisorModuleEndpoints();
+app.MapAdminCareerAdvisorEndpoints();
 
 app.Run();
 

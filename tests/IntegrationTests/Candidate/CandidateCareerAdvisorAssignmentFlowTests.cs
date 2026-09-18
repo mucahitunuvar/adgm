@@ -9,30 +9,24 @@ using GenclikMerkezi.Modules.Identity.Features.Login;
 namespace GenclikMerkezi.IntegrationTests.Candidate;
 
 // Uçtan uca Görev 2 (ADR-022 §2): RegisterCandidateCommand'ın CareerAdvisor modülünün public
-// contract'ından aktif danışman listesini çekip en az yüklüyü ataması.
-public class CandidateCareerAdvisorAssignmentFlowTests : IClassFixture<CustomWebApplicationFactory>
+// contract'ından aktif danışman listesini çekip en az yüklüyü ataması. Her test kendi özel/izole
+// CustomWebApplicationFactory'sini kullanıyor - "aktif danışman sayısı tam olarak N" varsayımı,
+// sınıf genelinde paylaşılan bir factory/veritabanıyla (diğer testlerin deaktive etmeden bıraktığı
+// danışmanlar yüzünden) güvenilir şekilde kurulamaz.
+public class CandidateCareerAdvisorAssignmentFlowTests
 {
-    private readonly CustomWebApplicationFactory _factory;
-    private readonly HttpClient _client;
-
-    public CandidateCareerAdvisorAssignmentFlowTests(CustomWebApplicationFactory factory)
-    {
-        _factory = factory;
-        _client = factory.CreateClient();
-    }
-
-    private async Task<string> LoginAsAdminAsync()
+    private static async Task<string> LoginAsAdminAsync(CustomWebApplicationFactory factory, HttpClient client)
     {
         var email = $"admin-{Guid.NewGuid():N}@example.com";
         const string password = "AdminSifre123";
-        await _factory.SeedAdminUserAsync(email, password);
+        await factory.SeedAdminUserAsync(email, password);
 
-        var loginResponse = await _client.PostAsJsonAsync("/api/v1/auth/login", new { email, password });
+        var loginResponse = await client.PostAsJsonAsync("/api/v1/auth/login", new { email, password });
         var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
         return login!.AccessToken;
     }
 
-    private async Task<Guid> CreateCareerAdvisorAsync(string adminAccessToken)
+    private static async Task<Guid> CreateCareerAdvisorAsync(HttpClient client, string adminAccessToken)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/admin/career-advisors")
         {
@@ -47,42 +41,45 @@ public class CandidateCareerAdvisorAssignmentFlowTests : IClassFixture<CustomWeb
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminAccessToken);
 
-        var response = await _client.SendAsync(request);
+        var response = await client.SendAsync(request);
         var body = await response.Content.ReadFromJsonAsync<CreateCareerAdvisorResponse>();
         return body!.CareerAdvisorId;
     }
 
-    private async Task<(Guid CandidateCvId, string AccessToken)> RegisterAndLoginCandidateAsync()
+    private static async Task<(Guid CandidateCvId, string AccessToken)> RegisterAndLoginCandidateAsync(HttpClient client)
     {
         var email = $"aday-{Guid.NewGuid():N}@example.com";
         const string password = "Sifre123";
 
-        var registerResponse = await _client.PostAsJsonAsync(
+        var registerResponse = await client.PostAsJsonAsync(
             "/api/v1/candidates/register",
             new { email, password, firstName = "Ahmet", lastName = "Yılmaz", phoneNumber = (string?)null });
         var registered = await registerResponse.Content.ReadFromJsonAsync<RegisterCandidateResponse>();
 
-        var loginResponse = await _client.PostAsJsonAsync("/api/v1/auth/login", new { email, password });
+        var loginResponse = await client.PostAsJsonAsync("/api/v1/auth/login", new { email, password });
         var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
 
         return (registered!.CandidateCvId, login!.AccessToken);
     }
 
-    private async Task<GetCandidateCvResponse> GetCandidateCvAsync(Guid candidateCvId, string accessToken)
+    private static async Task<GetCandidateCvResponse> GetCandidateCvAsync(HttpClient client, Guid candidateCvId, string accessToken)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/candidates/{candidateCvId}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-        var response = await _client.SendAsync(request);
+        var response = await client.SendAsync(request);
         return (await response.Content.ReadFromJsonAsync<GetCandidateCvResponse>())!;
     }
 
     [Fact]
     public async Task Register_WithNoActiveCareerAdvisors_LeavesCareerAdvisorIdNull()
     {
-        var (candidateCvId, accessToken) = await RegisterAndLoginCandidateAsync();
+        using var factory = new CustomWebApplicationFactory();
+        var client = factory.CreateClient();
 
-        var candidateCv = await GetCandidateCvAsync(candidateCvId, accessToken);
+        var (candidateCvId, accessToken) = await RegisterAndLoginCandidateAsync(client);
+
+        var candidateCv = await GetCandidateCvAsync(client, candidateCvId, accessToken);
 
         Assert.Null(candidateCv.CareerAdvisorId);
     }
@@ -90,12 +87,15 @@ public class CandidateCareerAdvisorAssignmentFlowTests : IClassFixture<CustomWeb
     [Fact]
     public async Task Register_WithActiveCareerAdvisors_AssignsTheLeastLoadedOne()
     {
-        var adminAccessToken = await LoginAsAdminAsync();
-        var advisorId = await CreateCareerAdvisorAsync(adminAccessToken);
+        using var factory = new CustomWebApplicationFactory();
+        var client = factory.CreateClient();
 
-        var (candidateCvId, accessToken) = await RegisterAndLoginCandidateAsync();
+        var adminAccessToken = await LoginAsAdminAsync(factory, client);
+        var advisorId = await CreateCareerAdvisorAsync(client, adminAccessToken);
 
-        var candidateCv = await GetCandidateCvAsync(candidateCvId, accessToken);
+        var (candidateCvId, accessToken) = await RegisterAndLoginCandidateAsync(client);
+
+        var candidateCv = await GetCandidateCvAsync(client, candidateCvId, accessToken);
 
         Assert.Equal(advisorId, candidateCv.CareerAdvisorId);
     }
@@ -103,17 +103,20 @@ public class CandidateCareerAdvisorAssignmentFlowTests : IClassFixture<CustomWeb
     [Fact]
     public async Task Register_TwiceWithTwoAdvisors_AssignsSecondCandidateToTheStillIdleAdvisor()
     {
-        var adminAccessToken = await LoginAsAdminAsync();
-        var firstAdvisorId = await CreateCareerAdvisorAsync(adminAccessToken);
-        var secondAdvisorId = await CreateCareerAdvisorAsync(adminAccessToken);
+        using var factory = new CustomWebApplicationFactory();
+        var client = factory.CreateClient();
 
-        var (firstCandidateCvId, firstAccessToken) = await RegisterAndLoginCandidateAsync();
-        var firstCandidateCv = await GetCandidateCvAsync(firstCandidateCvId, firstAccessToken);
+        var adminAccessToken = await LoginAsAdminAsync(factory, client);
+        var firstAdvisorId = await CreateCareerAdvisorAsync(client, adminAccessToken);
+        var secondAdvisorId = await CreateCareerAdvisorAsync(client, adminAccessToken);
+
+        var (firstCandidateCvId, firstAccessToken) = await RegisterAndLoginCandidateAsync(client);
+        var firstCandidateCv = await GetCandidateCvAsync(client, firstCandidateCvId, firstAccessToken);
         var firstAssignedAdvisorId = firstCandidateCv.CareerAdvisorId!.Value;
         var stillIdleAdvisorId = firstAssignedAdvisorId == firstAdvisorId ? secondAdvisorId : firstAdvisorId;
 
-        var (secondCandidateCvId, secondAccessToken) = await RegisterAndLoginCandidateAsync();
-        var secondCandidateCv = await GetCandidateCvAsync(secondCandidateCvId, secondAccessToken);
+        var (secondCandidateCvId, secondAccessToken) = await RegisterAndLoginCandidateAsync(client);
+        var secondCandidateCv = await GetCandidateCvAsync(client, secondCandidateCvId, secondAccessToken);
 
         Assert.Equal(stillIdleAdvisorId, secondCandidateCv.CareerAdvisorId);
     }

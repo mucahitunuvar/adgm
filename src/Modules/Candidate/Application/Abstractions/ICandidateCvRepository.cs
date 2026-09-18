@@ -12,5 +12,9 @@ public interface ICandidateCvRepository
     // hiç görünmez (GroupBy boş grup döndürmez) - çağıran taraf eksik anahtarı 0 olarak ele almalı.
     Task<IReadOnlyDictionary<Guid, int>> GetCandidateCountsByCareerAdvisorAsync(CancellationToken cancellationToken = default);
 
+    // Görev 3/ADR-022 §1: bir danışman deaktive edildiğinde ona atanmış tüm adayları bulup yeniden
+    // atamak için. Tracked (AsNoTracking değil) - çağıran taraf AssignCareerAdvisor ile mutasyon yapacak.
+    Task<IReadOnlyList<CandidateCv>> GetByCareerAdvisorIdAsync(Guid careerAdvisorId, CancellationToken cancellationToken = default);
+
     void Add(CandidateCv candidateCv);
 }

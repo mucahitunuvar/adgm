@@ -1,0 +1,3 @@
+namespace GenclikMerkezi.Modules.Candidate.Features.ReassignOrphanedCandidates;
+
+public sealed record ReassignOrphanedCandidatesResponse(int ReassignedCount);
