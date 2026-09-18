@@ -14,6 +14,8 @@ public static class CandidateSearchIndexProjector
     public static CandidateSearchIndex CreateInitial(CandidateCv candidateCv, DateTime updatedAtUtc) =>
         CandidateSearchIndex.Create(
             candidateCv.Id,
+            candidateCv.FirstName,
+            candidateCv.LastName,
             TurkishTextNormalizer.Normalize($"{candidateCv.FirstName} {candidateCv.LastName}"),
             candidateCv.Email,
             candidateCv.ProvinceId,
@@ -34,6 +36,8 @@ public static class CandidateSearchIndexProjector
             .Select(e => e.SectorId!.Value) ?? [];
 
         index.Refresh(
+            candidateCv.FirstName,
+            candidateCv.LastName,
             fullNameNormalized,
             candidateCv.Email,
             candidateCv.ProvinceId,

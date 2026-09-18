@@ -11,7 +11,7 @@ using GenclikMerkezi.Modules.Candidate.Features.RemoveCandidateReference;
 using GenclikMerkezi.Modules.Candidate.Features.RemoveCertificate;
 using GenclikMerkezi.Modules.Candidate.Features.RemoveEducation;
 using GenclikMerkezi.Modules.Candidate.Features.RemoveExperience;
-using GenclikMerkezi.Modules.Candidate.Features.SearchCandidateCvs;
+using GenclikMerkezi.Modules.Candidate.Features.SearchCandidates;
 using GenclikMerkezi.Modules.Candidate.Features.UpdateCandidateCvContactInfo;
 using GenclikMerkezi.Modules.Candidate.Features.UpdateCandidateCvContentSummary;
 using GenclikMerkezi.Modules.Candidate.Features.UpdateCandidateCvPersonalInfo;
@@ -69,7 +69,7 @@ public static class CandidateModuleEndpointExtensions
         RemoveCandidateReferenceEndpoint.Map(app);
 
         // Admin/advisor tarafı için candidate listesi
-        SearchCandidateCvsEndpoint.Map(app);
+        SearchCandidatesEndpoint.Map(app);
 
         return app;
     }

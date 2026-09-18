@@ -8,7 +8,7 @@ namespace GenclikMerkezi.Modules.Candidate.Features.GetCandidateCv;
 // Ownership (AGENTS.md §26): a Candidate may only read their own CV. Admin/CareerAdvisor oversight
 // of other candidates' CVs is deferred along with CareerAdvisorId itself (ADR-017 Decision 6 -
 // CareerAdvisor module/assignment does not exist yet); the admin/advisor-facing list endpoint
-// (SearchCandidateCvs) is the one place that surfaces other candidates today, gated by role instead.
+// (SearchCandidates) is the one place that surfaces other candidates today, gated by role instead.
 public sealed class GetCandidateCvQueryHandler(
     ICandidateCvRepository candidateCvRepository,
     IFileStorageService fileStorageService,

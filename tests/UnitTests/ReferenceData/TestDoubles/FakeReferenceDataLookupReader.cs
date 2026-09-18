@@ -47,4 +47,13 @@ public sealed class FakeReferenceDataLookupReader : IReferenceDataLookupReader
 
         return Task.FromResult(new PagedResult<LookupItemSummary>(page, filtered.Count, paging.Page, paging.PageSize));
     }
+
+    public Task<IReadOnlyCollection<LookupItemSummary>> GetByIdsAsync(
+        ReferenceDataLookupType type, IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        var items = _items.TryGetValue(type, out var list) ? list : [];
+        var matched = items.Where(i => ids.Contains(i.Id)).ToList();
+
+        return Task.FromResult<IReadOnlyCollection<LookupItemSummary>>(matched);
+    }
 }

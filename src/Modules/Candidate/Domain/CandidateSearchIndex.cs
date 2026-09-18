@@ -14,6 +14,12 @@ public sealed class CandidateSearchIndex : Entity
     private readonly List<CandidateSearchIndexEducationLevel> _educationLevels = [];
     private readonly List<CandidateSearchIndexSector> _sectors = [];
 
+    // Original-cased, for display (Görev 2's listing response) - FullNameNormalized below is search-
+    // only (uppercase, Turkish-diacritic-folded) and unsuitable for showing to a user.
+    public string FirstName { get; private set; } = string.Empty;
+
+    public string LastName { get; private set; } = string.Empty;
+
     public string FullNameNormalized { get; private set; } = string.Empty;
 
     public string Email { get; private set; } = string.Empty;
@@ -45,6 +51,8 @@ public sealed class CandidateSearchIndex : Entity
 
     public static CandidateSearchIndex Create(
         Guid candidateCvId,
+        string firstName,
+        string lastName,
         string fullNameNormalized,
         string email,
         Guid? provinceId,
@@ -56,12 +64,15 @@ public sealed class CandidateSearchIndex : Entity
     {
         var index = new CandidateSearchIndex(candidateCvId);
         index.Refresh(
-            fullNameNormalized, email, provinceId, districtId, completionPercentage, educationLevelIds, sectorIds, updatedAtUtc);
+            firstName, lastName, fullNameNormalized, email, provinceId, districtId, completionPercentage,
+            educationLevelIds, sectorIds, updatedAtUtc);
 
         return index;
     }
 
     public void Refresh(
+        string firstName,
+        string lastName,
         string fullNameNormalized,
         string email,
         Guid? provinceId,
@@ -71,6 +82,8 @@ public sealed class CandidateSearchIndex : Entity
         IEnumerable<Guid> sectorIds,
         DateTime updatedAtUtc)
     {
+        FirstName = firstName;
+        LastName = lastName;
         FullNameNormalized = fullNameNormalized;
         Email = email;
         ProvinceId = provinceId;

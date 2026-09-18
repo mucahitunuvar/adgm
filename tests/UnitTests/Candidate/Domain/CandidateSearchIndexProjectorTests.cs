@@ -16,6 +16,8 @@ public class CandidateSearchIndexProjectorTests
         var index = CandidateSearchIndexProjector.CreateInitial(cv, updatedAtUtc);
 
         Assert.Equal(cv.Id, index.Id);
+        Assert.Equal("İrem", index.FirstName);
+        Assert.Equal("Yılmaz", index.LastName);
         Assert.Equal("IREM YILMAZ", index.FullNameNormalized);
         Assert.Equal("irem@example.com", index.Email);
         Assert.Equal(0, index.CompletionPercentage);
@@ -91,6 +93,8 @@ public class CandidateSearchIndexProjectorTests
 
         CandidateSearchIndexProjector.Project(index, cv, candidateCvContent: null, DateTime.UtcNow);
 
+        Assert.Equal("Ayşe", index.FirstName);
+        Assert.Equal("Çelik", index.LastName);
         Assert.Equal("AYSE CELIK", index.FullNameNormalized);
         Assert.Equal("ayse@example.com", index.Email);
     }

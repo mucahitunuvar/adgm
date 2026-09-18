@@ -101,6 +101,22 @@ public sealed class ReferenceDataLookupReader(ReferenceDataDbContext dbContext, 
             cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<LookupItemSummary>> GetByIdsAsync(
+        ReferenceDataLookupType type, IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        var query = GetQueryable(type);
+
+        return await query
+            .Where(l => ids.Contains(l.Id))
+            .Select(l => new LookupItemSummary(l.Id, l.Code, l.DisplayName, l.IsActive, l.SortOrder))
+            .ToListAsync(cancellationToken);
+    }
+
     private static TimeSpan? GetTtl(ReferenceDataLookupType type) => SeedTypes.Contains(type) ? SeedTtl : null;
 
     private IQueryable<LookupItem> GetQueryable(ReferenceDataLookupType type) => type switch
