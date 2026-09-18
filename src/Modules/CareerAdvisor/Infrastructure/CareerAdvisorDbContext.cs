@@ -13,6 +13,8 @@ public sealed class CareerAdvisorDbContext(DbContextOptions<CareerAdvisorDbConte
 
     public DbSet<Domain.CandidateNote> CandidateNotes => Set<Domain.CandidateNote>();
 
+    public DbSet<Domain.MeetingRequest> MeetingRequests => Set<Domain.MeetingRequest>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(CareerAdvisorDbContext).Assembly);

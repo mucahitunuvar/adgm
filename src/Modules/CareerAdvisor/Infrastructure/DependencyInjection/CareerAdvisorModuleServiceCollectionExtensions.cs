@@ -32,6 +32,7 @@ public static class CareerAdvisorModuleServiceCollectionExtensions
 
         services.AddScoped<ICareerAdvisorRepository, CareerAdvisorRepository>();
         services.AddScoped<ICandidateNoteRepository, CandidateNoteRepository>();
+        services.AddScoped<IMeetingRequestRepository, MeetingRequestRepository>();
         services.AddScoped<ICareerAdvisorModuleContract, CareerAdvisorModuleContract>();
 
         return services;

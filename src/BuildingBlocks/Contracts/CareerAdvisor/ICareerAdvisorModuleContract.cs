@@ -1,3 +1,5 @@
+using GenclikMerkezi.SharedKernel.Results;
+
 namespace GenclikMerkezi.Contracts.CareerAdvisor;
 
 // The published, in-process contract other modules depend on instead of CareerAdvisor's own
@@ -9,4 +11,17 @@ namespace GenclikMerkezi.Contracts.CareerAdvisor;
 public interface ICareerAdvisorModuleContract
 {
     Task<IReadOnlyList<ActiveCareerAdvisorSummary>> GetActiveAdvisorsAsync(CancellationToken cancellationToken = default);
+
+    // Görev 5/ADR-022 §4: adayın kendi danışmanından görüşme talep etmesi (Candidate → CareerAdvisor
+    // yönü). candidateUserId, MeetingRequest.CandidateUserId'ye seed edilir - CareerAdvisor, Candidate
+    // modülünü sorgulayamadığı için ileride adaya bildirim gönderirken (tarih önerme/reddetme)
+    // Identity'nin GetUserProfileAsync contract'ı üzerinden bu id kullanılır.
+    Task<Result<Guid>> CreateMeetingRequestAsync(
+        Guid candidateCvId, Guid candidateUserId, Guid careerAdvisorId, CancellationToken cancellationToken = default);
+
+    // Görev 5/ADR-022 §4: aday, danışmanın önerdiği tarihi onaylar (yine Candidate → CareerAdvisor
+    // yönü). candidateUserId, MeetingRequest.CandidateUserId ile eşleşmezse Forbidden döner - çağıranın
+    // yalnızca kendi talebini onaylayabilmesini garanti eder.
+    Task<Result> ConfirmMeetingRequestAsync(
+        Guid meetingRequestId, Guid candidateUserId, CancellationToken cancellationToken = default);
 }

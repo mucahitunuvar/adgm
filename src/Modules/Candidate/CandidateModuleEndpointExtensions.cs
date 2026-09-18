@@ -3,6 +3,7 @@ using GenclikMerkezi.Modules.Candidate.Features.AddCandidateReference;
 using GenclikMerkezi.Modules.Candidate.Features.AddCertificate;
 using GenclikMerkezi.Modules.Candidate.Features.AddEducation;
 using GenclikMerkezi.Modules.Candidate.Features.AddExperience;
+using GenclikMerkezi.Modules.Candidate.Features.ConfirmMeeting;
 using GenclikMerkezi.Modules.Candidate.Features.ExportCandidateCvPdf;
 using GenclikMerkezi.Modules.Candidate.Features.GetCandidateCv;
 using GenclikMerkezi.Modules.Candidate.Features.GetCandidateCvContent;
@@ -12,6 +13,7 @@ using GenclikMerkezi.Modules.Candidate.Features.RemoveCandidateReference;
 using GenclikMerkezi.Modules.Candidate.Features.RemoveCertificate;
 using GenclikMerkezi.Modules.Candidate.Features.RemoveEducation;
 using GenclikMerkezi.Modules.Candidate.Features.RemoveExperience;
+using GenclikMerkezi.Modules.Candidate.Features.RequestMeeting;
 using GenclikMerkezi.Modules.Candidate.Features.SearchCandidates;
 using GenclikMerkezi.Modules.Candidate.Features.UpdateCandidateCvContactInfo;
 using GenclikMerkezi.Modules.Candidate.Features.UpdateCandidateCvContentSummary;
@@ -72,6 +74,10 @@ public static class CandidateModuleEndpointExtensions
 
         // Admin/advisor tarafı için candidate listesi
         SearchCandidatesEndpoint.Map(app);
+
+        // Görüşme talebi (Görev 5/ADR-022 §4)
+        RequestMeetingEndpoint.Map(app);
+        ConfirmMeetingEndpoint.Map(app);
 
         return app;
     }
