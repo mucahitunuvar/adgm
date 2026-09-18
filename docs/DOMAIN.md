@@ -833,11 +833,77 @@ seed listesi + Candidate tarafında opsiyonel referans + serbest metin fallback)
 Ülke/İl/İlçe, Dil ve Uyruk (Country) zaten mevcuttu, yeniden kullanıldı — bkz.
 §29.1 ReferenceData.
 
+## Aday Listeleme ve Filtreleme (CandidateSearchIndex)
+
+Admin ve CareerAdvisor'ın aday havuzunu listeleyip filtreleyebilmesi,
+`CandidateCv`/`CandidateCvContent`'e hiç dokunmayan, tamamen denormalize bir
+read-model olan `CandidateSearchIndex` üzerinden sağlanır (bkz. **ADR-020**).
+Bu tablo `CandidateCv.Id`'ye 1-1 bağlıdır ve şunları içerir: `FirstName`/
+`LastName` (görüntüleme için, orijinal büyük/küçük harfle), `FullNameNormalized`
+(arama için — bkz. aşağıdaki normalize notu), `Email`, `ProvinceId`,
+`DistrictId`, `CompletionPercentage`, `EducationLevelIds`/`SectorIds` (junction
+tablolar üzerinden — `CandidateCvContent`'in Eğitim/Deneyim koleksiyonlarındaki
+distinct id'ler), `UpdatedAtUtc`.
+
+Bu read-model, Profil Tamamlanma Yüzdesi ile **aynı senkron dispatch
+mekanizmasını** (yukarıdaki bölüm) kullanır — `CandidateCvUpdatedDomainEvent`/
+`CandidateCvContentUpdatedDomainEvent` tetiklendiğinde tek bir handler hem
+`CompletionPercentage`'ı yeniden hesaplar hem de bu read-model'i günceller, tek
+`SaveChangesAsync` içinde. Kayıt anında (`RegisterCandidateCommand`) da bir
+başlangıç satırı oluşturulur — aksi halde `CandidateCv.Create` hiç domain event
+fırlatmadığı için aday, ilk profil düzenlemesine kadar listelemede hiç
+görünmezdi.
+
+**Arama normalize kuralı:** `FullNameNormalized`, Türkçe İ/I/ı/i çakışmasını
+(ve diğer Türkçe karakterleri) tek bir kanonik harfe indirgeyip sonra
+`ToUpperInvariant()` uygulayan bir fonksiyonla üretilir — düz
+`ToUpperInvariant()` yeterli değildir, çünkü `"İ".ToLowerInvariant()` düz "i"
+değil, "i" + birleştirici nokta (2 karakter) üretir. Arama metni, karşılaştırma
+öncesi aynı fonksiyondan geçirilir.
+
+`GET /api/v1/candidates` (query: `searchText`, `provinceId`, `districtId`,
+`educationLevelId`, `sectorId`, `minCompletionPercentage`, `page`, `pageSize`)
+yalnızca Admin ve CareerAdvisor rolleri için açıktır; adayın kendisi kullanamaz.
+Sonuç satırındaki İl/İlçe **adı** (id değil), `IReferenceDataLookupReader`'a bu
+iş için eklenen `GetByIdsAsync` (toplu id→isim çözümleme) ile üretilir — mevcut
+`ListAsync`'in sayfa boyutu sınırı (max 100) İlçe'nin ~975 satırını
+kapsayamadığı için ayrı bir metot gerekti.
+
+CareerAdvisor ataması henüz kurulmadığından, CareerAdvisor şimdilik Admin ile
+aynı kapsamda (tüm adaylar) sonuç görür — bkz. aşağıdaki ertelenmiş noktalar.
+
+## CV PDF Export
+
+`GET /api/v1/candidates/{id}/cv/export` (bkz. **ADR-021**), bir adayın
+`CandidateCv` + `CandidateCvContent` verisini QuestPDF (Community License) ile
+sabit tasarımlı bir PDF'e dönüştürür. Bölüm sırası Candidate.md'yi izler:
+Header (Fotoğraf, Ad Soyad, Ünvan, İletişim, Sosyal Medya) → Kişisel Bilgiler
+(dolu ise Engellilik Bilgisi dahil) → Özet → Deneyim → Eğitim → Bilgisayar
+Bilgisi → Diller → Sertifikalar → Referanslar → Hobiler. Boş bir bölüm (ör. hiç
+sertifika yoksa) PDF'te hiç görünmez.
+
+**Net Maaş Beklentisi bu PDF'e hiçbir zaman dahil edilmez** — bu, yalnızca
+render aşamasında atlanan bir alan değil, PDF'i besleyen ara modelin
+(`CandidateCvPdfModel`) hiç sahip olmadığı bir alandır; yani PDF'e sızması
+yapısal olarak imkansızdır.
+
+Yetkilendirme, bu modülde ownership ile role-based kontrolün **birlikte**
+gerektiği ilk durumdur: adayın kendisi (yalnızca kendi CV'si), Admin veya
+CareerAdvisor. Fotoğraf, `IFileStorageService`'e eklenen `ReadAsync` (byte
+okuma — `GetUrlAsync`'ten farklı olarak bir URL değil, gömülecek byte'ları
+döner) ile okunur. CV'deki lookup alanları (Sektör, Eğitim Durumu, Dil, vb.),
+CandidateSearchIndex'in İl/İlçe çözümlemesiyle aynı `GetByIdsAsync` mekanizması
+kullanılarak görüntüleme adına çözümlenir. Üretim on-demand'dır, cache yoktur.
+
 ## Henüz Karara Bağlanmamış / Ertelenmiş Noktalar
 
 * Firma adı autocomplete (Employer modülü bağımlılığı) — ertelendi, ilerideki
   bir ADR'de ele alınacak.
-* CareerAdvisor ataması — CareerAdvisor modülü kurulunca aktifleşecek.
+* CareerAdvisor ataması — CareerAdvisor modülü kurulunca aktifleşecek; ADR-020
+  ileriye dönük not olarak, atamanın Admin'in manuel ataması yerine otomatik
+  dağıtım/load-balancing (ör. round-robin veya en az yüklü advisor'a atama) ile
+  yapılacağını belirtiyor — algoritma detayları CareerAdvisor modülünün kendi
+  ADR'sinde ele alınacak.
 
 ---
 

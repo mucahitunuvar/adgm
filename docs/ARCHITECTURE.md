@@ -369,13 +369,14 @@ Sorumlulukları:
 
 ## 8.2. Candidate
 
-Adayın CV bilgilerini yönetir. Kapsam ve tasarım kararları **ADR-018** (aggregate
-tasarımı, kayıt orkestrasyonu, profil tamamlanma read-model'i) ve **ADR-019**
-(dosya yükleme altyapısı) ile karara bağlanmıştır; iş kuralları için bkz.
-DOMAIN.md §20.1.
+Adayın CV bilgilerini yönetir. Kapsam ve tasarım kararları **ADR-018**
+(aggregate tasarımı, kayıt orkestrasyonu, profil tamamlanma read-model'i),
+**ADR-019** (dosya yükleme altyapısı), **ADR-020** (listeleme/filtreleme
+read-model'i) ve **ADR-021** (PDF export) ile karara bağlanmıştır; iş kuralları
+için bkz. DOMAIN.md §20.1.
 
-İki aggregate'e bölünmüştür (kendi `CandidateDbContext`'i altında, database-per-
-module):
+Üç aggregate/read-model'e bölünmüştür (kendi `CandidateDbContext`'i altında,
+database-per-module):
 
 ```text
 CandidateCv            (header — nadiren değişen, liste/arama ekranlarında
@@ -385,29 +386,54 @@ CandidateCv            (header — nadiren değişen, liste/arama ekranlarında
 CandidateCvContent      (detay — sık güncellenen, koleksiyon ağırlıklı: Deneyim,
                          Eğitim, Diller, Sertifikalar, Referanslar + Özet/
                          BilgisayarBilgisi/Hobiler/CvDosyası)
+
+CandidateSearchIndex    (read-model — tamamen denormalize, admin/advisor
+                         listeleme/filtreleme endpoint'i yalnızca buna sorgu
+                         atar, CandidateCv/CandidateCvContent'e hiç join yapmaz)
 ```
 
 Ayrım gerekçesi: liste/arama sorgularının `CandidateCvContent`'in ağır
 koleksiyonlarını join etmeden çalışabilmesi (bkz. ADR-018 Karar §1).
+`CandidateSearchIndex`, bu ayrımı bir adım öteye taşır: `CandidateCv`'nin
+kendisine bile dokunmadan (yalnızca kendi dar tablosuna bakarak) filtreli
+listeleme yapar (ADR-020).
 
 Diğer notlar:
 
 * Kayıt (`RegisterCandidateCommand`), Identity'nin public contract'ı üzerinden
   senkron `CreateUserAsync` çağrısı + telafi (compensation) ile orkestre edilir
   — cross-module erişim ADR-016 Decision 2 pattern'ini kullanır, Identity'nin
-  DbContext'ine doğrudan erişmez.
+  DbContext'ine doğrudan erişmez. Aynı orkestrasyon, `CandidateSearchIndex`'in
+  başlangıç satırını da oluşturur (aksi halde aday, ilk profil düzenlemesine
+  kadar listelemede görünmezdi — `CandidateCv.Create` domain event fırlatmaz).
 * Fotoğraf ve CV dosyası yüklemeleri SharedKernel'in `IFileStorageService`'i
   (ADR-019) üzerinden yapılır; modül kendi dosya sağlayıcısını implemente etmez.
-* `CompletionPercentage`, CAP/RabbitMQ Outbox'ı değil, modül-içi (in-process)
-  MediatR domain event dispatch'i ile güncellenir — CAP process başına tek
-  instance'a (Identity'nin `IdentityDbContext`'i) sabitlendiği için (ADR-014)
-  Candidate kendi transactional outbox'ını kuramaz; bu kısıt AGENTS.md §6
-  (Architectural Conflict Rule) kapsamında değerlendirilip bu şekilde çözülmüştür.
+  PDF export (ADR-021), aynı soyutlamaya eklenen `ReadAsync` ile fotoğrafın
+  byte'larını okuyup PDF'e gömer (`GetUrlAsync` yalnızca bir URL üretir, byte
+  değil).
+* `CompletionPercentage` **ve** `CandidateSearchIndex`, CAP/RabbitMQ Outbox'ı
+  değil, modül-içi (in-process) MediatR domain event dispatch'i ile güncellenir
+  — tek bir handler, `CandidateCvUpdatedDomainEvent`/
+  `CandidateCvContentUpdatedDomainEvent` tetiklendiğinde ikisini de aynı
+  `SaveChangesAsync` içinde günceller (ayrı bir handler/round-trip değil). CAP
+  process başına tek instance'a (Identity'nin `IdentityDbContext`'i)
+  sabitlendiği için (ADR-014) Candidate kendi transactional outbox'ını kuramaz;
+  bu kısıt AGENTS.md §6 (Architectural Conflict Rule) kapsamında
+  değerlendirilip bu şekilde çözülmüştür.
 * Yetkilendirme, kaynak sahipliği (resource ownership) üzerinden sunucu
   tarafında yapılır: bir aday yalnızca kendi `CandidateCv`'sine erişebilir
   (`ICurrentUserContext` — bkz. §34.1); Admin/CareerAdvisor için genel erişim,
   CareerAdvisor modülü kurulana kadar yalnızca liste/arama endpoint'inde rol
-  bazlı olarak sağlanır.
+  bazlı olarak sağlanır. PDF export endpoint'i, ownership **ve** role-based
+  kontrolü birlikte kullanan ilk endpoint'tir: rol claim'i `ICurrentUserContext`
+  yerine endpoint katmanında (`ClaimsPrincipal.IsInRole`) okunup handler'a düz
+  bir bool olarak geçirilir — `ICurrentUserContext`'in bilinçli minimal kapsamı
+  (ADR-017 Decision 2) genişletilmez.
+* Lookup id'lerinin görüntüleme adına isme çözümlenmesi (liste ekranındaki
+  İl/İlçe adı, PDF'teki Sektör/Eğitim Durumu/Dil vb.), `IReferenceDataLookupReader`'a
+  ADR-020 kapsamında eklenen `GetByIdsAsync` (toplu id→isim çözümleme) ile
+  yapılır — mevcut `ListAsync`'in sayfa boyutu sınırı (max 100) İlçe gibi
+  yüzlerce satırlı lookup'ları kapsayamadığı için ayrı bir metot gerekti.
 
 ---
 
