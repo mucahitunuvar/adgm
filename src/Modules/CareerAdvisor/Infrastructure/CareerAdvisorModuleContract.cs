@@ -1,6 +1,7 @@
 using GenclikMerkezi.Contracts.CareerAdvisor;
 using GenclikMerkezi.Modules.CareerAdvisor.Features.ConfirmMeetingRequest;
 using GenclikMerkezi.Modules.CareerAdvisor.Features.CreateMeetingRequest;
+using GenclikMerkezi.Modules.CareerAdvisor.Features.SendBulkNotification;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -33,5 +34,20 @@ public sealed class CareerAdvisorModuleContract(CareerAdvisorDbContext dbContext
         Guid meetingRequestId, Guid candidateUserId, CancellationToken cancellationToken = default)
     {
         return sender.Send(new ConfirmMeetingRequestCommand(meetingRequestId, candidateUserId), cancellationToken);
+    }
+
+    public async Task<Guid?> GetAdvisorIdByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.CareerAdvisors
+            .AsNoTracking()
+            .Where(a => a.UserId == userId && a.IsActive)
+            .Select(a => (Guid?)a.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task SendBulkNotificationAsync(
+        IReadOnlyList<Guid> candidateUserIds, string subject, string message, CancellationToken cancellationToken = default)
+    {
+        return sender.Send(new SendBulkNotificationCommand(candidateUserIds, subject, message), cancellationToken);
     }
 }

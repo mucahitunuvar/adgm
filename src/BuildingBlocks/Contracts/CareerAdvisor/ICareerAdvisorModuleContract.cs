@@ -24,4 +24,15 @@ public interface ICareerAdvisorModuleContract
     // yalnızca kendi talebini onaylayabilmesini garanti eder.
     Task<Result> ConfirmMeetingRequestAsync(
         Guid meetingRequestId, Guid candidateUserId, CancellationToken cancellationToken = default);
+
+    // Görev 8: Candidate modülünün, "bu kullanıcı aktif bir danışman mı" sorusunu sorması için -
+    // Candidate kendi CandidateCv.CareerAdvisorId verisini bu CareerAdvisorId'yle gruplar. null,
+    // kullanıcının aktif bir danışman olmadığı anlamına gelir.
+    Task<Guid?> GetAdvisorIdByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    // Görev 8/ADR-022 §6: "CareerAdvisor → Notification: toplu bildirim". candidateUserIds,
+    // çağıran modül (Candidate) tarafından zaten sahiplik doğrulaması yapılmış bir liste olarak
+    // gelir - CareerAdvisor bu listeyi tekrar doğrulamaz (Candidate verisini sorgulayamaz).
+    Task SendBulkNotificationAsync(
+        IReadOnlyList<Guid> candidateUserIds, string subject, string message, CancellationToken cancellationToken = default);
 }

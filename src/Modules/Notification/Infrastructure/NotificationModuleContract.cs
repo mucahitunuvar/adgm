@@ -37,4 +37,30 @@ public sealed class NotificationModuleContract(
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task SendBulkAsync(
+        IEnumerable<NotificationRecipient> recipients, string subject, string message, CancellationToken cancellationToken = default)
+    {
+        foreach (var recipient in recipients)
+        {
+            var emailNotification = EmailNotification.Create(recipient.Email, subject, message);
+
+            try
+            {
+                await emailSender.SendAsync(recipient.Email, subject, message, cancellationToken);
+                emailNotification.MarkSent();
+            }
+            catch (Exception ex)
+            {
+                emailNotification.MarkFailed(ex.Message);
+            }
+
+            emailNotificationRepository.Add(emailNotification);
+
+            var inAppNotification = InAppNotification.Create(recipient.UserId, message);
+            inAppNotificationRepository.Add(inAppNotification);
+        }
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
 }

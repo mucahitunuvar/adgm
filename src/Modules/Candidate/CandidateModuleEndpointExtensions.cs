@@ -15,6 +15,7 @@ using GenclikMerkezi.Modules.Candidate.Features.RemoveEducation;
 using GenclikMerkezi.Modules.Candidate.Features.RemoveExperience;
 using GenclikMerkezi.Modules.Candidate.Features.RequestMeeting;
 using GenclikMerkezi.Modules.Candidate.Features.SearchCandidates;
+using GenclikMerkezi.Modules.Candidate.Features.SendBulkCandidateNotification;
 using GenclikMerkezi.Modules.Candidate.Features.UpdateCandidateCvContactInfo;
 using GenclikMerkezi.Modules.Candidate.Features.UpdateCandidateCvContentSummary;
 using GenclikMerkezi.Modules.Candidate.Features.UpdateCandidateCvPersonalInfo;
@@ -78,6 +79,9 @@ public static class CandidateModuleEndpointExtensions
         // Görüşme talebi (Görev 5/ADR-022 §4)
         RequestMeetingEndpoint.Map(app);
         ConfirmMeetingEndpoint.Map(app);
+
+        // Toplu bildirim (Görev 8)
+        SendBulkCandidateNotificationEndpoint.Map(app);
 
         return app;
     }

@@ -11,12 +11,17 @@ public sealed class FakeIdentityService : IIdentityService
 
     public IdentityUserProfile? UserProfileResult { get; set; }
 
+    // Görev 8: çoklu-alıcı (bulk) senaryolarda her userId için farklı bir profil gerekir - tekil
+    // UserProfileResult (tüm çağrılara aynı sabit değeri döner) bunun için yetersiz kalır. Burada
+    // bulunamayan bir userId, geriye dönük uyumluluk için UserProfileResult'a düşer.
+    public Dictionary<Guid, IdentityUserProfile> UserProfilesById { get; } = [];
+
     public bool DeactivateUserAsyncCalled { get; private set; }
 
     public Guid? DeactivatedUserId { get; private set; }
 
     public Task<IdentityUserProfile?> GetUserProfileAsync(Guid userId, CancellationToken cancellationToken = default) =>
-        Task.FromResult(UserProfileResult);
+        Task.FromResult(UserProfilesById.TryGetValue(userId, out var profile) ? profile : UserProfileResult);
 
     public Task<Result<Guid>> CreateUserAsync(
         string email,

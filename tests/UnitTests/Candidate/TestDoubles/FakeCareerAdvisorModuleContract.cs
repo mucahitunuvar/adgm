@@ -11,9 +11,15 @@ public sealed class FakeCareerAdvisorModuleContract : ICareerAdvisorModuleContra
 
     public Result ConfirmMeetingRequestResult { get; set; } = Result.Success();
 
+    public Guid? AdvisorIdForCurrentUser { get; set; }
+
     public (Guid CandidateCvId, Guid CandidateUserId, Guid CareerAdvisorId)? CreateMeetingRequestCall { get; private set; }
 
     public (Guid MeetingRequestId, Guid CandidateUserId)? ConfirmMeetingRequestCall { get; private set; }
+
+    public Guid? GetAdvisorIdByUserIdCall { get; private set; }
+
+    public (IReadOnlyList<Guid> CandidateUserIds, string Subject, string Message)? SendBulkNotificationCall { get; private set; }
 
     public Task<IReadOnlyList<ActiveCareerAdvisorSummary>> GetActiveAdvisorsAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(ActiveAdvisors);
@@ -30,5 +36,18 @@ public sealed class FakeCareerAdvisorModuleContract : ICareerAdvisorModuleContra
     {
         ConfirmMeetingRequestCall = (meetingRequestId, candidateUserId);
         return Task.FromResult(ConfirmMeetingRequestResult);
+    }
+
+    public Task<Guid?> GetAdvisorIdByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        GetAdvisorIdByUserIdCall = userId;
+        return Task.FromResult(AdvisorIdForCurrentUser);
+    }
+
+    public Task SendBulkNotificationAsync(
+        IReadOnlyList<Guid> candidateUserIds, string subject, string message, CancellationToken cancellationToken = default)
+    {
+        SendBulkNotificationCall = (candidateUserIds, subject, message);
+        return Task.CompletedTask;
     }
 }

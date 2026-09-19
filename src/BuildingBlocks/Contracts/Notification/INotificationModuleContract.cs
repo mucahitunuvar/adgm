@@ -12,4 +12,9 @@ public interface INotificationModuleContract
 {
     Task SendAsync(
         Guid userId, string recipientEmail, string subject, string message, CancellationToken cancellationToken = default);
+
+    // Görev 8: aynı içerik birden çok alıcıya - tek tek SendAsync çağırmak yerine tek bir
+    // transaction/commit sınırında toplu işlenir.
+    Task SendBulkAsync(
+        IEnumerable<NotificationRecipient> recipients, string subject, string message, CancellationToken cancellationToken = default);
 }

@@ -1,0 +1,3 @@
+namespace GenclikMerkezi.Modules.Candidate.Features.SendBulkCandidateNotification;
+
+public sealed record SendBulkCandidateNotificationResponse(int RecipientCount);
