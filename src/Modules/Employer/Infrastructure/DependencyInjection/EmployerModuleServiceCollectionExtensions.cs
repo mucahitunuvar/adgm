@@ -1,3 +1,4 @@
+using GenclikMerkezi.Contracts.Employer;
 using GenclikMerkezi.Modules.Employer.Application.Abstractions;
 using GenclikMerkezi.Modules.Employer.Infrastructure.Persistence;
 using GenclikMerkezi.SharedKernel.Abstractions;
@@ -32,6 +33,7 @@ public static class EmployerModuleServiceCollectionExtensions
             (sp, _) => sp.GetRequiredService<EmployerDbContext>());
 
         services.AddScoped<ICompanyRepository, CompanyRepository>();
+        services.AddScoped<ICompanyModuleContract, CompanyModuleContract>();
 
         return services;
     }
