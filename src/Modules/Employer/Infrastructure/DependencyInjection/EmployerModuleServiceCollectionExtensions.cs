@@ -35,6 +35,7 @@ public static class EmployerModuleServiceCollectionExtensions
         services.AddScoped<ICompanyRepository, CompanyRepository>();
         services.AddScoped<ICompanyModuleContract, CompanyModuleContract>();
         services.AddScoped<IJobRepository, JobRepository>();
+        services.AddScoped<IPersonnelNeedRepository, PersonnelNeedRepository>();
 
         return services;
     }
