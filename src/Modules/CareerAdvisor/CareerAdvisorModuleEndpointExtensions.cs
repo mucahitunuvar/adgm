@@ -1,6 +1,7 @@
 using GenclikMerkezi.Modules.CareerAdvisor.Features.AddCandidateNote;
 using GenclikMerkezi.Modules.CareerAdvisor.Features.CreateCareerAdvisor;
 using GenclikMerkezi.Modules.CareerAdvisor.Features.GetCandidateNotes;
+using GenclikMerkezi.Modules.CareerAdvisor.Features.GetGeneralPool;
 using GenclikMerkezi.Modules.CareerAdvisor.Features.ProposeMeetingTime;
 using GenclikMerkezi.Modules.CareerAdvisor.Features.RejectMeetingRequest;
 using Microsoft.AspNetCore.Routing;
@@ -16,6 +17,7 @@ public static class CareerAdvisorModuleEndpointExtensions
         GetCandidateNotesEndpoint.Map(app);
         ProposeMeetingTimeEndpoint.Map(app);
         RejectMeetingRequestEndpoint.Map(app);
+        GetGeneralPoolEndpoint.Map(app);
 
         // DeactivateCareerAdvisorCommand'ın kendisi doğrudan bir HTTP endpoint'e bağlı değil (Görev 3/
         // ADR-022 §1): yeniden atamasız çıplak bir deaktivasyon, danışmana atanmış adayları "öksüz"
