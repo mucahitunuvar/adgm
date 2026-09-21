@@ -12,6 +12,8 @@ public sealed class EmployerDbContext(DbContextOptions<EmployerDbContext> option
 {
     public DbSet<Company> Companies => Set<Company>();
 
+    public DbSet<Job> Jobs => Set<Job>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(EmployerDbContext).Assembly);
