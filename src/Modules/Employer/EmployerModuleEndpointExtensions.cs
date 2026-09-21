@@ -7,6 +7,8 @@ using GenclikMerkezi.Modules.Employer.Features.GetCompany;
 using GenclikMerkezi.Modules.Employer.Features.GetJobsPendingReview;
 using GenclikMerkezi.Modules.Employer.Features.GetMyCompany;
 using GenclikMerkezi.Modules.Employer.Features.GetMyCompanyJobs;
+using GenclikMerkezi.Modules.Employer.Features.GetMyPersonnelNeeds;
+using GenclikMerkezi.Modules.Employer.Features.GetOwnPoolPersonnelNeeds;
 using GenclikMerkezi.Modules.Employer.Features.GetPublishedJobs;
 using GenclikMerkezi.Modules.Employer.Features.PoolPersonnelNeed;
 using GenclikMerkezi.Modules.Employer.Features.RegisterEmployer;
@@ -46,6 +48,8 @@ public static class EmployerModuleEndpointExtensions
         UpdatePersonnelNeedEndpoint.Map(app);
         SubmitPersonnelNeedEndpoint.Map(app);
         PoolPersonnelNeedEndpoint.Map(app);
+        GetMyPersonnelNeedsEndpoint.Map(app);
+        GetOwnPoolPersonnelNeedsEndpoint.Map(app);
 
         return app;
     }
