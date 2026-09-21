@@ -7,6 +7,8 @@ using GenclikMerkezi.Modules.Candidate;
 using GenclikMerkezi.Modules.Candidate.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.CareerAdvisor;
 using GenclikMerkezi.Modules.CareerAdvisor.Infrastructure.DependencyInjection;
+using GenclikMerkezi.Modules.Employer;
+using GenclikMerkezi.Modules.Employer.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.Identity;
 using GenclikMerkezi.Modules.Identity.Infrastructure;
 using GenclikMerkezi.Modules.Identity.Infrastructure.DependencyInjection;
@@ -28,7 +30,8 @@ builder.Services.AddSharedApplicationServices(
     typeof(NotificationModuleMarker).Assembly,
     typeof(ReferenceDataModuleMarker).Assembly,
     typeof(CandidateModuleMarker).Assembly,
-    typeof(CareerAdvisorModuleMarker).Assembly);
+    typeof(CareerAdvisorModuleMarker).Assembly,
+    typeof(EmployerModuleMarker).Assembly);
 
 // ADR-017: ICacheService (and, once registered, IUserScopedCacheService) - shared, not per-module,
 // so it is registered here rather than inside any single AddXModule().
@@ -42,6 +45,7 @@ builder.Services.AddNotificationModule(builder.Configuration);
 builder.Services.AddReferenceDataModule(builder.Configuration);
 builder.Services.AddCandidateModule(builder.Configuration);
 builder.Services.AddCareerAdvisorModule(builder.Configuration);
+builder.Services.AddEmployerModule(builder.Configuration);
 
 // Host-seviyesi çok-modüllü orkestrasyon (ADR-022 §1) - herhangi bir modüle ait değil, bu yüzden
 // modüllerin AddXModule() metotlarının hiçbirinde değil, burada kaydediliyor.
@@ -122,6 +126,7 @@ app.MapReferenceDataModuleEndpoints();
 app.MapCandidateModuleEndpoints();
 app.MapCareerAdvisorModuleEndpoints();
 app.MapAdminCareerAdvisorEndpoints();
+app.MapEmployerModuleEndpoints();
 
 app.Run();
 
