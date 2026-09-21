@@ -13,6 +13,7 @@ using GenclikMerkezi.Modules.Employer.Features.RejectCompany;
 using GenclikMerkezi.Modules.Employer.Features.RejectJob;
 using GenclikMerkezi.Modules.Employer.Features.RequestJobRevision;
 using GenclikMerkezi.Modules.Employer.Features.SubmitJobForReview;
+using GenclikMerkezi.Modules.Employer.Features.SubmitPersonnelNeed;
 using GenclikMerkezi.Modules.Employer.Features.UpdateJob;
 using GenclikMerkezi.Modules.Employer.Features.UpdatePersonnelNeed;
 using Microsoft.AspNetCore.Routing;
@@ -42,6 +43,7 @@ public static class EmployerModuleEndpointExtensions
 
         CreatePersonnelNeedEndpoint.Map(app);
         UpdatePersonnelNeedEndpoint.Map(app);
+        SubmitPersonnelNeedEndpoint.Map(app);
 
         return app;
     }
