@@ -1,5 +1,6 @@
 using GenclikMerkezi.Modules.Candidate.Infrastructure;
 using GenclikMerkezi.Modules.CareerAdvisor.Infrastructure;
+using GenclikMerkezi.Modules.Employer.Infrastructure;
 using GenclikMerkezi.Modules.Identity;
 using GenclikMerkezi.Modules.Identity.Application.Abstractions;
 using GenclikMerkezi.Modules.Identity.Domain;
@@ -36,6 +37,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     private readonly string _referenceDataDatabaseName = $"GenclikMerkezi.ReferenceData.Test.{Guid.NewGuid():N}";
     private readonly string _candidateDatabaseName = $"GenclikMerkezi.Candidate.Test.{Guid.NewGuid():N}";
     private readonly string _careerAdvisorDatabaseName = $"GenclikMerkezi.CareerAdvisor.Test.{Guid.NewGuid():N}";
+    private readonly string _employerDatabaseName = $"GenclikMerkezi.Employer.Test.{Guid.NewGuid():N}";
 
     private string IdentityConnectionString =>
         $"{LocalDbServer}Database={_identityDatabaseName};";
@@ -58,6 +60,12 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     protected virtual string CareerAdvisorConnectionString =>
         $"{LocalDbServer}Database={_careerAdvisorDatabaseName};";
 
+    // Overridable so BrokenEmployerDatabaseWebApplicationFactory can point this at an unreachable
+    // server instead, to test RegisterEmployerCommand's compensation path against a real
+    // (deliberately broken) connection rather than a mock.
+    protected virtual string EmployerConnectionString =>
+        $"{LocalDbServer}Database={_employerDatabaseName};";
+
     public FakeEmailSender EmailSender { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -73,6 +81,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("ConnectionStrings:ReferenceDataDatabase", ReferenceDataConnectionString);
         builder.UseSetting("ConnectionStrings:CandidateDatabase", CandidateConnectionString);
         builder.UseSetting("ConnectionStrings:CareerAdvisorDatabase", CareerAdvisorConnectionString);
+        builder.UseSetting("ConnectionStrings:EmployerDatabase", EmployerConnectionString);
         builder.UseSetting("Jwt:Issuer", "GenclikMerkezi.Tests");
         builder.UseSetting("Jwt:Audience", "GenclikMerkezi.Tests");
         builder.UseSetting("Jwt:SigningKey", "integration-test-signing-key-do-not-use-in-prod");
@@ -87,6 +96,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             scope.ServiceProvider.GetRequiredService<ReferenceDataDbContext>().Database.EnsureCreated();
             EnsureCandidateDatabaseCreated(scope.ServiceProvider);
             EnsureCareerAdvisorDatabaseCreated(scope.ServiceProvider);
+            EnsureEmployerDatabaseCreated(scope.ServiceProvider);
         });
 
         // Runs after Program.cs's own AddNotificationModule() registration, so this replaces the
@@ -110,6 +120,13 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     protected virtual void EnsureCareerAdvisorDatabaseCreated(IServiceProvider services)
     {
         services.GetRequiredService<CareerAdvisorDbContext>().Database.EnsureCreated();
+    }
+
+    // Overridden by BrokenEmployerDatabaseWebApplicationFactory to no-op, same reasoning as
+    // EnsureCandidateDatabaseCreated above.
+    protected virtual void EnsureEmployerDatabaseCreated(IServiceProvider services)
+    {
+        services.GetRequiredService<EmployerDbContext>().Database.EnsureCreated();
     }
 
     // Admin cannot be created through the public register endpoint (RegisterUserCommandValidator
@@ -156,6 +173,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         DropDatabase(_referenceDataDatabaseName);
         DropDatabase(_candidateDatabaseName);
         DropDatabase(_careerAdvisorDatabaseName);
+        DropDatabase(_employerDatabaseName);
     }
 
     // Best-effort cleanup of the throwaway LocalDB databases - EF Core's connection pool may
