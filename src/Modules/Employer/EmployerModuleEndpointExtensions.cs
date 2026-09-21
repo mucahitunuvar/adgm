@@ -5,6 +5,7 @@ using GenclikMerkezi.Modules.Employer.Features.GetCompany;
 using GenclikMerkezi.Modules.Employer.Features.GetMyCompany;
 using GenclikMerkezi.Modules.Employer.Features.RegisterEmployer;
 using GenclikMerkezi.Modules.Employer.Features.RejectCompany;
+using GenclikMerkezi.Modules.Employer.Features.SubmitJobForReview;
 using GenclikMerkezi.Modules.Employer.Features.UpdateJob;
 using Microsoft.AspNetCore.Routing;
 
@@ -23,6 +24,7 @@ public static class EmployerModuleEndpointExtensions
 
         CreateJobEndpoint.Map(app);
         UpdateJobEndpoint.Map(app);
+        SubmitJobForReviewEndpoint.Map(app);
 
         return app;
     }
