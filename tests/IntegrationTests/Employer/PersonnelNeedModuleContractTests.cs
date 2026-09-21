@@ -4,11 +4,14 @@ using System.Net.Http.Json;
 using GenclikMerkezi.Contracts.Employer;
 using GenclikMerkezi.IntegrationTests.Identity;
 using GenclikMerkezi.Modules.CareerAdvisor.Features.CreateCareerAdvisor;
+using GenclikMerkezi.Modules.Employer;
 using GenclikMerkezi.Modules.Employer.Application.Abstractions;
 using GenclikMerkezi.Modules.Employer.Domain;
 using GenclikMerkezi.Modules.Employer.Features.CreatePersonnelNeed;
 using GenclikMerkezi.Modules.Employer.Features.RegisterEmployer;
 using GenclikMerkezi.Modules.Identity.Features.Login;
+using GenclikMerkezi.SharedKernel.Abstractions;
+using GenclikMerkezi.SharedKernel.Results;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GenclikMerkezi.IntegrationTests.Employer;
@@ -147,9 +150,60 @@ public class PersonnelNeedModuleContractTests : IClassFixture<CustomWebApplicati
         using var scope = _factory.Services.CreateScope();
         var contract = scope.ServiceProvider.GetRequiredService<IPersonnelNeedModuleContract>();
 
-        var generalPool = await contract.GetGeneralPoolAsync();
+        var generalPool = await contract.GetGeneralPoolAsync(new PagedRequest());
 
-        Assert.Contains(generalPool, p => p.Id == personnelNeedId);
+        Assert.Contains(generalPool.Items, p => p.Id == personnelNeedId);
+    }
+
+    // HTTP akışı (register -> en-az-yüklü-danışman ataması -> pool) yerine repository'ler doğrudan
+    // DI'dan çözülüp domain metodları çağrılıyor (SyncCandidateReadModelsFlowTests deseni) - bu testin
+    // amacı yalnızca GetGeneralPoolAsync'in sayfalama/sıralama davranışı, danışman ataması değil; HTTP
+    // akışını kullanmak JobReviewFlowTests'te görülen en-az-yüklü-danışman "mayını"na (paylaşılan
+    // CustomWebApplicationFactory'de başka testlerin bıraktığı danışmanlar) gereksiz yere maruz bırakırdı.
+    [Fact]
+    public async Task GetGeneralPoolAsync_PagesResults_NewestFirst()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var companyRepository = scope.ServiceProvider.GetRequiredService<ICompanyRepository>();
+        var personnelNeedRepository = scope.ServiceProvider.GetRequiredService<IPersonnelNeedRepository>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredKeyedService<IUnitOfWork>(EmployerModuleMarker.UnitOfWorkKey);
+        var contract = scope.ServiceProvider.GetRequiredService<IPersonnelNeedModuleContract>();
+
+        var personnelNeedIds = new List<Guid>();
+        var pooledAtUtc = DateTime.UtcNow;
+
+        for (var i = 0; i < 3; i++)
+        {
+            var company = Company.Create(
+                Guid.NewGuid(), $"Acme {i} A.Ş.", Guid.NewGuid(), null, null, null, Guid.NewGuid(), Guid.NewGuid(),
+                Guid.NewGuid(), "Adres", null, "Ad", "Soyad", $"firma{Guid.NewGuid():N}@example.com", "05550000000",
+                Guid.NewGuid(), Random.Shared.NextInt64(1_000_000_000L, 9_999_999_999L).ToString(), false, null,
+                DateTime.UtcNow);
+            companyRepository.Add(company);
+
+            var personnelNeed = PersonnelNeed.Create(
+                company.Id, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 3, Guid.NewGuid(),
+                Guid.NewGuid(), null, [], [], [], [], DateTime.UtcNow);
+            personnelNeed.Submit();
+            // Her birine artan bir PooledAtUtc veriliyor ki "en yeni önce" sıralaması deterministik test edilebilsin.
+            personnelNeed.PoolToGeneral(Guid.NewGuid(), pooledAtUtc.AddMinutes(i));
+            personnelNeedRepository.Add(personnelNeed);
+
+            personnelNeedIds.Add(personnelNeed.Id);
+        }
+
+        await unitOfWork.SaveChangesAsync(CancellationToken.None);
+
+        var firstPage = await contract.GetGeneralPoolAsync(new PagedRequest { Page = 1, PageSize = 2 });
+
+        Assert.Equal(2, firstPage.Items.Count);
+        Assert.True(firstPage.TotalCount >= 3);
+        Assert.Equal(1, firstPage.Page);
+        Assert.Equal(2, firstPage.PageSize);
+        Assert.True(firstPage.HasNextPage);
+
+        // En yeni önce (PooledAtUtc descending): en son havuza atılan (personnelNeedIds[2]) ilk sayfada olmalı.
+        Assert.Contains(firstPage.Items, p => p.Id == personnelNeedIds[2]);
     }
 
     [Fact]

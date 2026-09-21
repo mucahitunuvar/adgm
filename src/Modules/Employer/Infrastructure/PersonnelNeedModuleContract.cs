@@ -1,3 +1,4 @@
+using GenclikMerkezi.BuildingBlocks.Infrastructure.Persistence;
 using GenclikMerkezi.Contracts.Employer;
 using GenclikMerkezi.Modules.Employer.Domain;
 using GenclikMerkezi.Modules.Employer.Features.ClosePersonnelNeed;
@@ -13,15 +14,17 @@ namespace GenclikMerkezi.Modules.Employer.Infrastructure;
 // (CreateMeetingRequestAsync deseni).
 public sealed class PersonnelNeedModuleContract(EmployerDbContext dbContext, ISender sender) : IPersonnelNeedModuleContract
 {
-    public async Task<IReadOnlyList<PersonnelNeedSummary>> GetGeneralPoolAsync(CancellationToken cancellationToken = default)
+    public Task<PagedResult<PersonnelNeedSummary>> GetGeneralPoolAsync(
+        PagedRequest request, CancellationToken cancellationToken = default)
     {
-        return await dbContext.PersonnelNeeds
+        return dbContext.PersonnelNeeds
             .AsNoTracking()
             .Where(p => p.Status == PersonnelNeedStatus.GenelHavuzda)
+            .OrderByDescending(p => p.PooledAtUtc)
             .Select(p => new PersonnelNeedSummary(
                 p.Id, p.CompanyId, p.EmploymentTypeId, p.WorkLocationTypeId, p.PositionId, p.DepartmentId,
                 p.Quantity, p.ProvinceId, p.ExperienceLevelId, p.DetailsText, p.PooledByAdvisorId, p.PooledAtUtc))
-            .ToListAsync(cancellationToken);
+            .ToPagedResultAsync(request, cancellationToken);
     }
 
     public Task<Result> CloseAsync(
