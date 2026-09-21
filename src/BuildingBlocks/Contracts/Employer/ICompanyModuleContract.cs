@@ -11,4 +11,10 @@ public interface ICompanyModuleContract
     Task<CompanySummary?> GetCompanyByIdAsync(Guid companyId, CancellationToken cancellationToken = default);
 
     Task<Guid?> GetCareerAdvisorIdForCompanyAsync(Guid companyId, CancellationToken cancellationToken = default);
+
+    // CareerAdvisor Görev 6: Genel Havuz sayfasının bir sayfadaki distinct CompanyId kümesini toplu
+    // çözmesi için - IReferenceDataLookupReader.GetByIdsAsync ile aynı semantik: bulunamayan id'ler
+    // sonuçta sessizce yok, hata fırlatmaz.
+    Task<IReadOnlyCollection<CompanySummary>> GetCompaniesByIdsAsync(
+        IReadOnlyCollection<Guid> companyIds, CancellationToken cancellationToken = default);
 }

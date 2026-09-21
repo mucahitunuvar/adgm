@@ -24,4 +24,14 @@ public sealed class CompanyModuleContract(EmployerDbContext dbContext) : ICompan
             .Select(c => c.CareerAdvisorId)
             .FirstOrDefaultAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyCollection<CompanySummary>> GetCompaniesByIdsAsync(
+        IReadOnlyCollection<Guid> companyIds, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Companies
+            .AsNoTracking()
+            .Where(c => companyIds.Contains(c.Id))
+            .Select(c => new CompanySummary(c.Id, c.Name, c.CareerAdvisorId))
+            .ToListAsync(cancellationToken);
+    }
 }
