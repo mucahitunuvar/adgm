@@ -1,5 +1,7 @@
 using GenclikMerkezi.Modules.Employer.Features.ApproveCompany;
 using GenclikMerkezi.Modules.Employer.Features.DeactivateCompany;
+using GenclikMerkezi.Modules.Employer.Features.GetCompany;
+using GenclikMerkezi.Modules.Employer.Features.GetMyCompany;
 using GenclikMerkezi.Modules.Employer.Features.RegisterEmployer;
 using GenclikMerkezi.Modules.Employer.Features.RejectCompany;
 using Microsoft.AspNetCore.Routing;
@@ -14,6 +16,8 @@ public static class EmployerModuleEndpointExtensions
         ApproveCompanyEndpoint.Map(app);
         RejectCompanyEndpoint.Map(app);
         DeactivateCompanyEndpoint.Map(app);
+        GetCompanyEndpoint.Map(app);
+        GetMyCompanyEndpoint.Map(app);
 
         return app;
     }
