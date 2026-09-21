@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Employer.Domain;
+using GenclikMerkezi.SharedKernel.Domain;
 
 namespace GenclikMerkezi.UnitTests.Employer.Domain;
 
@@ -138,6 +139,21 @@ public class CompanyTests
         company.AssignCareerAdvisor(newCareerAdvisorId);
 
         Assert.Equal(newCareerAdvisorId, company.CareerAdvisorId);
+    }
+
+    // Görev 4: Company hiçbir zaman domain event fırlatmıyor (Görev 1'de kurulan senkron/event-free
+    // tasarım) - CandidateCv.SetPhoto'nun aksine SetLogo bunu bilinçli olarak ihlal etmez.
+    [Fact]
+    public void SetLogo_DoesNotRaiseDomainEvent()
+    {
+        var company = CreateCompany();
+        var logo = FileAttachment.Create(
+            "employer-logos/2026/09/21/logo.png", "logo.png", "image/png", 1024, DateTime.UtcNow, "Company", company.Id);
+
+        company.SetLogo(logo);
+
+        Assert.Equal(logo, company.Logo);
+        Assert.Empty(company.DomainEvents);
     }
 
     private static Company TransitionTo(CompanyStatus status)

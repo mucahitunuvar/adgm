@@ -19,6 +19,18 @@ public sealed class CompanyConfiguration : IEntityTypeConfiguration<Company>
         builder.Property(c => c.CareerAdvisorId);
 
         // Firma Bilgileri
+        builder.OwnsOne(c => c.Logo, logo =>
+        {
+            logo.ToTable("Companies");
+            logo.Property(l => l.FileKey).HasColumnName("LogoFileKey").HasMaxLength(500);
+            logo.Property(l => l.OriginalFileName).HasColumnName("LogoOriginalFileName").HasMaxLength(260);
+            logo.Property(l => l.ContentType).HasColumnName("LogoContentType").HasMaxLength(100);
+            logo.Property(l => l.SizeInBytes).HasColumnName("LogoSizeInBytes");
+            logo.Property(l => l.UploadedAtUtc).HasColumnName("LogoUploadedAtUtc");
+            logo.Property(l => l.OwnerEntityType).HasColumnName("LogoOwnerEntityType").HasMaxLength(100);
+            logo.Property(l => l.OwnerEntityId).HasColumnName("LogoOwnerEntityId");
+        });
+
         builder.Property(c => c.Name).HasMaxLength(200).IsRequired();
         builder.Property(c => c.SectorId).IsRequired();
         builder.Property(c => c.FoundedYear);

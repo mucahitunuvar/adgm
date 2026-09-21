@@ -19,6 +19,7 @@ using GenclikMerkezi.Modules.Employer.Features.SubmitJobForReview;
 using GenclikMerkezi.Modules.Employer.Features.SubmitPersonnelNeed;
 using GenclikMerkezi.Modules.Employer.Features.UpdateJob;
 using GenclikMerkezi.Modules.Employer.Features.UpdatePersonnelNeed;
+using GenclikMerkezi.Modules.Employer.Features.UploadCompanyLogo;
 using Microsoft.AspNetCore.Routing;
 
 namespace GenclikMerkezi.Modules.Employer;
@@ -33,6 +34,7 @@ public static class EmployerModuleEndpointExtensions
         DeactivateCompanyEndpoint.Map(app);
         GetCompanyEndpoint.Map(app);
         GetMyCompanyEndpoint.Map(app);
+        UploadCompanyLogoEndpoint.Map(app);
 
         CreateJobEndpoint.Map(app);
         UpdateJobEndpoint.Map(app);

@@ -16,6 +16,8 @@ public sealed class Company : AggregateRoot
     public Guid? CareerAdvisorId { get; private set; }
 
     // Firma Bilgileri
+    public FileAttachment? Logo { get; private set; }
+
     public string Name { get; private set; }
 
     public Guid SectorId { get; private set; }
@@ -213,5 +215,13 @@ public sealed class Company : AggregateRoot
     public void AssignCareerAdvisor(Guid? careerAdvisorId)
     {
         CareerAdvisorId = careerAdvisorId;
+    }
+
+    // CandidateCv.SetPhoto'nun aksine domain event fırlatmaz (Görev 4): Company hiçbir zaman domain
+    // event fırlatmıyor (Görev 1'de kurulan senkron/event-free tasarım, Employer Outbox kullanmıyor) -
+    // yalnızca alanı set eder.
+    public void SetLogo(FileAttachment? logo)
+    {
+        Logo = logo;
     }
 }
