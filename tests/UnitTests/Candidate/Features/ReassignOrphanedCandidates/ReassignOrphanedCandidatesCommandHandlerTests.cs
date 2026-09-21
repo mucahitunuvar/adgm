@@ -30,7 +30,8 @@ public class ReassignOrphanedCandidatesCommandHandlerTests
     {
         var deactivatedAdvisorId = Guid.NewGuid();
         var onlyActiveAdvisorId = Guid.NewGuid();
-        _careerAdvisorModuleContract.ActiveAdvisors = [new ActiveCareerAdvisorSummary(onlyActiveAdvisorId)];
+        _careerAdvisorModuleContract.ActiveAdvisors =
+            [new ActiveCareerAdvisorSummary(onlyActiveAdvisorId, Guid.NewGuid(), "advisor@example.com")];
 
         var orphan1 = GenclikMerkezi.Modules.Candidate.Domain.CandidateCv.Create(
             Guid.NewGuid(), "A", "A", "a1@example.com", null, deactivatedAdvisorId);
@@ -56,8 +57,8 @@ public class ReassignOrphanedCandidatesCommandHandlerTests
         var advisorBId = Guid.NewGuid();
         _careerAdvisorModuleContract.ActiveAdvisors =
         [
-            new ActiveCareerAdvisorSummary(advisorAId),
-            new ActiveCareerAdvisorSummary(advisorBId),
+            new ActiveCareerAdvisorSummary(advisorAId, Guid.NewGuid(), "advisor-a@example.com"),
+            new ActiveCareerAdvisorSummary(advisorBId, Guid.NewGuid(), "advisor-b@example.com"),
         ];
 
         var orphans = new[]

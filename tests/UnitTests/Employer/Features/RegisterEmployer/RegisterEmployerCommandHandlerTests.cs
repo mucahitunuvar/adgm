@@ -82,8 +82,8 @@ public class RegisterEmployerCommandHandlerTests
         var idleAdvisorId = Guid.NewGuid();
         _careerAdvisorModuleContract.ActiveAdvisors =
         [
-            new ActiveCareerAdvisorSummary(busyAdvisorId),
-            new ActiveCareerAdvisorSummary(idleAdvisorId),
+            new ActiveCareerAdvisorSummary(busyAdvisorId, Guid.NewGuid(), "advisor-busy@example.com"),
+            new ActiveCareerAdvisorSummary(idleAdvisorId, Guid.NewGuid(), "advisor-idle@example.com"),
         ];
 
         // busyAdvisorId already has two existing (non-rejected/deactivated) companies, idleAdvisorId has none.

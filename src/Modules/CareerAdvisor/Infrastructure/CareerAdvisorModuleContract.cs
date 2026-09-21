@@ -20,7 +20,7 @@ public sealed class CareerAdvisorModuleContract(CareerAdvisorDbContext dbContext
         return await dbContext.CareerAdvisors
             .AsNoTracking()
             .Where(a => a.IsActive)
-            .Select(a => new ActiveCareerAdvisorSummary(a.Id))
+            .Select(a => new ActiveCareerAdvisorSummary(a.Id, a.UserId, a.Email))
             .ToListAsync(cancellationToken);
     }
 
