@@ -3,7 +3,10 @@ using GenclikMerkezi.Modules.Employer.Features.ApproveJob;
 using GenclikMerkezi.Modules.Employer.Features.CreateJob;
 using GenclikMerkezi.Modules.Employer.Features.DeactivateCompany;
 using GenclikMerkezi.Modules.Employer.Features.GetCompany;
+using GenclikMerkezi.Modules.Employer.Features.GetJobsPendingReview;
 using GenclikMerkezi.Modules.Employer.Features.GetMyCompany;
+using GenclikMerkezi.Modules.Employer.Features.GetMyCompanyJobs;
+using GenclikMerkezi.Modules.Employer.Features.GetPublishedJobs;
 using GenclikMerkezi.Modules.Employer.Features.RegisterEmployer;
 using GenclikMerkezi.Modules.Employer.Features.RejectCompany;
 using GenclikMerkezi.Modules.Employer.Features.RejectJob;
@@ -31,6 +34,9 @@ public static class EmployerModuleEndpointExtensions
         ApproveJobEndpoint.Map(app);
         RejectJobEndpoint.Map(app);
         RequestJobRevisionEndpoint.Map(app);
+        GetPublishedJobsEndpoint.Map(app);
+        GetMyCompanyJobsEndpoint.Map(app);
+        GetJobsPendingReviewEndpoint.Map(app);
 
         return app;
     }
