@@ -49,7 +49,7 @@ public class RecordInterviewResultCommandHandlerTests
         var (interview, _, _) = CreateScheduledInterviewForAdvisor(advisorId);
 
         var result = await CreateHandler().Handle(
-            new RecordInterviewResultCommand(interview.Id, InterviewResult.Olumlu, "İyi geçti"), CancellationToken.None);
+            new RecordInterviewResultCommand(interview.Id, "Olumlu", "İyi geçti"), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(InterviewStatus.Tamamlandi, interview.Status);
@@ -69,7 +69,7 @@ public class RecordInterviewResultCommandHandlerTests
         var (interview, _, _) = CreateScheduledInterviewForAdvisor(organizingAdvisorId);
 
         var result = await CreateHandler().Handle(
-            new RecordInterviewResultCommand(interview.Id, InterviewResult.Olumlu, null), CancellationToken.None);
+            new RecordInterviewResultCommand(interview.Id, "Olumlu", null), CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Forbidden, result.Error.Type);
@@ -88,7 +88,7 @@ public class RecordInterviewResultCommandHandlerTests
         _interviewRepository.Add(interview);
 
         var result = await CreateHandler().Handle(
-            new RecordInterviewResultCommand(interview.Id, InterviewResult.Olumlu, null), CancellationToken.None);
+            new RecordInterviewResultCommand(interview.Id, "Olumlu", null), CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Conflict, result.Error.Type);

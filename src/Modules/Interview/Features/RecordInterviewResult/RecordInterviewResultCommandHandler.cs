@@ -3,6 +3,7 @@ using GenclikMerkezi.Contracts.CareerAdvisor;
 using GenclikMerkezi.Contracts.Employer;
 using GenclikMerkezi.Contracts.Notification;
 using GenclikMerkezi.Modules.Interview.Application.Abstractions;
+using GenclikMerkezi.Modules.Interview.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
@@ -41,7 +42,8 @@ public sealed class RecordInterviewResultCommandHandler(
                 "Interview.NotOrganizingAdvisor", "Only the interview's organizing career advisor may record its result."));
         }
 
-        var recordResult = interview.RecordResult(request.Outcome, request.ResultNotes, DateTime.UtcNow);
+        var outcome = Enum.Parse<InterviewResult>(request.Outcome, ignoreCase: true);
+        var recordResult = interview.RecordResult(outcome, request.ResultNotes, DateTime.UtcNow);
 
         if (recordResult.IsFailure)
         {
