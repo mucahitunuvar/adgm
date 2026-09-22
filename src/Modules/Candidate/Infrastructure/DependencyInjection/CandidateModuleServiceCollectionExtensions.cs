@@ -1,3 +1,4 @@
+using GenclikMerkezi.Contracts.Candidate;
 using GenclikMerkezi.Modules.Candidate.Application.Abstractions;
 using GenclikMerkezi.Modules.Candidate.Infrastructure.Pdf;
 using GenclikMerkezi.Modules.Candidate.Infrastructure.Persistence;
@@ -43,6 +44,7 @@ public static class CandidateModuleServiceCollectionExtensions
         services.AddScoped<ICandidateCvContentRepository, CandidateCvContentRepository>();
         services.AddScoped<ICandidateSearchIndexRepository, CandidateSearchIndexRepository>();
         services.AddScoped<ICandidateCvPdfExportService, QuestPdfCandidateCvExportService>();
+        services.AddScoped<ICandidateModuleContract, CandidateModuleContract>();
 
         return services;
     }
