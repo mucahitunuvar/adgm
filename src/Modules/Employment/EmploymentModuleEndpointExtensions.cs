@@ -1,3 +1,4 @@
+using GenclikMerkezi.Modules.Employment.Features.AddEmploymentNote;
 using GenclikMerkezi.Modules.Employment.Features.CreateEmployment;
 using GenclikMerkezi.Modules.Employment.Features.EndEmployment;
 using Microsoft.AspNetCore.Routing;
@@ -10,6 +11,7 @@ public static class EmploymentModuleEndpointExtensions
     {
         CreateEmploymentEndpoint.Map(app);
         EndEmploymentEndpoint.Map(app);
+        AddEmploymentNoteEndpoint.Map(app);
 
         return app;
     }
