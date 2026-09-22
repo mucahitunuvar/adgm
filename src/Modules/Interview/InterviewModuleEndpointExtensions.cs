@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Interview.Features.CancelInterview;
+using GenclikMerkezi.Modules.Interview.Features.RecordInterviewResult;
 using GenclikMerkezi.Modules.Interview.Features.RequestInterviewAsCandidate;
 using GenclikMerkezi.Modules.Interview.Features.RequestInterviewAsEmployer;
 using GenclikMerkezi.Modules.Interview.Features.ScheduleInterview;
@@ -14,6 +15,7 @@ public static class InterviewModuleEndpointExtensions
         RequestInterviewAsEmployerEndpoint.Map(app);
         ScheduleInterviewEndpoint.Map(app);
         CancelInterviewEndpoint.Map(app);
+        RecordInterviewResultEndpoint.Map(app);
 
         return app;
     }
