@@ -27,6 +27,24 @@ public sealed class PersonnelNeedModuleContract(EmployerDbContext dbContext, ISe
             .ToPagedResultAsync(request, cancellationToken);
     }
 
+    public Task<PersonnelNeedSummary?> GetByIdAsync(Guid personnelNeedId, CancellationToken cancellationToken = default)
+    {
+        return dbContext.PersonnelNeeds
+            .AsNoTracking()
+            .Where(p => p.Id == personnelNeedId)
+            .Select(p => new PersonnelNeedSummary(
+                p.Id, p.CompanyId, p.EmploymentTypeId, p.WorkLocationTypeId, p.PositionId, p.DepartmentId,
+                p.Quantity, p.ProvinceId, p.ExperienceLevelId, p.DetailsText, p.PooledByAdvisorId, p.PooledAtUtc))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<bool> IsInGeneralPoolAsync(Guid personnelNeedId, CancellationToken cancellationToken = default)
+    {
+        return dbContext.PersonnelNeeds
+            .AsNoTracking()
+            .AnyAsync(p => p.Id == personnelNeedId && p.Status == PersonnelNeedStatus.GenelHavuzda, cancellationToken);
+    }
+
     public Task<Result> CloseAsync(
         Guid personnelNeedId, Guid closedByAdvisorId, Guid? fulfilledByCandidateCvId, CancellationToken cancellationToken = default)
     {
