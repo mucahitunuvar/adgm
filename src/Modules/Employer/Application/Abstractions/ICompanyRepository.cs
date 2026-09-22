@@ -14,5 +14,11 @@ public interface ICompanyRepository
     // (GroupBy boş grup döndürmez) - çağıran taraf eksik anahtarı 0 olarak ele almalı.
     Task<IReadOnlyDictionary<Guid, int>> GetCompanyCountsByCareerAdvisorAsync(CancellationToken cancellationToken = default);
 
+    // Danışman deaktive edildiğinde ona atanmış tüm firmaları bulup yeniden atamak için
+    // (ReassignOrphanedCompaniesCommand - ICandidateCvRepository.GetByCareerAdvisorIdAsync'in birebir
+    // Company karşılığı). Tracked (AsNoTracking değil) - çağıran taraf AssignCareerAdvisor ile
+    // mutasyon yapacak.
+    Task<IReadOnlyList<Company>> GetByCareerAdvisorIdAsync(Guid careerAdvisorId, CancellationToken cancellationToken = default);
+
     void Add(Company company);
 }

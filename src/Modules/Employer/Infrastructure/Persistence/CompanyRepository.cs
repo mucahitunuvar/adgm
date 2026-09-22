@@ -28,6 +28,14 @@ public sealed class CompanyRepository(EmployerDbContext dbContext) : ICompanyRep
             .ToDictionaryAsync(g => g.Key, g => g.Count(), cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Company>> GetByCareerAdvisorIdAsync(
+        Guid careerAdvisorId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Companies
+            .Where(c => c.CareerAdvisorId == careerAdvisorId)
+            .ToListAsync(cancellationToken);
+    }
+
     public void Add(Company company)
     {
         dbContext.Companies.Add(company);

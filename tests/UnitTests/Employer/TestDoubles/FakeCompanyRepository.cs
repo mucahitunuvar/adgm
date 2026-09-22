@@ -27,6 +27,12 @@ public sealed class FakeCompanyRepository : ICompanyRepository
         return Task.FromResult(counts);
     }
 
+    public Task<IReadOnlyList<Company>> GetByCareerAdvisorIdAsync(Guid careerAdvisorId, CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<Company> matches = _companies.Where(c => c.CareerAdvisorId == careerAdvisorId).ToList();
+        return Task.FromResult(matches);
+    }
+
     public void Add(Company company)
     {
         _companies.Add(company);

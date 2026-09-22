@@ -5,6 +5,8 @@ using GenclikMerkezi.IntegrationTests.Identity;
 using GenclikMerkezi.Modules.CareerAdvisor.Features.CreateCareerAdvisor;
 using GenclikMerkezi.Modules.Candidate.Features.GetCandidateCv;
 using GenclikMerkezi.Modules.Candidate.Features.RegisterCandidate;
+using GenclikMerkezi.Modules.Employer.Features.GetCompany;
+using GenclikMerkezi.Modules.Employer.Features.RegisterEmployer;
 using GenclikMerkezi.Modules.Identity.Features.Login;
 
 namespace GenclikMerkezi.IntegrationTests.CareerAdvisor;
@@ -87,6 +89,44 @@ public class DeactivateCareerAdvisorAndReassignFlowTests : IClassFixture<CustomW
         return (await response.Content.ReadFromJsonAsync<GetCandidateCvResponse>())!;
     }
 
+    private static async Task<Guid> RegisterEmployerAsync(HttpClient client)
+    {
+        var response = await client.PostAsJsonAsync(
+            "/api/v1/employer/register",
+            new
+            {
+                email = $"firma-{Guid.NewGuid():N}@example.com",
+                password = "Sifre123",
+                name = "Acme A.Ş.",
+                sectorId = Guid.NewGuid(),
+                foundedYear = (int?)null,
+                employeeCount = (int?)null,
+                websiteUrl = (string?)null,
+                countryId = Guid.NewGuid(),
+                provinceId = Guid.NewGuid(),
+                districtId = Guid.NewGuid(),
+                address = "Adres",
+                aboutHtml = (string?)null,
+                contactFirstName = "Ayşe",
+                contactLastName = "Kaya",
+                contactPhone = "05551234567",
+                taxOfficeId = Guid.NewGuid(),
+                taxNumber = Random.Shared.NextInt64(1_000_000_000L, 9_999_999_999L).ToString(),
+                marketingConsent = false,
+            });
+        var body = await response.Content.ReadFromJsonAsync<RegisterEmployerResponse>();
+        return body!.CompanyId;
+    }
+
+    private static async Task<GetCompanyResponse> GetCompanyAsync(HttpClient client, Guid companyId, string accessToken)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/admin/companies/{companyId}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        var response = await client.SendAsync(request);
+        return (await response.Content.ReadFromJsonAsync<GetCompanyResponse>())!;
+    }
+
     [Fact]
     public async Task Deactivate_ThenReDeactivate_IsIdempotent()
     {
@@ -152,6 +192,38 @@ public class DeactivateCareerAdvisorAndReassignFlowTests : IClassFixture<CustomW
 
         var afterDeactivation = await GetCandidateCvAsync(client, candidateCvId, candidateAccessToken);
         Assert.Equal(otherAdvisorId, afterDeactivation.CareerAdvisorId);
+    }
+
+    [Fact]
+    public async Task Deactivate_WithAnotherActiveAdvisor_ReassignsOrphanedCandidateAndCompanyToIt()
+    {
+        // CareerAdvisorDeactivationOrchestrator'ın artık hem Candidate hem Employer modülünü
+        // çağırdığının kanıtı: aynı danışmana atanmış hem bir aday hem bir firma, danışman deactive
+        // edildiğinde ikisi de diğer aktif danışmana taşınmalı.
+        using var factory = new CustomWebApplicationFactory();
+        var client = factory.CreateClient();
+
+        var adminAccessToken = await LoginAsAdminAsync(factory, client);
+        var firstAdvisorId = await CreateCareerAdvisorAsync(client, adminAccessToken);
+        var secondAdvisorId = await CreateCareerAdvisorAsync(client, adminAccessToken);
+
+        var (candidateCvId, candidateAccessToken) = await RegisterAndLoginCandidateAsync(client);
+        var beforeDeactivation = await GetCandidateCvAsync(client, candidateCvId, candidateAccessToken);
+        var assignedAdvisorId = beforeDeactivation.CareerAdvisorId!.Value;
+        var otherAdvisorId = assignedAdvisorId == firstAdvisorId ? secondAdvisorId : firstAdvisorId;
+
+        var companyId = await RegisterEmployerAsync(client);
+        var companyBeforeDeactivation = await GetCompanyAsync(client, companyId, adminAccessToken);
+        Assert.Equal(assignedAdvisorId, companyBeforeDeactivation.CareerAdvisorId);
+
+        var deactivateResponse = await DeactivateCareerAdvisorAsync(client, assignedAdvisorId, adminAccessToken);
+        Assert.Equal(HttpStatusCode.NoContent, deactivateResponse.StatusCode);
+
+        var afterDeactivation = await GetCandidateCvAsync(client, candidateCvId, candidateAccessToken);
+        Assert.Equal(otherAdvisorId, afterDeactivation.CareerAdvisorId);
+
+        var companyAfterDeactivation = await GetCompanyAsync(client, companyId, adminAccessToken);
+        Assert.Equal(otherAdvisorId, companyAfterDeactivation.CareerAdvisorId);
     }
 
     [Fact]
