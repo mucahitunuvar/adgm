@@ -1,3 +1,4 @@
+using GenclikMerkezi.Modules.Employer.Features.AdminReassignCompany;
 using GenclikMerkezi.Modules.Employer.Features.AdminReinstateJob;
 using GenclikMerkezi.Modules.Employer.Features.AdminSuspendJob;
 using GenclikMerkezi.Modules.Employer.Features.ApproveCompany;
@@ -37,6 +38,7 @@ public static class EmployerModuleEndpointExtensions
         GetCompanyEndpoint.Map(app);
         GetMyCompanyEndpoint.Map(app);
         UploadCompanyLogoEndpoint.Map(app);
+        AdminReassignCompanyEndpoint.Map(app);
 
         CreateJobEndpoint.Map(app);
         UpdateJobEndpoint.Map(app);

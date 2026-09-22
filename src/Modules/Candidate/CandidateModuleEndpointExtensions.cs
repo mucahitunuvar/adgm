@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Candidate.Features.AddCandidateLanguage;
+using GenclikMerkezi.Modules.Candidate.Features.AdminReassignCandidate;
 using GenclikMerkezi.Modules.Candidate.Features.AddCandidateReference;
 using GenclikMerkezi.Modules.Candidate.Features.AddCertificate;
 using GenclikMerkezi.Modules.Candidate.Features.AddEducation;
@@ -75,6 +76,7 @@ public static class CandidateModuleEndpointExtensions
 
         // Admin/advisor tarafı için candidate listesi
         SearchCandidatesEndpoint.Map(app);
+        AdminReassignCandidateEndpoint.Map(app);
 
         // Görüşme talebi (Görev 5/ADR-022 §4)
         RequestMeetingEndpoint.Map(app);
