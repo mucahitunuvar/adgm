@@ -1,0 +1,3 @@
+namespace GenclikMerkezi.Modules.Matching.Features.CreateCandidateSuggestion;
+
+public sealed record CreateCandidateSuggestionResponse(Guid CandidateSuggestionId);
