@@ -13,4 +13,5 @@ public enum JobStatus
     Published,
     Rejected,
     RevisionRequested,
+    SuspendedByAdmin,
 }

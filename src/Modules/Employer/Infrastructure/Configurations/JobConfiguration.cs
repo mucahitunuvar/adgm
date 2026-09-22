@@ -32,6 +32,9 @@ public sealed class JobConfiguration : IEntityTypeConfiguration<Job>
         builder.Property(j => j.RejectionReason).HasMaxLength(1000);
         builder.Property(j => j.RevisionNotes).HasMaxLength(1000);
         builder.Property(j => j.PublishedAtUtc);
+        builder.Property(j => j.SuspendedByUserId);
+        builder.Property(j => j.SuspendedAtUtc);
+        builder.Property(j => j.SuspensionReason).HasMaxLength(1000);
         builder.Property(j => j.CreatedAtUtc).IsRequired();
 
         builder.HasMany(j => j.GenderPreferences)

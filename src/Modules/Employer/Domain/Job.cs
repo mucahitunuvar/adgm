@@ -55,6 +55,12 @@ public sealed class Job : AggregateRoot
 
     public DateTime? PublishedAtUtc { get; private set; }
 
+    public Guid? SuspendedByUserId { get; private set; }
+
+    public DateTime? SuspendedAtUtc { get; private set; }
+
+    public string? SuspensionReason { get; private set; }
+
     public DateTime CreatedAtUtc { get; private set; }
 
     private Job(
@@ -215,6 +221,37 @@ public sealed class Job : AggregateRoot
         Status = JobStatus.RevisionRequested;
         RevisionNotes = notes;
         ReviewedAtUtc = requestedAtUtc;
+
+        return Result.Success();
+    }
+
+    // PROJECT.md §5.2: admin, yayındaki uygunsuz bir ilanı yayından kaldırabilmeli. Yalnızca
+    // Published'tan (CareerAdvisor.Reject/Approve akışının dışında, doğrudan admin aksiyonu).
+    public Result Suspend(Guid suspendedByUserId, string reason, DateTime suspendedAtUtc)
+    {
+        if (Status != JobStatus.Published)
+        {
+            return Result.Failure(Error.Conflict("Job.InvalidTransition", $"Cannot suspend a job while status is {Status}."));
+        }
+
+        Status = JobStatus.SuspendedByAdmin;
+        SuspendedByUserId = suspendedByUserId;
+        SuspendedAtUtc = suspendedAtUtc;
+        SuspensionReason = reason;
+
+        return Result.Success();
+    }
+
+    // SuspendedByUserId/SuspendedAtUtc/SuspensionReason bilinçli olarak temizlenmez - geçmiş kaydı
+    // olarak kalır, yalnızca Status değişir.
+    public Result Reinstate(DateTime reinstatedAtUtc)
+    {
+        if (Status != JobStatus.SuspendedByAdmin)
+        {
+            return Result.Failure(Error.Conflict("Job.InvalidTransition", $"Cannot reinstate a job while status is {Status}."));
+        }
+
+        Status = JobStatus.Published;
 
         return Result.Success();
     }

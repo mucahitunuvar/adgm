@@ -41,6 +41,13 @@ public class JobTests
             return job;
         }
 
+        if (status == JobStatus.SuspendedByAdmin)
+        {
+            job.Approve(Guid.NewGuid(), DateTime.UtcNow);
+            job.Suspend(Guid.NewGuid(), "Uygunsuz içerik", DateTime.UtcNow);
+            return job;
+        }
+
         job.RequestRevision("Lütfen açıklamayı detaylandırın", DateTime.UtcNow);
         return job;
     }
@@ -222,5 +229,69 @@ public class JobTests
 
         Assert.Single(job.GenderPreferences);
         Assert.Equal(secondGenderId, job.GenderPreferences.Single().GenderId);
+    }
+
+    [Fact]
+    public void Suspend_FromPublished_Succeeds()
+    {
+        var job = TransitionTo(JobStatus.Published);
+        var suspendedByUserId = Guid.NewGuid();
+        var suspendedAtUtc = DateTime.UtcNow;
+
+        var result = job.Suspend(suspendedByUserId, "Uygunsuz içerik", suspendedAtUtc);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(JobStatus.SuspendedByAdmin, job.Status);
+        Assert.Equal(suspendedByUserId, job.SuspendedByUserId);
+        Assert.Equal(suspendedAtUtc, job.SuspendedAtUtc);
+        Assert.Equal("Uygunsuz içerik", job.SuspensionReason);
+    }
+
+    [Theory]
+    [InlineData(JobStatus.Draft)]
+    [InlineData(JobStatus.UnderReview)]
+    [InlineData(JobStatus.Rejected)]
+    [InlineData(JobStatus.RevisionRequested)]
+    public void Suspend_FromNonPublishedStatus_Fails(JobStatus initialStatus)
+    {
+        var job = TransitionTo(initialStatus);
+
+        var result = job.Suspend(Guid.NewGuid(), "Uygunsuz içerik", DateTime.UtcNow);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(initialStatus, job.Status);
+    }
+
+    [Fact]
+    public void Reinstate_FromSuspendedByAdmin_TransitionsBackToPublished_WithoutClearingSuspensionFields()
+    {
+        var job = TransitionTo(JobStatus.SuspendedByAdmin);
+        var suspendedByUserId = job.SuspendedByUserId;
+        var suspendedAtUtc = job.SuspendedAtUtc;
+        var suspensionReason = job.SuspensionReason;
+
+        var result = job.Reinstate(DateTime.UtcNow);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(JobStatus.Published, job.Status);
+        Assert.Equal(suspendedByUserId, job.SuspendedByUserId);
+        Assert.Equal(suspendedAtUtc, job.SuspendedAtUtc);
+        Assert.Equal(suspensionReason, job.SuspensionReason);
+    }
+
+    [Theory]
+    [InlineData(JobStatus.Draft)]
+    [InlineData(JobStatus.UnderReview)]
+    [InlineData(JobStatus.Published)]
+    [InlineData(JobStatus.Rejected)]
+    [InlineData(JobStatus.RevisionRequested)]
+    public void Reinstate_FromNonSuspendedStatus_Fails(JobStatus initialStatus)
+    {
+        var job = TransitionTo(initialStatus);
+
+        var result = job.Reinstate(DateTime.UtcNow);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(initialStatus, job.Status);
     }
 }
