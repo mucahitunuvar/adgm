@@ -26,7 +26,7 @@ public class RejectCandidateSuggestionCommandHandlerTests
     {
         var companyId = Guid.NewGuid();
         var personnelNeedId = Guid.NewGuid();
-        _companyModuleContract.Seed(new CompanySummary(companyId, "Acme A.Ş.", careerAdvisorId));
+        _companyModuleContract.Seed(new CompanySummary(companyId, "Acme A.Ş.", careerAdvisorId, Guid.NewGuid(), "firma@example.com"));
         _personnelNeedModuleContract.Seed(new PersonnelNeedSummary(
             personnelNeedId, companyId, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             3, Guid.NewGuid(), Guid.NewGuid(), null, careerAdvisorId, DateTime.UtcNow));

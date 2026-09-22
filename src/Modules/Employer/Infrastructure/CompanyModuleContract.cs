@@ -12,7 +12,16 @@ public sealed class CompanyModuleContract(EmployerDbContext dbContext) : ICompan
         return await dbContext.Companies
             .AsNoTracking()
             .Where(c => c.Id == companyId)
-            .Select(c => new CompanySummary(c.Id, c.Name, c.CareerAdvisorId))
+            .Select(c => new CompanySummary(c.Id, c.Name, c.CareerAdvisorId, c.UserId, c.ContactEmail))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<CompanySummary?> GetCompanyByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Companies
+            .AsNoTracking()
+            .Where(c => c.UserId == userId)
+            .Select(c => new CompanySummary(c.Id, c.Name, c.CareerAdvisorId, c.UserId, c.ContactEmail))
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -31,7 +40,7 @@ public sealed class CompanyModuleContract(EmployerDbContext dbContext) : ICompan
         return await dbContext.Companies
             .AsNoTracking()
             .Where(c => companyIds.Contains(c.Id))
-            .Select(c => new CompanySummary(c.Id, c.Name, c.CareerAdvisorId))
+            .Select(c => new CompanySummary(c.Id, c.Name, c.CareerAdvisorId, c.UserId, c.ContactEmail))
             .ToListAsync(cancellationToken);
     }
 }

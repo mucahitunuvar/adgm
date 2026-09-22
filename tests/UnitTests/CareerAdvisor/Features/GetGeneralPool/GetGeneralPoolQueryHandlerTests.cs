@@ -37,7 +37,7 @@ public class GetGeneralPoolQueryHandlerTests
             companyId, positionId, departmentId, provinceId, employmentTypeId, workLocationTypeId, experienceLevelId);
         _personnelNeedModuleContract.SeedGeneralPool(summary);
 
-        _companyModuleContract.Seed(new CompanySummary(companyId, "Acme A.Ş.", Guid.NewGuid()));
+        _companyModuleContract.Seed(new CompanySummary(companyId, "Acme A.Ş.", Guid.NewGuid(), Guid.NewGuid(), "firma@example.com"));
         _referenceDataLookupReader.SeedList(
             ReferenceDataLookupType.Position, new LookupItemSummary(positionId, "POS", "Kaynakçı", true, 1));
         _referenceDataLookupReader.SeedList(

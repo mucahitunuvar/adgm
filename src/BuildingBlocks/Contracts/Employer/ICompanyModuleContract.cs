@@ -10,6 +10,10 @@ public interface ICompanyModuleContract
 {
     Task<CompanySummary?> GetCompanyByIdAsync(Guid companyId, CancellationToken cancellationToken = default);
 
+    // Interview modülü: firma kullanıcısının kendi CompanyId'sini çözmesi için -
+    // GetMyCompanyQueryHandler'daki ICompanyRepository.GetByUserIdAsync deseminin cross-module karşılığı.
+    Task<CompanySummary?> GetCompanyByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+
     Task<Guid?> GetCareerAdvisorIdForCompanyAsync(Guid companyId, CancellationToken cancellationToken = default);
 
     // CareerAdvisor Görev 6: Genel Havuz sayfasının bir sayfadaki distinct CompanyId kümesini toplu
