@@ -1,5 +1,7 @@
+using GenclikMerkezi.Modules.Interview.Features.CancelInterview;
 using GenclikMerkezi.Modules.Interview.Features.RequestInterviewAsCandidate;
 using GenclikMerkezi.Modules.Interview.Features.RequestInterviewAsEmployer;
+using GenclikMerkezi.Modules.Interview.Features.ScheduleInterview;
 using Microsoft.AspNetCore.Routing;
 
 namespace GenclikMerkezi.Modules.Interview;
@@ -10,6 +12,8 @@ public static class InterviewModuleEndpointExtensions
     {
         RequestInterviewAsCandidateEndpoint.Map(app);
         RequestInterviewAsEmployerEndpoint.Map(app);
+        ScheduleInterviewEndpoint.Map(app);
+        CancelInterviewEndpoint.Map(app);
 
         return app;
     }
