@@ -12,7 +12,16 @@ public sealed class CandidateModuleContract(CandidateDbContext dbContext) : ICan
         return await dbContext.CandidateCvs
             .AsNoTracking()
             .Where(c => c.Id == candidateCvId)
-            .Select(c => new CandidateCvSummary(c.Id, c.FirstName, c.LastName, c.CareerAdvisorId))
+            .Select(c => new CandidateCvSummary(c.Id, c.FirstName, c.LastName, c.CareerAdvisorId, c.UserId, c.Email))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<CandidateCvSummary?> GetCandidateCvByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.CandidateCvs
+            .AsNoTracking()
+            .Where(c => c.UserId == userId)
+            .Select(c => new CandidateCvSummary(c.Id, c.FirstName, c.LastName, c.CareerAdvisorId, c.UserId, c.Email))
             .FirstOrDefaultAsync(cancellationToken);
     }
 

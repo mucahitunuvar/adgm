@@ -34,7 +34,7 @@ public class CreateCandidateSuggestionCommandHandlerTests
         var candidateCvId = Guid.NewGuid();
         var personnelNeedId = Guid.NewGuid();
         _careerAdvisorModuleContract.AdvisorIdForCurrentUser = advisorId;
-        _candidateModuleContract.Seed(new CandidateCvSummary(candidateCvId, "Ahmet", "Yılmaz", advisorId));
+        _candidateModuleContract.Seed(new CandidateCvSummary(candidateCvId, "Ahmet", "Yılmaz", advisorId, Guid.NewGuid(), "aday@example.com"));
         _personnelNeedModuleContract.SeedGeneralPool(CreateGeneralPoolSummary(personnelNeedId));
 
         var result = await CreateHandler().Handle(
@@ -70,7 +70,7 @@ public class CreateCandidateSuggestionCommandHandlerTests
         var candidateCvId = Guid.NewGuid();
         var personnelNeedId = Guid.NewGuid();
         _careerAdvisorModuleContract.AdvisorIdForCurrentUser = advisorId;
-        _candidateModuleContract.Seed(new CandidateCvSummary(candidateCvId, "Ahmet", "Yılmaz", Guid.NewGuid()));
+        _candidateModuleContract.Seed(new CandidateCvSummary(candidateCvId, "Ahmet", "Yılmaz", Guid.NewGuid(), Guid.NewGuid(), "aday@example.com"));
         _personnelNeedModuleContract.SeedGeneralPool(CreateGeneralPoolSummary(personnelNeedId));
 
         var result = await CreateHandler().Handle(
@@ -88,7 +88,7 @@ public class CreateCandidateSuggestionCommandHandlerTests
         var advisorId = Guid.NewGuid();
         var candidateCvId = Guid.NewGuid();
         _careerAdvisorModuleContract.AdvisorIdForCurrentUser = advisorId;
-        _candidateModuleContract.Seed(new CandidateCvSummary(candidateCvId, "Ahmet", "Yılmaz", advisorId));
+        _candidateModuleContract.Seed(new CandidateCvSummary(candidateCvId, "Ahmet", "Yılmaz", advisorId, Guid.NewGuid(), "aday@example.com"));
         // PersonnelNeed hiç seed edilmedi -> IsInGeneralPoolAsync false döner.
 
         var result = await CreateHandler().Handle(
@@ -106,7 +106,7 @@ public class CreateCandidateSuggestionCommandHandlerTests
         var candidateCvId = Guid.NewGuid();
         var personnelNeedId = Guid.NewGuid();
         _careerAdvisorModuleContract.AdvisorIdForCurrentUser = advisorId;
-        _candidateModuleContract.Seed(new CandidateCvSummary(candidateCvId, "Ahmet", "Yılmaz", advisorId));
+        _candidateModuleContract.Seed(new CandidateCvSummary(candidateCvId, "Ahmet", "Yılmaz", advisorId, Guid.NewGuid(), "aday@example.com"));
         _personnelNeedModuleContract.SeedGeneralPool(CreateGeneralPoolSummary(personnelNeedId));
         _candidateSuggestionRepository.Add(
             GenclikMerkezi.Modules.Matching.Domain.CandidateSuggestion.Create(personnelNeedId, candidateCvId, advisorId, DateTime.UtcNow));

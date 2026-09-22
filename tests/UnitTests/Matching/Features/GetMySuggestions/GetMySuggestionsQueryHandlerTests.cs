@@ -25,7 +25,7 @@ public class GetMySuggestionsQueryHandlerTests
         var callerAdvisorId = Guid.NewGuid();
         _careerAdvisorModuleContract.AdvisorIdForCurrentUser = callerAdvisorId;
         var candidateCvId = Guid.NewGuid();
-        _candidateModuleContract.Seed(new CandidateCvSummary(candidateCvId, "Ahmet", "Yılmaz", callerAdvisorId));
+        _candidateModuleContract.Seed(new CandidateCvSummary(candidateCvId, "Ahmet", "Yılmaz", callerAdvisorId, Guid.NewGuid(), "aday@example.com"));
 
         var ownSuggestion = CandidateSuggestion.Create(Guid.NewGuid(), candidateCvId, callerAdvisorId, DateTime.UtcNow);
         _candidateSuggestionRepository.Add(ownSuggestion);

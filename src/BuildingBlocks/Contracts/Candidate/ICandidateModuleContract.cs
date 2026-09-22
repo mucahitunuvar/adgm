@@ -9,5 +9,9 @@ public interface ICandidateModuleContract
 {
     Task<CandidateCvSummary?> GetCandidateCvByIdAsync(Guid candidateCvId, CancellationToken cancellationToken = default);
 
+    // Interview modülü: aday kullanıcının kendi CandidateCvId'sini çözmesi için -
+    // ICompanyModuleContract.GetCompanyByUserIdAsync ile aynı gerekçe.
+    Task<CandidateCvSummary?> GetCandidateCvByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+
     Task<Guid?> GetCareerAdvisorIdForCandidateAsync(Guid candidateCvId, CancellationToken cancellationToken = default);
 }

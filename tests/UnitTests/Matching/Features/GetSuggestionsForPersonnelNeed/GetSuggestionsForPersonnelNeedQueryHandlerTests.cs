@@ -41,7 +41,7 @@ public class GetSuggestionsForPersonnelNeedQueryHandlerTests
         _careerAdvisorModuleContract.AdvisorIdForCurrentUser = careerAdvisorId;
         var personnelNeedId = SeedPersonnelNeedForAdvisor(careerAdvisorId);
         var candidateCvId = Guid.NewGuid();
-        _candidateModuleContract.Seed(new CandidateCvSummary(candidateCvId, "Ahmet", "Yılmaz", Guid.NewGuid()));
+        _candidateModuleContract.Seed(new CandidateCvSummary(candidateCvId, "Ahmet", "Yılmaz", Guid.NewGuid(), Guid.NewGuid(), "aday@example.com"));
         var suggestion = CandidateSuggestion.Create(personnelNeedId, candidateCvId, Guid.NewGuid(), DateTime.UtcNow);
         _candidateSuggestionRepository.Add(suggestion);
 
