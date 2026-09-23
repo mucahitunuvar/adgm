@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 using GenclikMerkezi.Admin;
+using GenclikMerkezi.Api.Hangfire;
 using GenclikMerkezi.BuildingBlocks.Infrastructure.DependencyInjection;
 using GenclikMerkezi.BuildingBlocks.Infrastructure.ExceptionHandling;
 using GenclikMerkezi.Modules.Candidate;
@@ -24,6 +25,7 @@ using GenclikMerkezi.Modules.Notification;
 using GenclikMerkezi.Modules.Notification.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.ReferenceData;
 using GenclikMerkezi.Modules.ReferenceData.Infrastructure.DependencyInjection;
+using Hangfire;
 using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -62,6 +64,16 @@ builder.Services.AddMatchingModule(builder.Configuration);
 builder.Services.AddInterviewModule(builder.Configuration);
 builder.Services.AddEmploymentModule(builder.Configuration);
 builder.Services.AddCareerDevelopmentModule(builder.Configuration);
+
+// Part 0 (Hangfire altyapısı): tüm modüllerin yeniden kullanabileceği genel bir background-job
+// altyapısı - herhangi bir modüle ait değil, Host'ta bir kez kaydedilir (CAP/AddMessaging ile aynı
+// gerekçe). Kendi başına, herhangi bir modülün sahipliğinde olmayan bir infrastructure DB kullanır.
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseSqlServerStorage(builder.Configuration.GetConnectionString("HangfireDatabase")));
+builder.Services.AddHangfireServer();
 
 // Host-seviyesi çok-modüllü orkestrasyon (ADR-022 §1) - herhangi bir modüle ait değil, bu yüzden
 // modüllerin AddXModule() metotlarının hiçbirinde değil, burada kaydediliyor.
@@ -136,6 +148,13 @@ app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// SECURITY.md §37: dashboard yalnızca Admin rolüne açık - UseAuthorization()'dan SONRA map edilir ki
+// HangfireAdminDashboardAuthorizationFilter'ın okuduğu HttpContext.User dolu olsun.
+app.MapHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = [new HangfireAdminDashboardAuthorizationFilter()],
+});
 
 app.MapIdentityModuleEndpoints();
 app.MapReferenceDataModuleEndpoints();
