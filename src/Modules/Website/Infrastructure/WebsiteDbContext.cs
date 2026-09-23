@@ -12,6 +12,8 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
 {
     public DbSet<SiteLanguage> SiteLanguages => Set<SiteLanguage>();
 
+    public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(WebsiteDbContext).Assembly);

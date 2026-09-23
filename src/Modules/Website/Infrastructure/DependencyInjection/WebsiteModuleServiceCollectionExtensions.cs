@@ -1,5 +1,7 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
+using GenclikMerkezi.Modules.Website.Application.Media;
 using GenclikMerkezi.Modules.Website.Infrastructure;
+using GenclikMerkezi.Modules.Website.Infrastructure.Media;
 using GenclikMerkezi.Modules.Website.Infrastructure.Persistence;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +38,9 @@ public static class WebsiteModuleServiceCollectionExtensions
             (sp, _) => sp.GetRequiredService<WebsiteDbContext>());
 
         services.AddScoped<ISiteLanguageRepository, SiteLanguageRepository>();
+        services.AddScoped<IMediaAssetRepository, MediaAssetRepository>();
+        services.AddSingleton<IImageProcessor, SkiaSharpImageProcessor>();
+        services.AddScoped<IMediaUsageChecker, CompositeMediaUsageChecker>();
 
         // ADR-024 §2: named policies, all resolving to the literal Admin role for now. Only this
         // block changes when a real permission system arrives - endpoints stay untouched.

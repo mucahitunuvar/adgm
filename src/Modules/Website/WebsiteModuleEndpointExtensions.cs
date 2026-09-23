@@ -1,9 +1,15 @@
 using GenclikMerkezi.Modules.Website.Features.ActivateSiteLanguage;
 using GenclikMerkezi.Modules.Website.Features.CreateSiteLanguage;
 using GenclikMerkezi.Modules.Website.Features.DeactivateSiteLanguage;
+using GenclikMerkezi.Modules.Website.Features.DeleteMediaAsset;
+using GenclikMerkezi.Modules.Website.Features.GetMediaAssetById;
+using GenclikMerkezi.Modules.Website.Features.GetMediaAssetFolders;
+using GenclikMerkezi.Modules.Website.Features.GetMediaAssets;
 using GenclikMerkezi.Modules.Website.Features.GetSiteLanguages;
 using GenclikMerkezi.Modules.Website.Features.SetDefaultSiteLanguage;
+using GenclikMerkezi.Modules.Website.Features.UpdateMediaAsset;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteLanguage;
+using GenclikMerkezi.Modules.Website.Features.UploadMediaAsset;
 using Microsoft.AspNetCore.Routing;
 
 namespace GenclikMerkezi.Modules.Website;
@@ -18,6 +24,13 @@ public static class WebsiteModuleEndpointExtensions
         DeactivateSiteLanguageEndpoint.Map(app);
         SetDefaultSiteLanguageEndpoint.Map(app);
         GetSiteLanguagesEndpoint.Map(app);
+
+        UploadMediaAssetEndpoint.Map(app);
+        GetMediaAssetsEndpoint.Map(app);
+        GetMediaAssetFoldersEndpoint.Map(app);
+        GetMediaAssetByIdEndpoint.Map(app);
+        UpdateMediaAssetEndpoint.Map(app);
+        DeleteMediaAssetEndpoint.Map(app);
 
         return app;
     }
