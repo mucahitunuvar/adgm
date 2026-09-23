@@ -12,6 +12,7 @@ using GenclikMerkezi.Modules.Matching.Infrastructure;
 using GenclikMerkezi.Modules.Notification.Application.Abstractions;
 using GenclikMerkezi.Modules.Notification.Infrastructure;
 using GenclikMerkezi.Modules.ReferenceData.Infrastructure;
+using GenclikMerkezi.Modules.Website.Infrastructure;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -46,6 +47,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     private readonly string _interviewDatabaseName = $"GenclikMerkezi.Interview.Test.{Guid.NewGuid():N}";
     private readonly string _employmentDatabaseName = $"GenclikMerkezi.Employment.Test.{Guid.NewGuid():N}";
     private readonly string _careerDevelopmentDatabaseName = $"GenclikMerkezi.CareerDevelopment.Test.{Guid.NewGuid():N}";
+    private readonly string _websiteDatabaseName = $"GenclikMerkezi.Website.Test.{Guid.NewGuid():N}";
 
     private string IdentityConnectionString =>
         $"{LocalDbServer}Database={_identityDatabaseName};";
@@ -86,6 +88,9 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     private string CareerDevelopmentConnectionString =>
         $"{LocalDbServer}Database={_careerDevelopmentDatabaseName};";
 
+    private string WebsiteConnectionString =>
+        $"{LocalDbServer}Database={_websiteDatabaseName};";
+
     public FakeEmailSender EmailSender { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -106,6 +111,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("ConnectionStrings:InterviewDatabase", InterviewConnectionString);
         builder.UseSetting("ConnectionStrings:EmploymentDatabase", EmploymentConnectionString);
         builder.UseSetting("ConnectionStrings:CareerDevelopmentDatabase", CareerDevelopmentConnectionString);
+        builder.UseSetting("ConnectionStrings:WebsiteDatabase", WebsiteConnectionString);
         builder.UseSetting("Jwt:Issuer", "GenclikMerkezi.Tests");
         builder.UseSetting("Jwt:Audience", "GenclikMerkezi.Tests");
         builder.UseSetting("Jwt:SigningKey", "integration-test-signing-key-do-not-use-in-prod");
@@ -125,6 +131,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             scope.ServiceProvider.GetRequiredService<InterviewDbContext>().Database.EnsureCreated();
             scope.ServiceProvider.GetRequiredService<EmploymentDbContext>().Database.EnsureCreated();
             scope.ServiceProvider.GetRequiredService<CareerDevelopmentDbContext>().Database.EnsureCreated();
+            scope.ServiceProvider.GetRequiredService<WebsiteDbContext>().Database.EnsureCreated();
         });
 
         // Runs after Program.cs's own AddNotificationModule() registration, so this replaces the
@@ -206,6 +213,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         DropDatabase(_interviewDatabaseName);
         DropDatabase(_employmentDatabaseName);
         DropDatabase(_careerDevelopmentDatabaseName);
+        DropDatabase(_websiteDatabaseName);
     }
 
     // Best-effort cleanup of the throwaway LocalDB databases - EF Core's connection pool may

@@ -1,4 +1,6 @@
+using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Infrastructure;
+using GenclikMerkezi.Modules.Website.Infrastructure.Persistence;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -32,6 +34,8 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddKeyedScoped<IUnitOfWork>(
             WebsiteModuleMarker.UnitOfWorkKey,
             (sp, _) => sp.GetRequiredService<WebsiteDbContext>());
+
+        services.AddScoped<ISiteLanguageRepository, SiteLanguageRepository>();
 
         // ADR-024 §2: named policies, all resolving to the literal Admin role for now. Only this
         // block changes when a real permission system arrives - endpoints stay untouched.

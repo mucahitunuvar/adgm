@@ -32,6 +32,7 @@
     <ProjectReference Include="..\..\src\Modules\Matching\GenclikMerkezi.Modules.Matching.csproj" />
     <ProjectReference Include="..\..\src\Modules\Notification\GenclikMerkezi.Modules.Notification.csproj" />
     <ProjectReference Include="..\..\src\Modules\ReferenceData\GenclikMerkezi.Modules.ReferenceData.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Website\GenclikMerkezi.Modules.Website.csproj" />
   </ItemGroup>
 
 </Project>

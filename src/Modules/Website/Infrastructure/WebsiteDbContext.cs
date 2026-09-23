@@ -1,4 +1,5 @@
 using GenclikMerkezi.BuildingBlocks.Infrastructure.Events;
+using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Domain;
 using MediatR;
@@ -9,8 +10,7 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure;
 public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options, IPublisher publisher)
     : DbContext(options), IUnitOfWork
 {
-    // No aggregates yet - Faz 0 Görev 1 only scaffolds the module. DbSets are added as each
-    // aggregate (SiteLanguage, MediaAsset, SiteSettings, ...) lands in later Görevs.
+    public DbSet<SiteLanguage> SiteLanguages => Set<SiteLanguage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
