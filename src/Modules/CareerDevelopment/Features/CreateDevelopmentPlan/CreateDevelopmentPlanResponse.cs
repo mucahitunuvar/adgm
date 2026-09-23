@@ -1,0 +1,3 @@
+namespace GenclikMerkezi.Modules.CareerDevelopment.Features.CreateDevelopmentPlan;
+
+public sealed record CreateDevelopmentPlanResponse(Guid DevelopmentPlanId);

@@ -1,0 +1,3 @@
+namespace GenclikMerkezi.Modules.CareerDevelopment.Features.CreateTrainingRecommendation;
+
+public sealed record CreateTrainingRecommendationResponse(Guid TrainingRecommendationId);

@@ -1,6 +1,8 @@
 using GenclikMerkezi.Modules.CareerDevelopment.Features.CreateAdvisorRecommendation;
 using GenclikMerkezi.Modules.CareerDevelopment.Features.CreateCareerGoal;
+using GenclikMerkezi.Modules.CareerDevelopment.Features.CreateDevelopmentPlan;
 using GenclikMerkezi.Modules.CareerDevelopment.Features.CreateSkillGap;
+using GenclikMerkezi.Modules.CareerDevelopment.Features.CreateTrainingRecommendation;
 using Microsoft.AspNetCore.Routing;
 
 namespace GenclikMerkezi.Modules.CareerDevelopment;
@@ -12,6 +14,8 @@ public static class CareerDevelopmentModuleEndpointExtensions
         CreateSkillGapEndpoint.Map(app);
         CreateCareerGoalEndpoint.Map(app);
         CreateAdvisorRecommendationEndpoint.Map(app);
+        CreateDevelopmentPlanEndpoint.Map(app);
+        CreateTrainingRecommendationEndpoint.Map(app);
 
         return app;
     }
