@@ -1,3 +1,5 @@
+using GenclikMerkezi.Modules.CareerDevelopment.Features.CancelDevelopmentPlan;
+using GenclikMerkezi.Modules.CareerDevelopment.Features.CompleteDevelopmentPlan;
 using GenclikMerkezi.Modules.CareerDevelopment.Features.CreateAdvisorRecommendation;
 using GenclikMerkezi.Modules.CareerDevelopment.Features.CreateCareerGoal;
 using GenclikMerkezi.Modules.CareerDevelopment.Features.CreateDevelopmentPlan;
@@ -16,6 +18,8 @@ public static class CareerDevelopmentModuleEndpointExtensions
         CreateAdvisorRecommendationEndpoint.Map(app);
         CreateDevelopmentPlanEndpoint.Map(app);
         CreateTrainingRecommendationEndpoint.Map(app);
+        CompleteDevelopmentPlanEndpoint.Map(app);
+        CancelDevelopmentPlanEndpoint.Map(app);
 
         return app;
     }
