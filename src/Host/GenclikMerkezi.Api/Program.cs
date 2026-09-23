@@ -28,6 +28,8 @@ using GenclikMerkezi.Modules.ReferenceData.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.Support;
 using GenclikMerkezi.Modules.Support.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.Support.Infrastructure.Jobs;
+using GenclikMerkezi.Modules.Website;
+using GenclikMerkezi.Modules.Website.Infrastructure.DependencyInjection;
 using Hangfire;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -49,7 +51,8 @@ builder.Services.AddSharedApplicationServices(
     typeof(InterviewModuleMarker).Assembly,
     typeof(EmploymentModuleMarker).Assembly,
     typeof(CareerDevelopmentModuleMarker).Assembly,
-    typeof(SupportModuleMarker).Assembly);
+    typeof(SupportModuleMarker).Assembly,
+    typeof(WebsiteModuleMarker).Assembly);
 
 // ADR-017: ICacheService (and, once registered, IUserScopedCacheService) - shared, not per-module,
 // so it is registered here rather than inside any single AddXModule().
@@ -69,6 +72,7 @@ builder.Services.AddInterviewModule(builder.Configuration);
 builder.Services.AddEmploymentModule(builder.Configuration);
 builder.Services.AddCareerDevelopmentModule(builder.Configuration);
 builder.Services.AddSupportModule(builder.Configuration);
+builder.Services.AddWebsiteModule(builder.Configuration);
 
 // Part 0 (Hangfire altyapısı): tüm modüllerin yeniden kullanabileceği genel bir background-job
 // altyapısı - herhangi bir modüle ait değil, Host'ta bir kez kaydedilir (CAP/AddMessaging ile aynı
@@ -172,6 +176,7 @@ app.MapInterviewModuleEndpoints();
 app.MapEmploymentModuleEndpoints();
 app.MapCareerDevelopmentModuleEndpoints();
 app.MapSupportModuleEndpoints();
+app.MapWebsiteModuleEndpoints();
 
 // Support'un tek Hangfire tüketicisi olduğu bu aşamada, ayrı bir IRecurringJobScheduler soyutlaması
 // yerine doğrudan burada kaydedilir (aşırı soyutlama yapma - AGENTS.md §51). İleride başka modüller
