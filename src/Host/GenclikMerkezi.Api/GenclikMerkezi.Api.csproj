@@ -21,6 +21,7 @@
     <ProjectReference Include="..\..\Modules\Matching\GenclikMerkezi.Modules.Matching.csproj" />
     <ProjectReference Include="..\..\Modules\Interview\GenclikMerkezi.Modules.Interview.csproj" />
     <ProjectReference Include="..\..\Modules\Employment\GenclikMerkezi.Modules.Employment.csproj" />
+    <ProjectReference Include="..\..\Modules\CareerDevelopment\GenclikMerkezi.Modules.CareerDevelopment.csproj" />
     <ProjectReference Include="..\..\Modules\Website\GenclikMerkezi.Modules.Website.csproj" />
     <ProjectReference Include="..\..\Modules\Notification\GenclikMerkezi.Modules.Notification.csproj" />
     <ProjectReference Include="..\..\Modules\ReferenceData\GenclikMerkezi.Modules.ReferenceData.csproj" />

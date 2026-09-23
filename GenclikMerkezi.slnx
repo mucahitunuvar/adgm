@@ -20,6 +20,9 @@
   <Folder Name="/src/Modules/CareerAdvisor/">
     <Project Path="src/Modules/CareerAdvisor/GenclikMerkezi.Modules.CareerAdvisor.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/CareerDevelopment/">
+    <Project Path="src/Modules/CareerDevelopment/GenclikMerkezi.Modules.CareerDevelopment.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Employer/">
     <Project Path="src/Modules/Employer/GenclikMerkezi.Modules.Employer.csproj" />
   </Folder>
