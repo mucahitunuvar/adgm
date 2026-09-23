@@ -50,3 +50,18 @@ Gerekçe:
 
 ## İlgili Kararlar
 - ADR-018: Candidate aggregate tasarımı (fotoğraf ve CV dosyası bu altyapıyı kullanır)
+
+## Ek (ADR-024 Faz 0 Görev 4): Public ve özel depolama kökleri
+
+**Gerekçe:** Tüm yüklemeler tek bir köke (`App_Data/uploads`) yazılıyordu ve Host bu kökü hiçbir zaman statik olarak servis etmiyordu — `GetUrlAsync`'in ürettiği URL'ler her kategori için 404 dönüyordu. Website modülünün görsel/doküman kütüphanesi (Görev 5) ve firma logosu gibi gerçekten herkese açık gösterilmesi gereken dosyalar için bu artık yetersiz; ama kökü toptan statik servise açmak, aday CV'lerini ve fotoğraflarını da açığa çıkarır. Bu nedenle dosyalar **erişim türüne göre** iki ayrı fiziksel köke yazılır. Ayrımın ölçütü "hangi modül sahibi" değil "herkese mi gösteriliyor"dur.
+
+| Kök | Ayar | Varsayılan yol | Servis | Kategoriler |
+|---|---|---|---|---|
+| Public | `FileStorage:PublicRootDirectory` | `App_Data/webuploads` | Statik, `FileStorage:PublicRequestPath` (`/webuploads`) altından, `Cache-Control: public, max-age=31536000, immutable`, dizin listeleme kapalı, `X-Content-Type-Options: nosniff` | `EmployerLogo`, `WebsiteImage`, `WebsiteDocument` |
+| Özel | `FileStorage:RootDirectory` | `App_Data/uploads` | **Asla statik servis edilmez** | `CandidatePhoto`, `CandidateCv`, `EmployerDocument`, `WebsiteFormAttachment` |
+
+**Değişmeyenler:**
+
+- `FileKey`'in formatı değişmedi: hâlâ yalnızca `{category}/{yyyy}/{MM}/{dd}/{guid}.{ext}` — hangi kökte durduğuna dair bir işaret taşımıyor. `DeleteAsync`/`ReadAsync`, kategoriyi `FileKey`'in ilk segmentinden (`FileCategoryExtensions.TryGetCategoryFromFolderSegment`) çözüp doğru kökte çalışıyor; DB'deki mevcut `FileKey` kayıtları etkilenmedi.
+- `GetUrlAsync` kategoriden bağımsız kalmaya devam ediyor: her zaman `{PublicBaseUrl}/{fileKey}` döner. Yalnızca public kategoriler için bu URL artık gerçekten çözülüyor; özel kategoriler için döndürülen URL, bu Faz 0 görevinden önce olduğu gibi, hâlâ çözülmüyor.
+- Aday fotoğrafı/CV'si ve firma belgeleri için yetkili indirme endpoint'leri bu görevin kapsamında değildir; Candidate/Employer için takip işi olarak not edilmiştir.

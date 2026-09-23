@@ -9,10 +9,22 @@ namespace GenclikMerkezi.UnitTests.BuildingBlocks.FileStorage;
 public sealed class LocalDiskFileStorageServiceTests : IDisposable
 {
     private readonly string _rootDirectory = Path.Combine(Path.GetTempPath(), $"gm-filestorage-tests-{Guid.NewGuid():N}");
+    private readonly string _publicRootDirectory = Path.Combine(Path.GetTempPath(), $"gm-filestorage-tests-public-{Guid.NewGuid():N}");
     private readonly FakeTimeProvider _timeProvider = new(new DateTimeOffset(2026, 9, 17, 10, 30, 0, TimeSpan.Zero));
 
-    private LocalDiskFileStorageService CreateService(string publicBaseUrl = "http://localhost/uploads") =>
-        new(Options.Create(new FileStorageSettings { RootDirectory = _rootDirectory, PublicBaseUrl = publicBaseUrl }), _timeProvider);
+    private LocalDiskFileStorageService CreateService(string publicBaseUrl = "http://localhost/webuploads") =>
+        new(
+            Options.Create(new FileStorageSettings
+            {
+                RootDirectory = _rootDirectory,
+                PublicRootDirectory = _publicRootDirectory,
+                PublicBaseUrl = publicBaseUrl,
+            }),
+            _timeProvider,
+            // _rootDirectory/_publicRootDirectory are already absolute (Path.GetTempPath()-based),
+            // so ContentRootPath is never actually consulted here - only relative configured roots
+            // fall back to it.
+            new FakeHostEnvironment());
 
     private static FileValidationPolicy CreatePhotoPolicy() =>
         FileValidationPolicy.Create(["jpg", "png"], ["image/jpeg", "image/png"], maxSizeInBytes: 2 * 1024 * 1024);
@@ -64,10 +76,61 @@ public sealed class LocalDiskFileStorageServiceTests : IDisposable
         Assert.StartsWith("employer-logos/2026/09/18/", secondResult.Value.FileKey);
         Assert.NotEqual(firstResult.Value.FileKey, secondResult.Value.FileKey);
 
+        // First upload (CandidatePhoto) is private -> _rootDirectory; second (EmployerLogo) is
+        // public -> _publicRootDirectory (ADR-024 Faz 0 Görev 4).
         var firstFullPath = Path.Combine(_rootDirectory, firstResult.Value.FileKey.Replace('/', Path.DirectorySeparatorChar));
-        var secondFullPath = Path.Combine(_rootDirectory, secondResult.Value.FileKey.Replace('/', Path.DirectorySeparatorChar));
+        var secondFullPath = Path.Combine(_publicRootDirectory, secondResult.Value.FileKey.Replace('/', Path.DirectorySeparatorChar));
         Assert.True(File.Exists(firstFullPath));
         Assert.True(File.Exists(secondFullPath));
+    }
+
+    public static IEnumerable<object[]> AllCategoriesWithExpectedPublicness()
+    {
+        yield return [FileCategory.CandidatePhoto, false];
+        yield return [FileCategory.CandidateCv, false];
+        yield return [FileCategory.EmployerLogo, true];
+        yield return [FileCategory.EmployerDocument, false];
+        yield return [FileCategory.WebsiteImage, true];
+        yield return [FileCategory.WebsiteDocument, true];
+        yield return [FileCategory.WebsiteFormAttachment, false];
+    }
+
+    [Theory]
+    [MemberData(nameof(AllCategoriesWithExpectedPublicness))]
+    public async Task UploadAsync_WritesEachCategoryToItsCorrectRoot(FileCategory category, bool expectedPublic)
+    {
+        var service = CreateService();
+        using var content = new MemoryStream(Encoding.UTF8.GetBytes("bytes"));
+
+        var result = await service.UploadAsync(
+            content, "file.jpg", "image/jpeg", category, "Test", Guid.NewGuid(), CreatePhotoPolicy());
+
+        Assert.True(result.IsSuccess);
+        var expectedRoot = expectedPublic ? _publicRootDirectory : _rootDirectory;
+        var expectedPath = Path.Combine(expectedRoot, result.Value.FileKey.Replace('/', Path.DirectorySeparatorChar));
+        Assert.True(File.Exists(expectedPath));
+
+        var otherRoot = expectedPublic ? _rootDirectory : _publicRootDirectory;
+        var otherPath = Path.Combine(otherRoot, result.Value.FileKey.Replace('/', Path.DirectorySeparatorChar));
+        Assert.False(File.Exists(otherPath));
+    }
+
+    [Fact]
+    public async Task ReadAsync_AndDeleteAsync_ResolveCorrectRootForPublicCategory()
+    {
+        var service = CreateService();
+        var originalBytes = Encoding.UTF8.GetBytes("public-bytes");
+        using var content = new MemoryStream(originalBytes);
+        var uploaded = await service.UploadAsync(
+            content, "logo.png", "image/png", FileCategory.WebsiteImage, "SiteSettings", Guid.NewGuid(), CreatePhotoPolicy());
+        var fullPath = Path.Combine(_publicRootDirectory, uploaded.Value.FileKey.Replace('/', Path.DirectorySeparatorChar));
+        Assert.True(File.Exists(fullPath));
+
+        var readBytes = await service.ReadAsync(uploaded.Value.FileKey);
+        Assert.Equal(originalBytes, readBytes);
+
+        await service.DeleteAsync(uploaded.Value.FileKey);
+        Assert.False(File.Exists(fullPath));
     }
 
     [Fact]
@@ -176,6 +239,11 @@ public sealed class LocalDiskFileStorageServiceTests : IDisposable
         if (Directory.Exists(_rootDirectory))
         {
             Directory.Delete(_rootDirectory, recursive: true);
+        }
+
+        if (Directory.Exists(_publicRootDirectory))
+        {
+            Directory.Delete(_publicRootDirectory, recursive: true);
         }
     }
 }

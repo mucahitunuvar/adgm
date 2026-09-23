@@ -4,6 +4,7 @@ using GenclikMerkezi.Admin;
 using GenclikMerkezi.Api.Hangfire;
 using GenclikMerkezi.BuildingBlocks.Infrastructure.DependencyInjection;
 using GenclikMerkezi.BuildingBlocks.Infrastructure.ExceptionHandling;
+using GenclikMerkezi.BuildingBlocks.Infrastructure.FileStorage;
 using GenclikMerkezi.Modules.Candidate;
 using GenclikMerkezi.Modules.Candidate.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.CareerAdvisor;
@@ -32,6 +33,8 @@ using GenclikMerkezi.Modules.Website;
 using GenclikMerkezi.Modules.Website.Infrastructure.DependencyInjection;
 using Hangfire;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -166,6 +169,28 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// ADR-019 Ek (ADR-024 Faz 0 Görev 4): only the PUBLIC storage root is ever served statically, at
+// PublicRequestPath, with a long-lived immutable cache (file names are GUIDs - a given URL's
+// content never changes) and nosniff. The private root (candidate photos/CVs, employer documents,
+// website form attachments) has no static file mapping at all here or anywhere else in this file -
+// there is deliberately no way to reach it over HTTP yet (see ADR-024 Faz 0 master prompt's
+// "kapsam dışı" list: authorized download endpoints for it are follow-up work).
+var publicFileStorageSettings = app.Services.GetRequiredService<IOptions<FileStorageSettings>>().Value;
+var publicFileStorageRoot = Path.GetFullPath(
+    Path.Combine(app.Environment.ContentRootPath, publicFileStorageSettings.PublicRootDirectory));
+Directory.CreateDirectory(publicFileStorageRoot);
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(publicFileStorageRoot),
+    RequestPath = publicFileStorageSettings.PublicRequestPath,
+    OnPrepareResponse = context =>
+    {
+        context.Context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+        context.Context.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+    },
+});
 
 app.UseRateLimiter();
 
