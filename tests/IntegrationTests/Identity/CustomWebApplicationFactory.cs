@@ -17,9 +17,12 @@ using GenclikMerkezi.SharedKernel.Abstractions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Data.Sqlite;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace GenclikMerkezi.IntegrationTests.Identity;
 
@@ -29,6 +32,14 @@ namespace GenclikMerkezi.IntegrationTests.Identity;
 // ADR-014's amendment), and CAP's SqlServer storage package cannot target a Sqlite connection.
 // ReferenceData has no such constraint (ADR-012's Sqlite switch would work for it) but uses
 // LocalDB too here, simply for consistency with the other two in this shared test factory.
+//
+// Every module added to this shared factory after those three was wired to LocalDB too, by
+// copying this file's existing pattern rather than re-deriving it - none of them (Candidate
+// through CareerDevelopment) has Identity/ReferenceData's stated reason and none is a CAP outbox
+// anchor. That is a pre-existing, repo-wide deviation from ADR-012 ("Testing -> Sqlite"), out of
+// scope to fix here. WebsiteDbContext is deliberately NOT added to that drift: it uses a real
+// Sqlite in-memory connection (see _websiteSqliteConnection below), matching what ADR-012 actually
+// specifies, since Website has no CAP/outbox constraint that would justify LocalDB.
 //
 // Not sealed: BrokenCandidateDatabaseWebApplicationFactory (Candidate's registration-compensation
 // test) subclasses this to point only the Candidate connection at an unreachable server, reusing
@@ -47,7 +58,19 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     private readonly string _interviewDatabaseName = $"GenclikMerkezi.Interview.Test.{Guid.NewGuid():N}";
     private readonly string _employmentDatabaseName = $"GenclikMerkezi.Employment.Test.{Guid.NewGuid():N}";
     private readonly string _careerDevelopmentDatabaseName = $"GenclikMerkezi.CareerDevelopment.Test.{Guid.NewGuid():N}";
-    private readonly string _websiteDatabaseName = $"GenclikMerkezi.Website.Test.{Guid.NewGuid():N}";
+
+    // ADR-012: Website has no CAP/outbox constraint, so (unlike every connection string above) it
+    // uses a real Sqlite in-memory database instead of LocalDB. A Sqlite ":memory:" database is
+    // destroyed the moment its connection closes, so one already-open connection is kept alive for
+    // the factory's lifetime and handed to every WebsiteDbContext instance (see ConfigureWebHost).
+    private readonly SqliteConnection _websiteSqliteConnection = CreateOpenWebsiteSqliteConnection();
+
+    private static SqliteConnection CreateOpenWebsiteSqliteConnection()
+    {
+        var connection = new SqliteConnection("DataSource=:memory:");
+        connection.Open();
+        return connection;
+    }
 
     private string IdentityConnectionString =>
         $"{LocalDbServer}Database={_identityDatabaseName};";
@@ -88,9 +111,6 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     private string CareerDevelopmentConnectionString =>
         $"{LocalDbServer}Database={_careerDevelopmentDatabaseName};";
 
-    private string WebsiteConnectionString =>
-        $"{LocalDbServer}Database={_websiteDatabaseName};";
-
     public FakeEmailSender EmailSender { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -111,7 +131,6 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("ConnectionStrings:InterviewDatabase", InterviewConnectionString);
         builder.UseSetting("ConnectionStrings:EmploymentDatabase", EmploymentConnectionString);
         builder.UseSetting("ConnectionStrings:CareerDevelopmentDatabase", CareerDevelopmentConnectionString);
-        builder.UseSetting("ConnectionStrings:WebsiteDatabase", WebsiteConnectionString);
         builder.UseSetting("Jwt:Issuer", "GenclikMerkezi.Tests");
         builder.UseSetting("Jwt:Audience", "GenclikMerkezi.Tests");
         builder.UseSetting("Jwt:SigningKey", "integration-test-signing-key-do-not-use-in-prod");
@@ -120,6 +139,29 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
+            // Overrides Program.cs's own AddWebsiteModule() registration (which points at
+            // SqlServer, since Database:Provider is never set to "Sqlite" for this shared
+            // factory's other modules - see the class-level comment). AddDbContext<TContext>
+            // registers the configuration action as an IDbContextOptionsConfiguration<TContext>
+            // entry (added, not replaced) rather than replacing DbContextOptions<TContext>
+            // outright - removing only the DbContextOptions<TContext> singleton still left both
+            // Program.cs's UseSqlServer() and this UseSqlite() call applied to the rebuilt options
+            // ("Multiple relational database provider configurations found"). Both registration
+            // kinds must be removed. UseInternalServiceProvider() then isolates WebsiteDbContext
+            // from the app's shared ambient container, which still has SqlServer's provider
+            // services registered for every other module ("Only a single database provider can be
+            // registered in a service provider" otherwise).
+            services.RemoveAll<DbContextOptions<WebsiteDbContext>>();
+            services.RemoveAll<IDbContextOptionsConfiguration<WebsiteDbContext>>();
+
+            var websiteSqliteServiceProvider = new ServiceCollection()
+                .AddEntityFrameworkSqlite()
+                .BuildServiceProvider();
+
+            services.AddDbContext<WebsiteDbContext>(options => options
+                .UseSqlite(_websiteSqliteConnection)
+                .UseInternalServiceProvider(websiteSqliteServiceProvider));
+
             using var scope = services.BuildServiceProvider().CreateScope();
             scope.ServiceProvider.GetRequiredService<IdentityDbContext>().Database.EnsureCreated();
             scope.ServiceProvider.GetRequiredService<NotificationDbContext>().Database.EnsureCreated();
@@ -213,7 +255,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         DropDatabase(_interviewDatabaseName);
         DropDatabase(_employmentDatabaseName);
         DropDatabase(_careerDevelopmentDatabaseName);
-        DropDatabase(_websiteDatabaseName);
+        _websiteSqliteConnection.Dispose();
     }
 
     // Best-effort cleanup of the throwaway LocalDB databases - EF Core's connection pool may
