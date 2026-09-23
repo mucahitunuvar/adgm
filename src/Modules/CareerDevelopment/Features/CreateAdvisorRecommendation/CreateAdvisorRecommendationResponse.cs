@@ -1,0 +1,3 @@
+namespace GenclikMerkezi.Modules.CareerDevelopment.Features.CreateAdvisorRecommendation;
+
+public sealed record CreateAdvisorRecommendationResponse(Guid AdvisorRecommendationId);
