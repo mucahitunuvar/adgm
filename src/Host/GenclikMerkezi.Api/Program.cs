@@ -74,6 +74,8 @@ builder.Services.AddCareerDevelopmentModule(builder.Configuration);
 builder.Services.AddSupportModule(builder.Configuration);
 builder.Services.AddWebsiteModule(builder.Configuration);
 
+var isTestingEnvironment = builder.Environment.IsEnvironment("Testing");
+
 // Part 0 (Hangfire altyapısı): tüm modüllerin yeniden kullanabileceği genel bir background-job
 // altyapısı - herhangi bir modüle ait değil, Host'ta bir kez kaydedilir (CAP/AddMessaging ile aynı
 // gerekçe). Kendi başına, herhangi bir modülün sahipliğinde olmayan bir infrastructure DB kullanır.
@@ -82,7 +84,21 @@ builder.Services.AddHangfire(config => config
     .UseSimpleAssemblyNameTypeSerializer()
     .UseRecommendedSerializerSettings()
     .UseSqlServerStorage(builder.Configuration.GetConnectionString("HangfireDatabase")));
-builder.Services.AddHangfireServer();
+
+// The actual background *server* (a real worker thread pool, distinct from the storage/client
+// registration above) is skipped for the "Testing" environment: no integration test needs Hangfire
+// to actually process a job, and every WebApplicationFactory<Program> instance in the test run
+// starts (and later disposes) its own server against the same shared Hangfire storage database.
+// Its shutdown signal handler logs through Hangfire.AspNetCore.AspNetCoreLog -> ILogger, and on
+// this host the default Windows EventLog logging provider can already be disposed by then, which
+// throws ObjectDisposedException on a raw ThreadPool callback thread with nothing to catch it -
+// that crashes the whole test process outright (observed once as "Etkin test çalıştırması iptal
+// edildi... Cannot access a disposed object. Object name: 'EventLogInternal'."). Not starting the
+// server in tests removes the only code path that triggers it.
+if (!isTestingEnvironment)
+{
+    builder.Services.AddHangfireServer();
+}
 
 // Host-seviyesi çok-modüllü orkestrasyon (ADR-022 §1) - herhangi bir modüle ait değil, bu yüzden
 // modüllerin AddXModule() metotlarının hiçbirinde değil, burada kaydediliyor.
@@ -94,8 +110,6 @@ builder.Services.AddScoped<CareerAdvisorDeactivationOrchestrator>();
 // consumer registered by any module (e.g. Notification's) is still discovered by this one
 // registration regardless of which assembly it lives in.
 builder.Services.AddMessaging<IdentityDbContext>(builder.Configuration, builder.Environment);
-
-var isTestingEnvironment = builder.Environment.IsEnvironment("Testing");
 
 // The "Testing" environment (integration tests) shares a single in-process host across many
 // requests from multiple test cases; the production limits would cause unrelated test failures.
@@ -181,8 +195,14 @@ app.MapWebsiteModuleEndpoints();
 // Support'un tek Hangfire tüketicisi olduğu bu aşamada, ayrı bir IRecurringJobScheduler soyutlaması
 // yerine doğrudan burada kaydedilir (aşırı soyutlama yapma - AGENTS.md §51). İleride başka modüller
 // de kendi recurring job'larını aynı şekilde burada (ya da kendi Program.cs eklentisinde) kaydedebilir.
-RecurringJob.AddOrUpdate<CloseOverdueSupportTicketsJob>(
-    "support-close-overdue-tickets", job => job.ExecuteAsync(CancellationToken.None), Cron.Hourly);
+// Skipped for "Testing" along with AddHangfireServer() above - no server is running to execute it,
+// and RecurringJob.AddOrUpdate would otherwise write against the shared Hangfire storage database
+// from every parallel test host.
+if (!isTestingEnvironment)
+{
+    RecurringJob.AddOrUpdate<CloseOverdueSupportTicketsJob>(
+        "support-close-overdue-tickets", job => job.ExecuteAsync(CancellationToken.None), Cron.Hourly);
+}
 
 app.Run();
 
