@@ -18,6 +18,8 @@ public sealed class CareerDevelopmentDbContext(DbContextOptions<CareerDevelopmen
 
     public DbSet<AdvisorRecommendation> AdvisorRecommendations => Set<AdvisorRecommendation>();
 
+    public DbSet<DevelopmentPlan> DevelopmentPlans => Set<DevelopmentPlan>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(CareerDevelopmentDbContext).Assembly);

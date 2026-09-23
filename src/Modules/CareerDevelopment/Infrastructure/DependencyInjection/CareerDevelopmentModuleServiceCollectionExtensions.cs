@@ -35,6 +35,7 @@ public static class CareerDevelopmentModuleServiceCollectionExtensions
         services.AddScoped<ICareerGoalRepository, CareerGoalRepository>();
         services.AddScoped<ITrainingRecommendationRepository, TrainingRecommendationRepository>();
         services.AddScoped<IAdvisorRecommendationRepository, AdvisorRecommendationRepository>();
+        services.AddScoped<IDevelopmentPlanRepository, DevelopmentPlanRepository>();
 
         return services;
     }
