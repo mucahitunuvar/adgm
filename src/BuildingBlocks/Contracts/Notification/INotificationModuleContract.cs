@@ -17,4 +17,10 @@ public interface INotificationModuleContract
     // transaction/commit sınırında toplu işlenir.
     Task SendBulkAsync(
         IEnumerable<NotificationRecipient> recipients, string subject, string message, CancellationToken cancellationToken = default);
+
+    // Website Faz 0 Görev 7 (ADR-024 §1, IWebsiteEmailSender's Host adapter): email-only, no UserId
+    // and therefore no in-app notification - for recipients who are not necessarily platform users
+    // (event registrants, form submitters, newsletter subscribers). Still best-effort/non-throwing
+    // and still recorded as an EmailNotification, same as SendAsync/SendBulkAsync.
+    Task SendEmailAsync(string recipientEmail, string subject, string body, CancellationToken cancellationToken = default);
 }

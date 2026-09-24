@@ -6,12 +6,15 @@ public sealed class FakeNotificationModuleContract : INotificationModuleContract
 {
     private readonly List<(Guid UserId, string RecipientEmail, string Subject, string Message)> _sentNotifications = [];
     private readonly List<(IReadOnlyList<NotificationRecipient> Recipients, string Subject, string Message)> _sentBulkNotifications = [];
+    private readonly List<(string RecipientEmail, string Subject, string Body)> _sentEmails = [];
 
     public IReadOnlyCollection<(Guid UserId, string RecipientEmail, string Subject, string Message)> SentNotifications =>
         _sentNotifications.AsReadOnly();
 
     public IReadOnlyCollection<(IReadOnlyList<NotificationRecipient> Recipients, string Subject, string Message)> SentBulkNotifications =>
         _sentBulkNotifications.AsReadOnly();
+
+    public IReadOnlyCollection<(string RecipientEmail, string Subject, string Body)> SentEmails => _sentEmails.AsReadOnly();
 
     public Task SendAsync(
         Guid userId, string recipientEmail, string subject, string message, CancellationToken cancellationToken = default)
@@ -24,6 +27,12 @@ public sealed class FakeNotificationModuleContract : INotificationModuleContract
         IEnumerable<NotificationRecipient> recipients, string subject, string message, CancellationToken cancellationToken = default)
     {
         _sentBulkNotifications.Add((recipients.ToList(), subject, message));
+        return Task.CompletedTask;
+    }
+
+    public Task SendEmailAsync(string recipientEmail, string subject, string body, CancellationToken cancellationToken = default)
+    {
+        _sentEmails.Add((recipientEmail, subject, body));
         return Task.CompletedTask;
     }
 }

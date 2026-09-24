@@ -19,4 +19,7 @@ public sealed class FakeNotificationModuleContract : INotificationModuleContract
     public Task SendBulkAsync(
         IEnumerable<NotificationRecipient> recipients, string subject, string message, CancellationToken cancellationToken = default) =>
         Task.CompletedTask;
+
+    public Task SendEmailAsync(string recipientEmail, string subject, string body, CancellationToken cancellationToken = default) =>
+        Task.CompletedTask;
 }

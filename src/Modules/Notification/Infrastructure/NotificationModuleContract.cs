@@ -63,4 +63,26 @@ public sealed class NotificationModuleContract(
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task SendEmailAsync(
+        string recipientEmail, string subject, string body, CancellationToken cancellationToken = default)
+    {
+        var emailNotification = EmailNotification.Create(recipientEmail, subject, body);
+
+        // Best-effort (ADR-022 §3/§6), same as SendAsync/SendBulkAsync - but deliberately no
+        // InAppNotification here: there is no UserId to attach one to.
+        try
+        {
+            await emailSender.SendAsync(recipientEmail, subject, body, cancellationToken);
+            emailNotification.MarkSent();
+        }
+        catch (Exception ex)
+        {
+            emailNotification.MarkFailed(ex.Message);
+        }
+
+        emailNotificationRepository.Add(emailNotification);
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
 }

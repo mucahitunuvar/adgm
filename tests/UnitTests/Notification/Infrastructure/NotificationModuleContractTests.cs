@@ -47,4 +47,30 @@ public class NotificationModuleContractTests
         Assert.Single(_inAppNotificationRepository.Notifications);
         Assert.Equal(1, _unitOfWork.SaveChangesCallCount);
     }
+
+    [Fact]
+    public async Task SendEmailAsync_WithSuccessfulDelivery_RecordsSentEmail_WithoutAnyInAppNotification()
+    {
+        await CreateContract().SendEmailAsync("ziyaretci@example.com", "Konu", "Mesaj", CancellationToken.None);
+
+        var emailNotification = Assert.Single(_emailNotificationRepository.Notifications);
+        Assert.Equal("ziyaretci@example.com", emailNotification.ToEmail);
+        Assert.Equal(EmailNotificationStatus.Sent, emailNotification.Status);
+
+        Assert.Empty(_inAppNotificationRepository.Notifications);
+        Assert.Equal(1, _unitOfWork.SaveChangesCallCount);
+    }
+
+    [Fact]
+    public async Task SendEmailAsync_WhenDeliveryFails_MarksEmailFailed_ButDoesNotThrow()
+    {
+        _emailSender.ThrowOnSend = new InvalidOperationException("SMTP unreachable");
+
+        await CreateContract().SendEmailAsync("ziyaretci@example.com", "Konu", "Mesaj", CancellationToken.None);
+
+        var emailNotification = Assert.Single(_emailNotificationRepository.Notifications);
+        Assert.Equal(EmailNotificationStatus.Failed, emailNotification.Status);
+        Assert.Equal("SMTP unreachable", emailNotification.FailureReason);
+        Assert.Equal(1, _unitOfWork.SaveChangesCallCount);
+    }
 }

@@ -2,9 +2,11 @@ using System.Security.Claims;
 using System.Threading.RateLimiting;
 using GenclikMerkezi.Admin;
 using GenclikMerkezi.Api.Hangfire;
+using GenclikMerkezi.Api.Website;
 using GenclikMerkezi.BuildingBlocks.Infrastructure.DependencyInjection;
 using GenclikMerkezi.BuildingBlocks.Infrastructure.ExceptionHandling;
 using GenclikMerkezi.BuildingBlocks.Infrastructure.FileStorage;
+using GenclikMerkezi.Contracts.Website;
 using GenclikMerkezi.Modules.Candidate;
 using GenclikMerkezi.Modules.Candidate.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.CareerAdvisor;
@@ -76,6 +78,10 @@ builder.Services.AddEmploymentModule(builder.Configuration);
 builder.Services.AddCareerDevelopmentModule(builder.Configuration);
 builder.Services.AddSupportModule(builder.Configuration);
 builder.Services.AddWebsiteModule(builder.Configuration);
+
+// ADR-024 §1 Görev 7: Website's IWebsiteEmailSender port, wired at the Host composition root to
+// Notification's public contract - Website itself depends on neither.
+builder.Services.AddScoped<IWebsiteEmailSender, NotificationWebsiteEmailSender>();
 
 var isTestingEnvironment = builder.Environment.IsEnvironment("Testing");
 
