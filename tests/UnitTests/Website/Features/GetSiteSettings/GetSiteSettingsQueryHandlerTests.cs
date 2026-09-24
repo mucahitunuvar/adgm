@@ -23,6 +23,7 @@ public class GetSiteSettingsQueryHandlerTests
         Assert.True(result.Value.BotProtectionEnabled);
         Assert.False(result.Value.GlobalSearchEnabled);
         Assert.Empty(result.Value.BankAccounts);
+        Assert.NotEmpty(result.Value.RowVersion);
     }
 
     [Fact]
@@ -36,14 +37,14 @@ public class GetSiteSettingsQueryHandlerTests
         _mediaAssetRepository.Seed(logo);
 
         var settings = SiteSettings.CreateDefault();
-        settings.UpdateTheme(SiteTheme.Create(logo.Id, null, null, null, null, null).Value, Guid.NewGuid(), DateTime.UtcNow);
+        settings.UpdateIdentity(logo.Id, null, null, null, Guid.NewGuid(), DateTime.UtcNow);
         _siteSettingsRepository.Seed(settings);
 
         var result = await CreateHandler().Handle(new GetSiteSettingsQuery(), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(logo.Id, result.Value.Theme.LogoLightMediaAssetId);
-        Assert.NotNull(result.Value.Theme.LogoLightUrl);
+        Assert.Equal(logo.Id, result.Value.LogoLightMediaAssetId);
+        Assert.NotNull(result.Value.LogoLightUrl);
     }
 
     [Fact]
@@ -51,12 +52,14 @@ public class GetSiteSettingsQueryHandlerTests
     {
         var settings = SiteSettings.CreateDefault();
         var iban = Iban.Create("TR330006100519786457841326").Value;
-        settings.ReplaceBankAccounts([BankAccount.Create(iban, "Ziraat", "Dernek", null, 1, isActive: false)], Guid.NewGuid(), DateTime.UtcNow);
+        settings.ReplaceBankAccounts(
+            [BankAccount.Create(iban, "Ziraat", "Dernek", BankAccountCurrency.TRY, null, 1, isActive: false)], Guid.NewGuid(), DateTime.UtcNow);
         _siteSettingsRepository.Seed(settings);
 
         var result = await CreateHandler().Handle(new GetSiteSettingsQuery(), CancellationToken.None);
 
         var account = Assert.Single(result.Value.BankAccounts);
         Assert.False(account.IsActive);
+        Assert.Equal("TRY", account.Currency);
     }
 }

@@ -4,20 +4,12 @@ using GenclikMerkezi.SharedKernel.Results;
 
 namespace GenclikMerkezi.Modules.Website.Domain;
 
-// ADR-024 §8.3/§13: visual identity tokens the frontend maps onto CSS variables so the module can be
-// reused with a different brand identity without code changes. Logo/favicon are loose references to
-// a MediaAsset (by id, resolved to a URL at read time), the same reasoning as every other
-// cross-aggregate reference in this module - never a navigation, since MediaAsset lives in its own
-// aggregate boundary.
+// ADR-024 §8.3/§13 (Görev 6): color/font tokens the frontend maps onto CSS variables so the module
+// can be reused with a different brand identity without code changes. Logo/favicon/OG-image are a
+// separate concept - SiteSettings' "identity" group (UpdateIdentity) - not part of the theme.
 public sealed partial class SiteTheme : ValueObject
 {
     public const int MaxFontFamilyLength = 100;
-
-    public Guid? LogoLightMediaAssetId { get; }
-
-    public Guid? LogoDarkMediaAssetId { get; }
-
-    public Guid? FaviconMediaAssetId { get; }
 
     public string PrimaryColorHex { get; } = string.Empty;
 
@@ -25,29 +17,14 @@ public sealed partial class SiteTheme : ValueObject
 
     public string FontFamily { get; } = string.Empty;
 
-    private SiteTheme(
-        Guid? logoLightMediaAssetId,
-        Guid? logoDarkMediaAssetId,
-        Guid? faviconMediaAssetId,
-        string primaryColorHex,
-        string secondaryColorHex,
-        string fontFamily)
+    private SiteTheme(string primaryColorHex, string secondaryColorHex, string fontFamily)
     {
-        LogoLightMediaAssetId = logoLightMediaAssetId;
-        LogoDarkMediaAssetId = logoDarkMediaAssetId;
-        FaviconMediaAssetId = faviconMediaAssetId;
         PrimaryColorHex = primaryColorHex;
         SecondaryColorHex = secondaryColorHex;
         FontFamily = fontFamily;
     }
 
-    public static Result<SiteTheme> Create(
-        Guid? logoLightMediaAssetId,
-        Guid? logoDarkMediaAssetId,
-        Guid? faviconMediaAssetId,
-        string? primaryColorHex,
-        string? secondaryColorHex,
-        string? fontFamily)
+    public static Result<SiteTheme> Create(string? primaryColorHex, string? secondaryColorHex, string? fontFamily)
     {
         var normalizedPrimary = (primaryColorHex ?? string.Empty).Trim();
         var normalizedSecondary = (secondaryColorHex ?? string.Empty).Trim();
@@ -71,18 +48,13 @@ public sealed partial class SiteTheme : ValueObject
                 "SiteTheme.FontFamilyTooLong", $"Font family must be at most {MaxFontFamilyLength} characters."));
         }
 
-        return Result.Success(new SiteTheme(
-            logoLightMediaAssetId, logoDarkMediaAssetId, faviconMediaAssetId,
-            normalizedPrimary, normalizedSecondary, normalizedFontFamily));
+        return Result.Success(new SiteTheme(normalizedPrimary, normalizedSecondary, normalizedFontFamily));
     }
 
-    public static SiteTheme CreateEmpty() => new(null, null, null, string.Empty, string.Empty, string.Empty);
+    public static SiteTheme CreateEmpty() => new(string.Empty, string.Empty, string.Empty);
 
     protected override IEnumerable<object?> GetEqualityComponents()
     {
-        yield return LogoLightMediaAssetId;
-        yield return LogoDarkMediaAssetId;
-        yield return FaviconMediaAssetId;
         yield return PrimaryColorHex;
         yield return SecondaryColorHex;
         yield return FontFamily;

@@ -17,18 +17,29 @@ public sealed class BankAccount : Entity
 
     public string AccountHolder { get; private set; } = string.Empty;
 
+    public BankAccountCurrency Currency { get; private set; }
+
     public string? Description { get; private set; }
 
     public int SortOrder { get; private set; }
 
     public bool IsActive { get; private set; }
 
-    private BankAccount(Guid id, Iban iban, string bankName, string accountHolder, string? description, int sortOrder, bool isActive)
+    private BankAccount(
+        Guid id,
+        Iban iban,
+        string bankName,
+        string accountHolder,
+        BankAccountCurrency currency,
+        string? description,
+        int sortOrder,
+        bool isActive)
         : base(id)
     {
         Iban = iban;
         BankName = bankName;
         AccountHolder = accountHolder;
+        Currency = currency;
         Description = description;
         SortOrder = sortOrder;
         IsActive = isActive;
@@ -38,8 +49,9 @@ public sealed class BankAccount : Entity
     {
     }
 
-    public static BankAccount Create(Iban iban, string bankName, string accountHolder, string? description, int sortOrder, bool isActive) =>
+    public static BankAccount Create(
+        Iban iban, string bankName, string accountHolder, BankAccountCurrency currency, string? description, int sortOrder, bool isActive) =>
         new(
-            Guid.NewGuid(), iban, bankName.Trim(), accountHolder.Trim(),
+            Guid.NewGuid(), iban, bankName.Trim(), accountHolder.Trim(), currency,
             string.IsNullOrWhiteSpace(description) ? null : description.Trim(), sortOrder, isActive);
 }

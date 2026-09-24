@@ -7,7 +7,13 @@ using GenclikMerkezi.Modules.Website.Features.CreateSiteLanguage;
 using GenclikMerkezi.Modules.Website.Features.GetPublicSite;
 using GenclikMerkezi.Modules.Website.Features.GetSiteLanguages;
 using GenclikMerkezi.Modules.Website.Features.GetSiteSettings;
-using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettings;
+using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsBankAccounts;
+using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsBotProtection;
+using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsContact;
+using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsFeatures;
+using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsIdentity;
+using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsMaintenance;
+using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsTheme;
 using GenclikMerkezi.Modules.Website.Features.UploadMediaAsset;
 using SkiaSharp;
 
@@ -48,6 +54,7 @@ public class SiteSettingsDefaultsTests : IClassFixture<CustomWebApplicationFacto
         Assert.False(body.DonationPageEnabled);
         Assert.Empty(body.BankAccounts);
         Assert.Equal(string.Empty, body.TurnstileSiteKey);
+        Assert.NotEmpty(body.RowVersion);
     }
 
     [Fact]
@@ -119,70 +126,196 @@ public class SiteSettingsFlowTests : IClassFixture<CustomWebApplicationFactory>
         await _client.SendAsync(activateRequest);
     }
 
-    private async Task<HttpResponseMessage> UpdateSettingsAsync(string accessToken, UpdateSiteSettingsRequest request)
+    private async Task<byte[]> GetCurrentRowVersionAsync(string accessToken)
     {
-        var updateRequest = new HttpRequestMessage(HttpMethod.Put, "/api/v1/admin/website/settings") { Content = JsonContent.Create(request) };
-        updateRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-        return await _client.SendAsync(updateRequest);
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/admin/website/settings");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        var response = await _client.SendAsync(request);
+        var body = await response.Content.ReadFromJsonAsync<SiteSettingsResponse>();
+        return body!.RowVersion;
     }
 
-    private static UpdateSiteSettingsRequest BuildMinimalRequest(
-        UpdateSiteSettingsThemeInput? theme = null,
-        IReadOnlyList<UpdateSiteSettingsTranslationInput>? translations = null,
-        IReadOnlyList<UpdateSiteSettingsBankAccountInput>? bankAccounts = null,
-        bool donationPageEnabled = false,
-        bool maintenanceModeEnabled = false,
-        string? turnstileSiteKey = null) =>
-        new(
-            theme ?? new UpdateSiteSettingsThemeInput(null, null, null, null, null, null),
-            new UpdateSiteSettingsContactInput(null, null, null, null, null),
-            [],
-            bankAccounts ?? [],
-            translations ?? [],
-            new UpdateSiteSettingsFeatureFlagsInput(false, false, false, donationPageEnabled, true),
-            maintenanceModeEnabled,
-            turnstileSiteKey);
+    private async Task<HttpResponseMessage> PutAsync<TRequest>(string accessToken, string path, TRequest request)
+    {
+        var httpRequest = new HttpRequestMessage(HttpMethod.Put, path) { Content = JsonContent.Create(request) };
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        return await _client.SendAsync(httpRequest);
+    }
+
+    private Task<HttpResponseMessage> PutIdentityAsync(
+        string accessToken, byte[] rowVersion, Guid? logoLightMediaAssetId = null,
+        IReadOnlyList<UpdateSiteSettingsIdentityTranslationInput>? translations = null) =>
+        PutAsync(accessToken, "/api/v1/admin/website/settings/identity", new UpdateSiteSettingsIdentityRequest(
+            rowVersion, logoLightMediaAssetId, null, null, null, translations ?? []));
+
+    private Task<HttpResponseMessage> PutThemeAsync(
+        string accessToken, byte[] rowVersion, string? primaryColorHex = null, string? secondaryColorHex = null, string? fontFamily = null) =>
+        PutAsync(accessToken, "/api/v1/admin/website/settings/theme",
+            new UpdateSiteSettingsThemeRequest(rowVersion, primaryColorHex, secondaryColorHex, fontFamily));
+
+    private Task<HttpResponseMessage> PutContactAsync(
+        string accessToken, byte[] rowVersion, string? email = null,
+        IReadOnlyList<GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsContact.UpdateSiteSettingsSocialLinkInput>? socialLinks = null) =>
+        PutAsync(accessToken, "/api/v1/admin/website/settings/contact",
+            new UpdateSiteSettingsContactRequest(rowVersion, null, null, email, null, null, socialLinks ?? []));
+
+    private Task<HttpResponseMessage> PutBankAccountsAsync(
+        string accessToken, byte[] rowVersion, IReadOnlyList<UpdateSiteSettingsBankAccountInput> bankAccounts) =>
+        PutAsync(accessToken, "/api/v1/admin/website/settings/bank-accounts", new UpdateSiteSettingsBankAccountsRequest(rowVersion, bankAccounts));
+
+    private Task<HttpResponseMessage> PutFeaturesAsync(
+        string accessToken, byte[] rowVersion, bool donationPageEnabled = false, bool globalSearchEnabled = false) =>
+        PutAsync(accessToken, "/api/v1/admin/website/settings/features",
+            new UpdateSiteSettingsFeaturesRequest(rowVersion, globalSearchEnabled, false, false, donationPageEnabled));
+
+    private Task<HttpResponseMessage> PutMaintenanceAsync(
+        string accessToken, byte[] rowVersion, bool maintenanceModeEnabled,
+        IReadOnlyList<UpdateSiteSettingsMaintenanceTranslationInput>? translations = null) =>
+        PutAsync(accessToken, "/api/v1/admin/website/settings/maintenance",
+            new UpdateSiteSettingsMaintenanceRequest(rowVersion, maintenanceModeEnabled, translations ?? []));
+
+    private Task<HttpResponseMessage> PutBotProtectionAsync(string accessToken, byte[] rowVersion, bool enabled, string? siteKey) =>
+        PutAsync(accessToken, "/api/v1/admin/website/settings/bot-protection", new UpdateSiteSettingsBotProtectionRequest(rowVersion, enabled, siteKey));
 
     [Fact]
-    public async Task UpdateSiteSettings_ThenReadBackFromAdminAndPublicEndpoints_ReflectsEveryChangedSection()
+    public async Task UpdateIdentity_ThenReadBack_ReflectsLogoAndTranslationsInBothAdminAndPublic()
     {
         var accessToken = await LoginAsAdminAsync();
         var logoId = await UploadLogoAsync(accessToken);
+        var rowVersion = await GetCurrentRowVersionAsync(accessToken);
 
-        var updateResponse = await UpdateSettingsAsync(accessToken, new UpdateSiteSettingsRequest(
-            new UpdateSiteSettingsThemeInput(logoId, null, null, "#123456", "#abcdef", "Inter"),
-            new UpdateSiteSettingsContactInput("Ankara", "+90 555 000 00 00", "info@example.org", null, null),
-            [new UpdateSiteSettingsSocialLinkInput("Instagram", "https://instagram.com/x", 1)],
-            [new UpdateSiteSettingsBankAccountInput("TR330006100519786457841326", "Ziraat", "Dernek", "Genel bağış", 1, true)],
-            [new UpdateSiteSettingsTranslationInput("tr", "Gençlik Merkezi", "Ana Sayfa", "Açıklama", "Footer metni", "Bakımdayız")],
-            new UpdateSiteSettingsFeatureFlagsInput(true, false, false, true, true),
-            true,
-            "0x4AAA-site-key"));
-        Assert.Equal(HttpStatusCode.NoContent, updateResponse.StatusCode);
+        var response = await PutIdentityAsync(accessToken, rowVersion, logoId,
+            [new UpdateSiteSettingsIdentityTranslationInput("tr", "Gençlik Merkezi", "Birlikte güçlüyüz", "Ana Sayfa", "Açıklama", "Footer metni")]);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         var adminGetRequest = new HttpRequestMessage(HttpMethod.Get, "/api/v1/admin/website/settings");
         adminGetRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-        var adminGetResponse = await _client.SendAsync(adminGetRequest);
-        var adminBody = await adminGetResponse.Content.ReadFromJsonAsync<SiteSettingsResponse>();
-        Assert.Equal("#123456", adminBody!.Theme.PrimaryColorHex);
-        Assert.Equal(logoId, adminBody.Theme.LogoLightMediaAssetId);
-        Assert.NotNull(adminBody.Theme.LogoLightUrl);
-        Assert.Equal("info@example.org", adminBody.Contact.Email);
-        Assert.True(adminBody.GlobalSearchEnabled);
-        Assert.True(adminBody.MaintenanceModeEnabled);
-        Assert.Equal("0x4AAA-site-key", adminBody.TurnstileSiteKey);
+        var adminBody = await (await _client.SendAsync(adminGetRequest)).Content.ReadFromJsonAsync<SiteSettingsResponse>();
+        Assert.Equal(logoId, adminBody!.LogoLightMediaAssetId);
+        Assert.NotNull(adminBody.LogoLightUrl);
         var trTranslation = Assert.Single(adminBody.Translations, t => t.LanguageCode == "tr");
         Assert.Equal("Gençlik Merkezi", trTranslation.SiteName);
-        Assert.Equal("Bakımdayız", trTranslation.MaintenanceMessage);
+        Assert.Equal("Birlikte güçlüyüz", trTranslation.Tagline);
 
-        var publicResponse = await _client.GetAsync("/api/v1/public/site");
-        var publicBody = await publicResponse.Content.ReadFromJsonAsync<PublicSiteResponse>();
+        var publicBody = await (await _client.GetAsync("/api/v1/public/site")).Content.ReadFromJsonAsync<PublicSiteResponse>();
+        Assert.NotNull(publicBody!.LogoLightUrl);
+        Assert.Equal("Gençlik Merkezi", publicBody.SiteName);
+        Assert.Equal("Birlikte güçlüyüz", publicBody.Tagline);
+    }
+
+    [Fact]
+    public async Task UpdateTheme_ThenReadBack_ReflectsColorsInBothAdminAndPublic()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var rowVersion = await GetCurrentRowVersionAsync(accessToken);
+
+        var response = await PutThemeAsync(accessToken, rowVersion, "#123456", "#abcdef", "Inter");
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var publicBody = await (await _client.GetAsync("/api/v1/public/site")).Content.ReadFromJsonAsync<PublicSiteResponse>();
         Assert.Equal("#123456", publicBody!.Theme.PrimaryColorHex);
-        Assert.NotNull(publicBody.Theme.LogoLightUrl);
-        Assert.Single(publicBody.BankAccounts, a => a.Iban == "TR330006100519786457841326");
-        Assert.True(publicBody.MaintenanceModeEnabled);
+        Assert.Equal("Inter", publicBody.Theme.FontFamily);
+    }
+
+    [Fact]
+    public async Task UpdateContact_ThenReadBack_ReflectsContactAndSocialLinks()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var rowVersion = await GetCurrentRowVersionAsync(accessToken);
+
+        var response = await PutContactAsync(
+            accessToken, rowVersion, "info@example.org",
+            [new GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsContact.UpdateSiteSettingsSocialLinkInput("Instagram", "https://instagram.com/x", 1)]);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var publicBody = await (await _client.GetAsync("/api/v1/public/site")).Content.ReadFromJsonAsync<PublicSiteResponse>();
+        Assert.Equal("info@example.org", publicBody!.Contact.Email);
+        Assert.Single(publicBody.SocialLinks, l => l.Platform == "Instagram");
+    }
+
+    [Fact]
+    public async Task UpdateBankAccounts_ThenReadBack_ReflectsAccountsIncludingCurrency()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var rowVersion = await GetCurrentRowVersionAsync(accessToken);
+
+        var response = await PutBankAccountsAsync(
+            accessToken, rowVersion, [new UpdateSiteSettingsBankAccountInput("TR330006100519786457841326", "Ziraat", "Dernek", "TRY", "Genel bağış", 1, true)]);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var adminGetRequest = new HttpRequestMessage(HttpMethod.Get, "/api/v1/admin/website/settings");
+        adminGetRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        var adminBody = await (await _client.SendAsync(adminGetRequest)).Content.ReadFromJsonAsync<SiteSettingsResponse>();
+        var account = Assert.Single(adminBody!.BankAccounts);
+        Assert.Equal("TRY", account.Currency);
+    }
+
+    [Fact]
+    public async Task UpdateFeatures_ThenReadBack_ReflectsFlags()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var rowVersion = await GetCurrentRowVersionAsync(accessToken);
+
+        var response = await PutFeaturesAsync(accessToken, rowVersion, donationPageEnabled: true, globalSearchEnabled: true);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var publicBody = await (await _client.GetAsync("/api/v1/public/site")).Content.ReadFromJsonAsync<PublicSiteResponse>();
+        Assert.True(publicBody!.DonationPageEnabled);
+        Assert.True(publicBody.GlobalSearchEnabled);
+    }
+
+    [Fact]
+    public async Task UpdateMaintenance_ThenReadBack_ReflectsGlobalSwitchAndPerLanguageMessage()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var rowVersion = await GetCurrentRowVersionAsync(accessToken);
+
+        var response = await PutMaintenanceAsync(
+            accessToken, rowVersion, true, [new UpdateSiteSettingsMaintenanceTranslationInput("tr", "Bakımdayız")]);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var publicBody = await (await _client.GetAsync("/api/v1/public/site")).Content.ReadFromJsonAsync<PublicSiteResponse>();
+        Assert.True(publicBody!.MaintenanceModeEnabled);
         Assert.Equal("Bakımdayız", publicBody.MaintenanceMessage);
-        Assert.Equal("0x4AAA-site-key", publicBody.TurnstileSiteKey);
+    }
+
+    [Fact]
+    public async Task UpdateBotProtection_ThenReadBack_ReflectsFlagAndSiteKey()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var rowVersion = await GetCurrentRowVersionAsync(accessToken);
+
+        var response = await PutBotProtectionAsync(accessToken, rowVersion, false, "0x4AAA-site-key");
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var adminGetRequest = new HttpRequestMessage(HttpMethod.Get, "/api/v1/admin/website/settings");
+        adminGetRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        var adminBody = await (await _client.SendAsync(adminGetRequest)).Content.ReadFromJsonAsync<SiteSettingsResponse>();
+        Assert.False(adminBody!.BotProtectionEnabled);
+        Assert.Equal("0x4AAA-site-key", adminBody.TurnstileSiteKey);
+
+        var publicBody = await (await _client.GetAsync("/api/v1/public/site")).Content.ReadFromJsonAsync<PublicSiteResponse>();
+        Assert.Equal("0x4AAA-site-key", publicBody!.TurnstileSiteKey);
+    }
+
+    [Fact]
+    public async Task UpdateTheme_WithStaleRowVersion_ReturnsConflict()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var staleRowVersion = await GetCurrentRowVersionAsync(accessToken);
+
+        // Someone else's edit lands first, advancing the real RowVersion.
+        var firstResponse = await PutThemeAsync(accessToken, staleRowVersion, "#111111");
+        Assert.Equal(HttpStatusCode.NoContent, firstResponse.StatusCode);
+
+        // The caller still holds the RowVersion from before that edit.
+        var conflictResponse = await PutThemeAsync(accessToken, staleRowVersion, "#222222");
+
+        Assert.Equal(HttpStatusCode.Conflict, conflictResponse.StatusCode);
+
+        // The first writer's value stuck - the stale write must not have applied.
+        var publicBody = await (await _client.GetAsync("/api/v1/public/site")).Content.ReadFromJsonAsync<PublicSiteResponse>();
+        Assert.Equal("#111111", publicBody!.Theme.PrimaryColorHex);
     }
 
     [Fact]
@@ -190,16 +323,14 @@ public class SiteSettingsFlowTests : IClassFixture<CustomWebApplicationFactory>
     {
         var accessToken = await LoginAsAdminAsync();
 
-        var beforeResponse = await _client.GetAsync("/api/v1/public/site");
-        var before = await beforeResponse.Content.ReadFromJsonAsync<PublicSiteResponse>();
+        var before = await (await _client.GetAsync("/api/v1/public/site")).Content.ReadFromJsonAsync<PublicSiteResponse>();
         Assert.NotEqual("#00ff00", before!.Theme.PrimaryColorHex);
 
-        var updateResponse = await UpdateSettingsAsync(
-            accessToken, BuildMinimalRequest(theme: new UpdateSiteSettingsThemeInput(null, null, null, "#00ff00", null, null)));
+        var rowVersion = await GetCurrentRowVersionAsync(accessToken);
+        var updateResponse = await PutThemeAsync(accessToken, rowVersion, "#00ff00");
         Assert.Equal(HttpStatusCode.NoContent, updateResponse.StatusCode);
 
-        var afterResponse = await _client.GetAsync("/api/v1/public/site");
-        var after = await afterResponse.Content.ReadFromJsonAsync<PublicSiteResponse>();
+        var after = await (await _client.GetAsync("/api/v1/public/site")).Content.ReadFromJsonAsync<PublicSiteResponse>();
         Assert.Equal("#00ff00", after!.Theme.PrimaryColorHex);
     }
 
@@ -219,7 +350,7 @@ public class SiteSettingsFlowTests : IClassFixture<CustomWebApplicationFactory>
 
         // A freshly created language starts active (Görev 2) - deactivate it so this test owns its
         // own inactive language instead of depending on "en" staying untouched by other tests that
-        // share this same singleton-backed factory (SiteLanguageDefaultsTests' own class avoids this
+        // share this same singleton-backed factory (SiteSettingsDefaultsTests' own class avoids this
         // exact problem for SiteSettings; here the SiteLanguage table is the shared mutable state).
         var createRequest = new HttpRequestMessage(HttpMethod.Post, "/api/v1/admin/website/languages")
         {
@@ -244,12 +375,13 @@ public class SiteSettingsFlowTests : IClassFixture<CustomWebApplicationFactory>
     {
         var accessToken = await LoginAsAdminAsync();
         await ActivateEnglishAsync(accessToken);
+        var rowVersion = await GetCurrentRowVersionAsync(accessToken);
 
-        var updateResponse = await UpdateSettingsAsync(accessToken, BuildMinimalRequest(translations:
+        var updateResponse = await PutIdentityAsync(accessToken, rowVersion, translations:
         [
-            new UpdateSiteSettingsTranslationInput("tr", "Gençlik Merkezi", null, null, null, null),
-            new UpdateSiteSettingsTranslationInput("en", "Youth Center", null, null, null, null),
-        ]));
+            new UpdateSiteSettingsIdentityTranslationInput("tr", "Gençlik Merkezi", null, null, null, null),
+            new UpdateSiteSettingsIdentityTranslationInput("en", "Youth Center", null, null, null, null),
+        ]);
         Assert.Equal(HttpStatusCode.NoContent, updateResponse.StatusCode);
 
         var response = await _client.GetAsync("/api/v1/public/site?lang=en");
@@ -264,14 +396,13 @@ public class SiteSettingsFlowTests : IClassFixture<CustomWebApplicationFactory>
     public async Task GetPublicSite_WithDonationPageDisabled_NeverReturnsBankAccounts()
     {
         var accessToken = await LoginAsAdminAsync();
+        var rowVersion = await GetCurrentRowVersionAsync(accessToken);
 
-        var updateResponse = await UpdateSettingsAsync(accessToken, BuildMinimalRequest(
-            bankAccounts: [new UpdateSiteSettingsBankAccountInput("TR330006100519786457841326", "Ziraat", "Dernek", null, 1, true)],
-            donationPageEnabled: false));
-        Assert.Equal(HttpStatusCode.NoContent, updateResponse.StatusCode);
+        await PutBankAccountsAsync(accessToken, rowVersion, [new UpdateSiteSettingsBankAccountInput("TR330006100519786457841326", "Ziraat", "Dernek", "TRY", null, 1, true)]);
+        rowVersion = await GetCurrentRowVersionAsync(accessToken);
+        await PutFeaturesAsync(accessToken, rowVersion, donationPageEnabled: false);
 
-        var response = await _client.GetAsync("/api/v1/public/site");
-        var body = await response.Content.ReadFromJsonAsync<PublicSiteResponse>();
+        var body = await (await _client.GetAsync("/api/v1/public/site")).Content.ReadFromJsonAsync<PublicSiteResponse>();
 
         Assert.False(body!.DonationPageEnabled);
         Assert.Empty(body.BankAccounts);
@@ -281,18 +412,17 @@ public class SiteSettingsFlowTests : IClassFixture<CustomWebApplicationFactory>
     public async Task GetPublicSite_WithDonationPageEnabled_ReturnsOnlyActiveBankAccounts()
     {
         var accessToken = await LoginAsAdminAsync();
+        var rowVersion = await GetCurrentRowVersionAsync(accessToken);
 
-        var updateResponse = await UpdateSettingsAsync(accessToken, BuildMinimalRequest(
-            bankAccounts:
-            [
-                new UpdateSiteSettingsBankAccountInput("TR330006100519786457841326", "Ziraat", "Dernek", null, 1, true),
-                new UpdateSiteSettingsBankAccountInput("TR320010009999901234567890", "Halkbank", "Dernek", null, 2, false),
-            ],
-            donationPageEnabled: true));
-        Assert.Equal(HttpStatusCode.NoContent, updateResponse.StatusCode);
+        await PutBankAccountsAsync(accessToken, rowVersion,
+        [
+            new UpdateSiteSettingsBankAccountInput("TR330006100519786457841326", "Ziraat", "Dernek", "TRY", null, 1, true),
+            new UpdateSiteSettingsBankAccountInput("TR320010009999901234567890", "Halkbank", "Dernek", "TRY", null, 2, false),
+        ]);
+        rowVersion = await GetCurrentRowVersionAsync(accessToken);
+        await PutFeaturesAsync(accessToken, rowVersion, donationPageEnabled: true);
 
-        var response = await _client.GetAsync("/api/v1/public/site");
-        var body = await response.Content.ReadFromJsonAsync<PublicSiteResponse>();
+        var body = await (await _client.GetAsync("/api/v1/public/site")).Content.ReadFromJsonAsync<PublicSiteResponse>();
 
         Assert.True(body!.DonationPageEnabled);
         var account = Assert.Single(body.BankAccounts);
@@ -300,18 +430,18 @@ public class SiteSettingsFlowTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
-    public async Task UpdateSiteSettings_WithLogoReferencingUnknownMediaAsset_ReturnsNotFound()
+    public async Task UpdateIdentity_WithLogoReferencingUnknownMediaAsset_ReturnsNotFound()
     {
         var accessToken = await LoginAsAdminAsync();
+        var rowVersion = await GetCurrentRowVersionAsync(accessToken);
 
-        var response = await UpdateSettingsAsync(
-            accessToken, BuildMinimalRequest(theme: new UpdateSiteSettingsThemeInput(Guid.NewGuid(), null, null, null, null, null)));
+        var response = await PutIdentityAsync(accessToken, rowVersion, Guid.NewGuid());
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
-    public async Task UpdateSiteSettings_AsNonAdmin_ReturnsForbidden()
+    public async Task UpdateSiteSettingsGroup_AsNonAdmin_ReturnsForbidden()
     {
         var email = $"aday-{Guid.NewGuid():N}@example.com";
         await _client.PostAsJsonAsync(
@@ -320,9 +450,9 @@ public class SiteSettingsFlowTests : IClassFixture<CustomWebApplicationFactory>
         var loginResponse = await _client.PostAsJsonAsync("/api/v1/auth/login", new { email, password = "Sifre123" });
         var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
 
-        var updateRequest = new HttpRequestMessage(HttpMethod.Put, "/api/v1/admin/website/settings")
+        var updateRequest = new HttpRequestMessage(HttpMethod.Put, "/api/v1/admin/website/settings/theme")
         {
-            Content = JsonContent.Create(BuildMinimalRequest()),
+            Content = JsonContent.Create(new UpdateSiteSettingsThemeRequest([], "#111111", null, null)),
         };
         updateRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", login!.AccessToken);
         var response = await _client.SendAsync(updateRequest);
@@ -335,8 +465,9 @@ public class SiteSettingsFlowTests : IClassFixture<CustomWebApplicationFactory>
     {
         var accessToken = await LoginAsAdminAsync();
         var logoId = await UploadLogoAsync(accessToken);
+        var rowVersion = await GetCurrentRowVersionAsync(accessToken);
 
-        await UpdateSettingsAsync(accessToken, BuildMinimalRequest(theme: new UpdateSiteSettingsThemeInput(logoId, null, null, null, null, null)));
+        await PutIdentityAsync(accessToken, rowVersion, logoId);
 
         var deleteRequest = new HttpRequestMessage(HttpMethod.Delete, $"/api/v1/admin/website/media/{logoId}");
         deleteRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);

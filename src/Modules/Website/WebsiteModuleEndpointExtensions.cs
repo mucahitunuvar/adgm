@@ -11,7 +11,13 @@ using GenclikMerkezi.Modules.Website.Features.GetSiteSettings;
 using GenclikMerkezi.Modules.Website.Features.SetDefaultSiteLanguage;
 using GenclikMerkezi.Modules.Website.Features.UpdateMediaAsset;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteLanguage;
-using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettings;
+using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsBankAccounts;
+using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsBotProtection;
+using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsContact;
+using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsFeatures;
+using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsIdentity;
+using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsMaintenance;
+using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsTheme;
 using GenclikMerkezi.Modules.Website.Features.UploadMediaAsset;
 using Microsoft.AspNetCore.Routing;
 
@@ -35,8 +41,14 @@ public static class WebsiteModuleEndpointExtensions
         UpdateMediaAssetEndpoint.Map(app);
         DeleteMediaAssetEndpoint.Map(app);
 
-        UpdateSiteSettingsEndpoint.Map(app);
         GetSiteSettingsEndpoint.Map(app);
+        UpdateSiteSettingsIdentityEndpoint.Map(app);
+        UpdateSiteSettingsThemeEndpoint.Map(app);
+        UpdateSiteSettingsContactEndpoint.Map(app);
+        UpdateSiteSettingsBankAccountsEndpoint.Map(app);
+        UpdateSiteSettingsFeaturesEndpoint.Map(app);
+        UpdateSiteSettingsMaintenanceEndpoint.Map(app);
+        UpdateSiteSettingsBotProtectionEndpoint.Map(app);
         GetPublicSiteEndpoint.Map(app);
 
         return app;

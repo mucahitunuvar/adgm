@@ -46,11 +46,7 @@ public sealed class GetPublicSiteQueryHandler(
             .Select(l => new PublicSiteLanguageResponse(l.Code.Value, l.Name, l.IsDefault, l.SortOrder))
             .ToList();
 
-        var themeResponse = new PublicSiteThemeResponse(
-            await ResolveMediaUrlAsync(settings.Theme.LogoLightMediaAssetId, cancellationToken),
-            await ResolveMediaUrlAsync(settings.Theme.LogoDarkMediaAssetId, cancellationToken),
-            await ResolveMediaUrlAsync(settings.Theme.FaviconMediaAssetId, cancellationToken),
-            settings.Theme.PrimaryColorHex, settings.Theme.SecondaryColorHex, settings.Theme.FontFamily);
+        var themeResponse = new PublicSiteThemeResponse(settings.Theme.PrimaryColorHex, settings.Theme.SecondaryColorHex, settings.Theme.FontFamily);
 
         var contactResponse = new PublicContactInfoResponse(
             settings.Contact.Address, settings.Contact.Phone, settings.Contact.Email, settings.Contact.WhatsApp, settings.Contact.MapEmbedUrl);
@@ -67,16 +63,22 @@ public sealed class GetPublicSiteQueryHandler(
             ? settings.BankAccounts
                 .Where(a => a.IsActive)
                 .OrderBy(a => a.SortOrder)
-                .Select(a => new PublicBankAccountResponse(a.Iban.Value, a.BankName, a.AccountHolder, a.Description, a.SortOrder))
+                .Select(a => new PublicBankAccountResponse(a.Iban.Value, a.BankName, a.AccountHolder, a.Currency.ToString(), a.Description, a.SortOrder))
                 .ToList()
             : [];
 
         var translation = settings.Translations.FirstOrDefault(t => t.LanguageCode == resolvedLanguage.Code);
 
         return new PublicSiteResponse(
-            languageResponses, resolvedLanguage.Code.Value, themeResponse, contactResponse, socialLinks, bankAccounts,
-            translation?.SiteName ?? string.Empty, translation?.DefaultSeoTitle ?? string.Empty,
-            translation?.DefaultSeoDescription ?? string.Empty, translation?.FooterText ?? string.Empty,
+            languageResponses, resolvedLanguage.Code.Value,
+            await ResolveMediaUrlAsync(settings.LogoLightMediaAssetId, cancellationToken),
+            await ResolveMediaUrlAsync(settings.LogoDarkMediaAssetId, cancellationToken),
+            await ResolveMediaUrlAsync(settings.FaviconMediaAssetId, cancellationToken),
+            await ResolveMediaUrlAsync(settings.DefaultOgImageMediaId, cancellationToken),
+            themeResponse, contactResponse, socialLinks, bankAccounts,
+            translation?.SiteName ?? string.Empty, translation?.Tagline ?? string.Empty,
+            translation?.DefaultMetaTitle ?? string.Empty, translation?.DefaultMetaDescription ?? string.Empty,
+            translation?.FooterText ?? string.Empty,
             settings.GlobalSearchEnabled, settings.NewsletterEnabled, settings.PublicJobListingsEnabled, settings.DonationPageEnabled,
             settings.MaintenanceModeEnabled, translation?.MaintenanceMessage ?? string.Empty,
             settings.TurnstileSiteKey);

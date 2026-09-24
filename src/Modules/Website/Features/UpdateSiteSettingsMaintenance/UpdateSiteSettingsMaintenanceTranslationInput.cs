@@ -1,0 +1,3 @@
+namespace GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsMaintenance;
+
+public sealed record UpdateSiteSettingsMaintenanceTranslationInput(string LanguageCode, string? MaintenanceMessage);

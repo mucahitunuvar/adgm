@@ -151,11 +151,23 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                     b.Property<bool>("BotProtectionEnabled")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("DefaultOgImageMediaId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("DonationPageEnabled")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("FaviconMediaAssetId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("GlobalSearchEnabled")
                         .HasColumnType("bit");
+
+                    b.Property<Guid?>("LogoDarkMediaAssetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("LogoLightMediaAssetId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("MaintenanceModeEnabled")
                         .HasColumnType("bit");
@@ -165,6 +177,11 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
 
                     b.Property<bool>("PublicJobListingsEnabled")
                         .HasColumnType("bit");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
 
                     b.Property<string>("TurnstileSiteKey")
                         .IsRequired()
@@ -375,6 +392,11 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                                 .HasMaxLength(150)
                                 .HasColumnType("nvarchar(150)");
 
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .HasMaxLength(3)
+                                .HasColumnType("nvarchar(3)");
+
                             b1.Property<string>("Description")
                                 .HasMaxLength(300)
                                 .HasColumnType("nvarchar(300)");
@@ -452,12 +474,12 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                             b1.Property<Guid>("Id")
                                 .HasColumnType("uniqueidentifier");
 
-                            b1.Property<string>("DefaultSeoDescription")
+                            b1.Property<string>("DefaultMetaDescription")
                                 .IsRequired()
                                 .HasMaxLength(500)
                                 .HasColumnType("nvarchar(500)");
 
-                            b1.Property<string>("DefaultSeoTitle")
+                            b1.Property<string>("DefaultMetaTitle")
                                 .IsRequired()
                                 .HasMaxLength(200)
                                 .HasColumnType("nvarchar(200)");
@@ -486,6 +508,11 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                             b1.Property<Guid>("SiteSettingsId")
                                 .HasColumnType("uniqueidentifier");
 
+                            b1.Property<string>("Tagline")
+                                .IsRequired()
+                                .HasMaxLength(200)
+                                .HasColumnType("nvarchar(200)");
+
                             b1.HasKey("Id");
 
                             b1.HasIndex("SiteSettingsId", "LanguageCode")
@@ -502,23 +529,11 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                             b1.Property<Guid>("SiteSettingsId")
                                 .HasColumnType("uniqueidentifier");
 
-                            b1.Property<Guid?>("FaviconMediaAssetId")
-                                .HasColumnType("uniqueidentifier")
-                                .HasColumnName("ThemeFaviconMediaAssetId");
-
                             b1.Property<string>("FontFamily")
                                 .IsRequired()
                                 .HasMaxLength(100)
                                 .HasColumnType("nvarchar(100)")
                                 .HasColumnName("ThemeFontFamily");
-
-                            b1.Property<Guid?>("LogoDarkMediaAssetId")
-                                .HasColumnType("uniqueidentifier")
-                                .HasColumnName("ThemeLogoDarkMediaAssetId");
-
-                            b1.Property<Guid?>("LogoLightMediaAssetId")
-                                .HasColumnType("uniqueidentifier")
-                                .HasColumnName("ThemeLogoLightMediaAssetId");
 
                             b1.Property<string>("PrimaryColorHex")
                                 .IsRequired()

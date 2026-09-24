@@ -4,10 +4,18 @@ namespace GenclikMerkezi.Modules.Website.Domain;
 
 // ADR-024 §13. Singleton aggregate: exactly one row, at the well-known Id below. There is
 // deliberately no factory that creates "a" SiteSettings with a random id - only CreateDefault(),
-// used both to seed the very first persisted row (see UpdateSiteSettingsCommandHandler's
-// get-or-create) and to hand read-only callers sensible defaults, without writing anything, when no
-// row has ever been persisted yet (GetSiteSettingsQueryHandler / GetPublicSiteQueryHandler never
-// call SaveChanges - a query must not commit a transaction, AGENTS.md §13).
+// used both to seed the very first persisted row (see each grouped UpdateSiteSettings* command
+// handler's get-or-create) and to hand read-only callers sensible defaults, without writing
+// anything, when no row has ever been persisted yet (GetSiteSettingsQueryHandler /
+// GetPublicSiteQueryHandler never call SaveChanges - a query must not commit a transaction,
+// AGENTS.md §13).
+//
+// Görev 6's grouped PUT endpoints (identity, theme, contact, bank-accounts, features, maintenance,
+// bot-protection) each update one independent slice of this aggregate and each takes RowVersion for
+// optimistic concurrency - two admins editing different sections at the same time must not silently
+// clobber each other. RowVersion is a plain application-managed token (Touch() regenerates it on
+// every mutation), not a database-generated rowversion/timestamp column: Website runs on both
+// SqlServer and Sqlite (ADR-012), and Sqlite has no equivalent auto-updating column type.
 public sealed class SiteSettings : AggregateRoot
 {
     public static readonly Guid SingletonId = Guid.Parse("11111111-1111-1111-1111-111111111111");
@@ -15,6 +23,19 @@ public sealed class SiteSettings : AggregateRoot
     private readonly List<SocialLink> _socialLinks = [];
     private readonly List<BankAccount> _bankAccounts = [];
     private readonly List<SiteSettingsTranslation> _translations = [];
+
+    // "Identity" group (ADR-024 §13 Görev 6): logo/favicon/OG-image are loose MediaAsset references
+    // (by id, resolved to a URL at read time), the same reasoning as every other cross-aggregate
+    // reference in this module - never a navigation, since MediaAsset lives in its own aggregate
+    // boundary. SiteName/Tagline/DefaultMetaTitle/DefaultMetaDescription/FooterText live per-language
+    // on SiteSettingsTranslation instead, since identity is also part of what changes by language.
+    public Guid? LogoLightMediaAssetId { get; private set; }
+
+    public Guid? LogoDarkMediaAssetId { get; private set; }
+
+    public Guid? FaviconMediaAssetId { get; private set; }
+
+    public Guid? DefaultOgImageMediaId { get; private set; }
 
     public SiteTheme Theme { get; private set; } = null!;
 
@@ -41,6 +62,8 @@ public sealed class SiteSettings : AggregateRoot
     // ADR-024 §13: the public (non-secret) Turnstile key the frontend widget embeds. The secret key
     // is never stored here - it lives only in the Website Infrastructure adapter's configuration.
     public string TurnstileSiteKey { get; private set; } = string.Empty;
+
+    public byte[] RowVersion { get; private set; } = Guid.NewGuid().ToByteArray();
 
     public Guid? UpdatedByUserId { get; private set; }
 
@@ -80,6 +103,43 @@ public sealed class SiteSettings : AggregateRoot
         globalSearchEnabled: false, newsletterEnabled: false, publicJobListingsEnabled: false,
         donationPageEnabled: false, botProtectionEnabled: true);
 
+    public void UpdateIdentity(
+        Guid? logoLightMediaAssetId, Guid? logoDarkMediaAssetId, Guid? faviconMediaAssetId, Guid? defaultOgImageMediaId,
+        Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        LogoLightMediaAssetId = logoLightMediaAssetId;
+        LogoDarkMediaAssetId = logoDarkMediaAssetId;
+        FaviconMediaAssetId = faviconMediaAssetId;
+        DefaultOgImageMediaId = defaultOgImageMediaId;
+        Touch(updatedByUserId, updatedAtUtc);
+    }
+
+    // Upserts the identity text fields for languageCode without touching that language's maintenance
+    // message (SetMaintenanceMessage's job) - one call per language the caller wants to set.
+    public void SetIdentityTranslation(
+        LanguageCode languageCode,
+        string? siteName,
+        string? tagline,
+        string? defaultMetaTitle,
+        string? defaultMetaDescription,
+        string? footerText,
+        Guid updatedByUserId,
+        DateTime updatedAtUtc)
+    {
+        var existing = _translations.FirstOrDefault(t => t.LanguageCode == languageCode);
+        if (existing is not null)
+        {
+            existing.UpdateIdentityFields(siteName, tagline, defaultMetaTitle, defaultMetaDescription, footerText);
+        }
+        else
+        {
+            _translations.Add(SiteSettingsTranslation.Create(
+                languageCode, siteName, tagline, defaultMetaTitle, defaultMetaDescription, footerText, null));
+        }
+
+        Touch(updatedByUserId, updatedAtUtc);
+    }
+
     public void UpdateTheme(SiteTheme theme, Guid updatedByUserId, DateTime updatedAtUtc)
     {
         Theme = theme;
@@ -106,27 +166,18 @@ public sealed class SiteSettings : AggregateRoot
         Touch(updatedByUserId, updatedAtUtc);
     }
 
-    // Upserts the translation for languageCode - one call per language the caller wants to set, same
-    // pattern as MediaAsset.SetTranslation.
-    public void SetTranslation(
-        LanguageCode languageCode,
-        string? siteName,
-        string? defaultSeoTitle,
-        string? defaultSeoDescription,
-        string? footerText,
-        string? maintenanceMessage,
-        Guid updatedByUserId,
-        DateTime updatedAtUtc)
+    // Upserts the maintenance message for languageCode without touching that language's identity
+    // fields (SetIdentityTranslation's job).
+    public void SetMaintenanceMessage(LanguageCode languageCode, string? message, Guid updatedByUserId, DateTime updatedAtUtc)
     {
         var existing = _translations.FirstOrDefault(t => t.LanguageCode == languageCode);
         if (existing is not null)
         {
-            existing.Update(siteName, defaultSeoTitle, defaultSeoDescription, footerText, maintenanceMessage);
+            existing.UpdateMaintenanceMessage(message);
         }
         else
         {
-            _translations.Add(SiteSettingsTranslation.Create(
-                languageCode, siteName, defaultSeoTitle, defaultSeoDescription, footerText, maintenanceMessage));
+            _translations.Add(SiteSettingsTranslation.Create(languageCode, null, null, null, null, null, message));
         }
 
         Touch(updatedByUserId, updatedAtUtc);
@@ -137,7 +188,6 @@ public sealed class SiteSettings : AggregateRoot
         bool newsletterEnabled,
         bool publicJobListingsEnabled,
         bool donationPageEnabled,
-        bool botProtectionEnabled,
         Guid updatedByUserId,
         DateTime updatedAtUtc)
     {
@@ -145,21 +195,21 @@ public sealed class SiteSettings : AggregateRoot
         NewsletterEnabled = newsletterEnabled;
         PublicJobListingsEnabled = publicJobListingsEnabled;
         DonationPageEnabled = donationPageEnabled;
-        BotProtectionEnabled = botProtectionEnabled;
         Touch(updatedByUserId, updatedAtUtc);
     }
 
-    // Global on/off switch only - the message itself is per-language (SiteSettingsTranslation.
-    // MaintenanceMessage), since a maintenance banner must speak the visitor's language.
+    public void UpdateBotProtection(bool botProtectionEnabled, string? turnstileSiteKey, Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        BotProtectionEnabled = botProtectionEnabled;
+        TurnstileSiteKey = (turnstileSiteKey ?? string.Empty).Trim();
+        Touch(updatedByUserId, updatedAtUtc);
+    }
+
+    // Global on/off switch only - the message itself is per-language (SetMaintenanceMessage), since a
+    // maintenance banner must speak the visitor's language.
     public void SetMaintenanceMode(bool enabled, Guid updatedByUserId, DateTime updatedAtUtc)
     {
         MaintenanceModeEnabled = enabled;
-        Touch(updatedByUserId, updatedAtUtc);
-    }
-
-    public void SetTurnstileSiteKey(string? turnstileSiteKey, Guid updatedByUserId, DateTime updatedAtUtc)
-    {
-        TurnstileSiteKey = (turnstileSiteKey ?? string.Empty).Trim();
         Touch(updatedByUserId, updatedAtUtc);
     }
 
@@ -167,5 +217,6 @@ public sealed class SiteSettings : AggregateRoot
     {
         UpdatedByUserId = updatedByUserId;
         UpdatedAtUtc = updatedAtUtc;
+        RowVersion = Guid.NewGuid().ToByteArray();
     }
 }

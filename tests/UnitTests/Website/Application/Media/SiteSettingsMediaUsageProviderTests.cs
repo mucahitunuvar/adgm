@@ -22,7 +22,7 @@ public class SiteSettingsMediaUsageProviderTests
     public async Task GetUsagesAsync_WhenMediaAssetIsNotReferenced_ReturnsEmpty()
     {
         var settings = SiteSettings.CreateDefault();
-        settings.UpdateTheme(SiteTheme.Create(Guid.NewGuid(), null, null, null, null, null).Value, Guid.NewGuid(), DateTime.UtcNow);
+        settings.UpdateIdentity(Guid.NewGuid(), null, null, null, Guid.NewGuid(), DateTime.UtcNow);
         _siteSettingsRepository.Seed(settings);
 
         var usages = await CreateProvider().GetUsagesAsync(Guid.NewGuid());
@@ -35,7 +35,7 @@ public class SiteSettingsMediaUsageProviderTests
     {
         var logoId = Guid.NewGuid();
         var settings = SiteSettings.CreateDefault();
-        settings.UpdateTheme(SiteTheme.Create(logoId, null, null, null, null, null).Value, Guid.NewGuid(), DateTime.UtcNow);
+        settings.UpdateIdentity(logoId, null, null, null, Guid.NewGuid(), DateTime.UtcNow);
         _siteSettingsRepository.Seed(settings);
 
         var usages = await CreateProvider().GetUsagesAsync(logoId);
@@ -49,11 +49,24 @@ public class SiteSettingsMediaUsageProviderTests
     {
         var sharedId = Guid.NewGuid();
         var settings = SiteSettings.CreateDefault();
-        settings.UpdateTheme(SiteTheme.Create(null, sharedId, sharedId, null, null, null).Value, Guid.NewGuid(), DateTime.UtcNow);
+        settings.UpdateIdentity(null, sharedId, sharedId, null, Guid.NewGuid(), DateTime.UtcNow);
         _siteSettingsRepository.Seed(settings);
 
         var usages = await CreateProvider().GetUsagesAsync(sharedId);
 
         Assert.Equal(2, usages.Count);
+    }
+
+    [Fact]
+    public async Task GetUsagesAsync_WhenMediaAssetIsTheDefaultOgImage_ReturnsOneUsage()
+    {
+        var ogImageId = Guid.NewGuid();
+        var settings = SiteSettings.CreateDefault();
+        settings.UpdateIdentity(null, null, null, ogImageId, Guid.NewGuid(), DateTime.UtcNow);
+        _siteSettingsRepository.Seed(settings);
+
+        var usages = await CreateProvider().GetUsagesAsync(ogImageId);
+
+        Assert.Single(usages);
     }
 }

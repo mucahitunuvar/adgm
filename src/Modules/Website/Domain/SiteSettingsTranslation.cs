@@ -2,15 +2,17 @@ using GenclikMerkezi.SharedKernel.Domain;
 
 namespace GenclikMerkezi.Modules.Website.Domain;
 
-// ADR-024 §13: per-language site name, default SEO fields, footer text and maintenance message.
-// Same upsert-per-language shape as MediaAssetTranslation (SiteSettings.SetTranslation).
-// MaintenanceMessage lives here (not on SiteSettings itself) because the maintenance banner must
-// speak the visitor's language - only MaintenanceModeEnabled (the on/off switch) is global.
+// ADR-024 §13 / Görev 6: per-language site identity text (site name, tagline, default SEO meta,
+// footer) and maintenance message. Split into two independent partial-update methods
+// (UpdateIdentityFields / UpdateMaintenanceMessage) because SiteSettings exposes them through two
+// separate grouped endpoints ("identity" and "maintenance") - updating one group must never
+// overwrite fields that belong to the other.
 public sealed class SiteSettingsTranslation : Entity
 {
     public const int MaxSiteNameLength = 150;
-    public const int MaxSeoTitleLength = 200;
-    public const int MaxSeoDescriptionLength = 500;
+    public const int MaxTaglineLength = 200;
+    public const int MaxMetaTitleLength = 200;
+    public const int MaxMetaDescriptionLength = 500;
     public const int MaxFooterTextLength = 2000;
     public const int MaxMaintenanceMessageLength = 500;
 
@@ -18,9 +20,11 @@ public sealed class SiteSettingsTranslation : Entity
 
     public string SiteName { get; private set; } = string.Empty;
 
-    public string DefaultSeoTitle { get; private set; } = string.Empty;
+    public string Tagline { get; private set; } = string.Empty;
 
-    public string DefaultSeoDescription { get; private set; } = string.Empty;
+    public string DefaultMetaTitle { get; private set; } = string.Empty;
+
+    public string DefaultMetaDescription { get; private set; } = string.Empty;
 
     public string FooterText { get; private set; } = string.Empty;
 
@@ -30,16 +34,18 @@ public sealed class SiteSettingsTranslation : Entity
         Guid id,
         LanguageCode languageCode,
         string siteName,
-        string defaultSeoTitle,
-        string defaultSeoDescription,
+        string tagline,
+        string defaultMetaTitle,
+        string defaultMetaDescription,
         string footerText,
         string maintenanceMessage)
         : base(id)
     {
         LanguageCode = languageCode;
         SiteName = siteName;
-        DefaultSeoTitle = defaultSeoTitle;
-        DefaultSeoDescription = defaultSeoDescription;
+        Tagline = tagline;
+        DefaultMetaTitle = defaultMetaTitle;
+        DefaultMetaDescription = defaultMetaDescription;
         FooterText = footerText;
         MaintenanceMessage = maintenanceMessage;
     }
@@ -51,22 +57,27 @@ public sealed class SiteSettingsTranslation : Entity
     public static SiteSettingsTranslation Create(
         LanguageCode languageCode,
         string? siteName,
-        string? defaultSeoTitle,
-        string? defaultSeoDescription,
+        string? tagline,
+        string? defaultMetaTitle,
+        string? defaultMetaDescription,
         string? footerText,
         string? maintenanceMessage) =>
         new(
-            Guid.NewGuid(), languageCode, (siteName ?? string.Empty).Trim(),
-            (defaultSeoTitle ?? string.Empty).Trim(), (defaultSeoDescription ?? string.Empty).Trim(),
+            Guid.NewGuid(), languageCode, (siteName ?? string.Empty).Trim(), (tagline ?? string.Empty).Trim(),
+            (defaultMetaTitle ?? string.Empty).Trim(), (defaultMetaDescription ?? string.Empty).Trim(),
             (footerText ?? string.Empty).Trim(), (maintenanceMessage ?? string.Empty).Trim());
 
-    internal void Update(
-        string? siteName, string? defaultSeoTitle, string? defaultSeoDescription, string? footerText, string? maintenanceMessage)
+    internal void UpdateIdentityFields(string? siteName, string? tagline, string? defaultMetaTitle, string? defaultMetaDescription, string? footerText)
     {
         SiteName = (siteName ?? string.Empty).Trim();
-        DefaultSeoTitle = (defaultSeoTitle ?? string.Empty).Trim();
-        DefaultSeoDescription = (defaultSeoDescription ?? string.Empty).Trim();
+        Tagline = (tagline ?? string.Empty).Trim();
+        DefaultMetaTitle = (defaultMetaTitle ?? string.Empty).Trim();
+        DefaultMetaDescription = (defaultMetaDescription ?? string.Empty).Trim();
         FooterText = (footerText ?? string.Empty).Trim();
+    }
+
+    internal void UpdateMaintenanceMessage(string? maintenanceMessage)
+    {
         MaintenanceMessage = (maintenanceMessage ?? string.Empty).Trim();
     }
 }

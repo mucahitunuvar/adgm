@@ -12,12 +12,20 @@ public sealed class SiteSettingsConfiguration : IEntityTypeConfiguration<SiteSet
         builder.HasKey(s => s.Id);
         builder.Property(s => s.Id).ValueGeneratedNever();
 
+        builder.Property(s => s.LogoLightMediaAssetId);
+        builder.Property(s => s.LogoDarkMediaAssetId);
+        builder.Property(s => s.FaviconMediaAssetId);
+        builder.Property(s => s.DefaultOgImageMediaId);
+
+        // Application-managed concurrency token (see SiteSettings' class remarks for why this is not
+        // a database-generated rowversion/timestamp column, i.e. not .IsRowVersion()): EF still
+        // enforces it exactly like one - every UPDATE's WHERE clause checks the value the caller read
+        // it with, and a mismatch throws DbUpdateConcurrencyException.
+        builder.Property(s => s.RowVersion).IsConcurrencyToken();
+
         builder.OwnsOne(s => s.Theme, theme =>
         {
             theme.ToTable("SiteSettings");
-            theme.Property(t => t.LogoLightMediaAssetId).HasColumnName("ThemeLogoLightMediaAssetId");
-            theme.Property(t => t.LogoDarkMediaAssetId).HasColumnName("ThemeLogoDarkMediaAssetId");
-            theme.Property(t => t.FaviconMediaAssetId).HasColumnName("ThemeFaviconMediaAssetId");
             theme.Property(t => t.PrimaryColorHex).HasColumnName("ThemePrimaryColorHex").HasMaxLength(7).IsRequired();
             theme.Property(t => t.SecondaryColorHex).HasColumnName("ThemeSecondaryColorHex").HasMaxLength(7).IsRequired();
             theme.Property(t => t.FontFamily).HasColumnName("ThemeFontFamily").HasMaxLength(SiteTheme.MaxFontFamilyLength).IsRequired();
@@ -60,6 +68,7 @@ public sealed class SiteSettingsConfiguration : IEntityTypeConfiguration<SiteSet
 
             account.Property(a => a.BankName).HasMaxLength(BankAccount.MaxBankNameLength).IsRequired();
             account.Property(a => a.AccountHolder).HasMaxLength(BankAccount.MaxAccountHolderLength).IsRequired();
+            account.Property(a => a.Currency).HasConversion<string>().HasMaxLength(3).IsRequired();
             account.Property(a => a.Description).HasMaxLength(BankAccount.MaxDescriptionLength);
             account.Property(a => a.SortOrder).IsRequired();
             account.Property(a => a.IsActive).IsRequired();
@@ -81,8 +90,9 @@ public sealed class SiteSettingsConfiguration : IEntityTypeConfiguration<SiteSet
             translation.HasIndex("SiteSettingsId", nameof(SiteSettingsTranslation.LanguageCode)).IsUnique();
 
             translation.Property(t => t.SiteName).HasMaxLength(SiteSettingsTranslation.MaxSiteNameLength).IsRequired();
-            translation.Property(t => t.DefaultSeoTitle).HasMaxLength(SiteSettingsTranslation.MaxSeoTitleLength).IsRequired();
-            translation.Property(t => t.DefaultSeoDescription).HasMaxLength(SiteSettingsTranslation.MaxSeoDescriptionLength).IsRequired();
+            translation.Property(t => t.Tagline).HasMaxLength(SiteSettingsTranslation.MaxTaglineLength).IsRequired();
+            translation.Property(t => t.DefaultMetaTitle).HasMaxLength(SiteSettingsTranslation.MaxMetaTitleLength).IsRequired();
+            translation.Property(t => t.DefaultMetaDescription).HasMaxLength(SiteSettingsTranslation.MaxMetaDescriptionLength).IsRequired();
             translation.Property(t => t.FooterText).HasMaxLength(SiteSettingsTranslation.MaxFooterTextLength).IsRequired();
             translation.Property(t => t.MaintenanceMessage).HasMaxLength(SiteSettingsTranslation.MaxMaintenanceMessageLength).IsRequired();
         });
