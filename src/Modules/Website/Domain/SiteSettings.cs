@@ -6,8 +6,8 @@ namespace GenclikMerkezi.Modules.Website.Domain;
 // deliberately no factory that creates "a" SiteSettings with a random id - only CreateDefault(),
 // used both to seed the very first persisted row (see UpdateSiteSettingsCommandHandler's
 // get-or-create) and to hand read-only callers sensible defaults, without writing anything, when no
-// row has ever been persisted yet (GetSiteSettingsQueryHandler / GetPublicSiteSettingsQueryHandler
-// never call SaveChanges - a query must not commit a transaction, AGENTS.md §13).
+// row has ever been persisted yet (GetSiteSettingsQueryHandler / GetPublicSiteQueryHandler never
+// call SaveChanges - a query must not commit a transaction, AGENTS.md §13).
 public sealed class SiteSettings : AggregateRoot
 {
     public static readonly Guid SingletonId = Guid.Parse("11111111-1111-1111-1111-111111111111");
@@ -38,7 +38,9 @@ public sealed class SiteSettings : AggregateRoot
 
     public bool MaintenanceModeEnabled { get; private set; }
 
-    public string? MaintenanceMessage { get; private set; }
+    // ADR-024 §13: the public (non-secret) Turnstile key the frontend widget embeds. The secret key
+    // is never stored here - it lives only in the Website Infrastructure adapter's configuration.
+    public string TurnstileSiteKey { get; private set; } = string.Empty;
 
     public Guid? UpdatedByUserId { get; private set; }
 
@@ -112,17 +114,19 @@ public sealed class SiteSettings : AggregateRoot
         string? defaultSeoTitle,
         string? defaultSeoDescription,
         string? footerText,
+        string? maintenanceMessage,
         Guid updatedByUserId,
         DateTime updatedAtUtc)
     {
         var existing = _translations.FirstOrDefault(t => t.LanguageCode == languageCode);
         if (existing is not null)
         {
-            existing.Update(siteName, defaultSeoTitle, defaultSeoDescription, footerText);
+            existing.Update(siteName, defaultSeoTitle, defaultSeoDescription, footerText, maintenanceMessage);
         }
         else
         {
-            _translations.Add(SiteSettingsTranslation.Create(languageCode, siteName, defaultSeoTitle, defaultSeoDescription, footerText));
+            _translations.Add(SiteSettingsTranslation.Create(
+                languageCode, siteName, defaultSeoTitle, defaultSeoDescription, footerText, maintenanceMessage));
         }
 
         Touch(updatedByUserId, updatedAtUtc);
@@ -145,10 +149,17 @@ public sealed class SiteSettings : AggregateRoot
         Touch(updatedByUserId, updatedAtUtc);
     }
 
-    public void SetMaintenanceMode(bool enabled, string? message, Guid updatedByUserId, DateTime updatedAtUtc)
+    // Global on/off switch only - the message itself is per-language (SiteSettingsTranslation.
+    // MaintenanceMessage), since a maintenance banner must speak the visitor's language.
+    public void SetMaintenanceMode(bool enabled, Guid updatedByUserId, DateTime updatedAtUtc)
     {
         MaintenanceModeEnabled = enabled;
-        MaintenanceMessage = string.IsNullOrWhiteSpace(message) ? null : message.Trim();
+        Touch(updatedByUserId, updatedAtUtc);
+    }
+
+    public void SetTurnstileSiteKey(string? turnstileSiteKey, Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        TurnstileSiteKey = (turnstileSiteKey ?? string.Empty).Trim();
         Touch(updatedByUserId, updatedAtUtc);
     }
 

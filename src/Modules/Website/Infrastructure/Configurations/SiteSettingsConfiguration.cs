@@ -84,6 +84,7 @@ public sealed class SiteSettingsConfiguration : IEntityTypeConfiguration<SiteSet
             translation.Property(t => t.DefaultSeoTitle).HasMaxLength(SiteSettingsTranslation.MaxSeoTitleLength).IsRequired();
             translation.Property(t => t.DefaultSeoDescription).HasMaxLength(SiteSettingsTranslation.MaxSeoDescriptionLength).IsRequired();
             translation.Property(t => t.FooterText).HasMaxLength(SiteSettingsTranslation.MaxFooterTextLength).IsRequired();
+            translation.Property(t => t.MaintenanceMessage).HasMaxLength(SiteSettingsTranslation.MaxMaintenanceMessageLength).IsRequired();
         });
         builder.Navigation(s => s.Translations).UsePropertyAccessMode(PropertyAccessMode.Field);
 
@@ -94,7 +95,7 @@ public sealed class SiteSettingsConfiguration : IEntityTypeConfiguration<SiteSet
         builder.Property(s => s.BotProtectionEnabled).IsRequired();
 
         builder.Property(s => s.MaintenanceModeEnabled).IsRequired();
-        builder.Property(s => s.MaintenanceMessage).HasMaxLength(1000);
+        builder.Property(s => s.TurnstileSiteKey).HasMaxLength(200).IsRequired();
 
         builder.Property(s => s.UpdatedByUserId);
         builder.Property(s => s.UpdatedAtUtc);

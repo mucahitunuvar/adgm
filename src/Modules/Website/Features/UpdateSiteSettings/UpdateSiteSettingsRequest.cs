@@ -8,4 +8,4 @@ public sealed record UpdateSiteSettingsRequest(
     IReadOnlyList<UpdateSiteSettingsTranslationInput> Translations,
     UpdateSiteSettingsFeatureFlagsInput FeatureFlags,
     bool MaintenanceModeEnabled,
-    string? MaintenanceMessage);
+    string? TurnstileSiteKey);

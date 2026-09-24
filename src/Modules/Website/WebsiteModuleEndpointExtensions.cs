@@ -5,7 +5,7 @@ using GenclikMerkezi.Modules.Website.Features.DeleteMediaAsset;
 using GenclikMerkezi.Modules.Website.Features.GetMediaAssetById;
 using GenclikMerkezi.Modules.Website.Features.GetMediaAssetFolders;
 using GenclikMerkezi.Modules.Website.Features.GetMediaAssets;
-using GenclikMerkezi.Modules.Website.Features.GetPublicSiteSettings;
+using GenclikMerkezi.Modules.Website.Features.GetPublicSite;
 using GenclikMerkezi.Modules.Website.Features.GetSiteLanguages;
 using GenclikMerkezi.Modules.Website.Features.GetSiteSettings;
 using GenclikMerkezi.Modules.Website.Features.SetDefaultSiteLanguage;
@@ -37,7 +37,7 @@ public static class WebsiteModuleEndpointExtensions
 
         UpdateSiteSettingsEndpoint.Map(app);
         GetSiteSettingsEndpoint.Map(app);
-        GetPublicSiteSettingsEndpoint.Map(app);
+        GetPublicSiteEndpoint.Map(app);
 
         return app;
     }

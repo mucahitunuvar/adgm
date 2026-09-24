@@ -1,8 +1,12 @@
+using GenclikMerkezi.BuildingBlocks.Infrastructure.Caching;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettings;
+using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Domain;
 using GenclikMerkezi.UnitTests.BuildingBlocks.TestDoubles;
 using GenclikMerkezi.UnitTests.Website.TestDoubles;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 
 namespace GenclikMerkezi.UnitTests.Website.Features.UpdateSiteSettings;
 
@@ -11,19 +15,21 @@ public class UpdateSiteSettingsCommandHandlerTests
     private readonly FakeSiteSettingsRepository _siteSettingsRepository = new();
     private readonly FakeMediaAssetRepository _mediaAssetRepository = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
+    private readonly ICacheService _cacheService =
+        new MemoryCacheService(new MemoryCache(new MemoryCacheOptions()), Options.Create(new CacheSettings()));
 
     private UpdateSiteSettingsCommandHandler CreateHandler() =>
-        new(_siteSettingsRepository, _mediaAssetRepository, new FakeCurrentUserContext(Guid.NewGuid()), _unitOfWork);
+        new(_siteSettingsRepository, _mediaAssetRepository, new FakeCurrentUserContext(Guid.NewGuid()), _cacheService, _unitOfWork);
 
     private static UpdateSiteSettingsCommand BuildValidCommand() => new(
         new UpdateSiteSettingsThemeInput(null, null, null, "#111111", "#222222", "Inter"),
         new UpdateSiteSettingsContactInput("Ankara", "+90 555 000 00 00", "info@example.org", null, null),
         [new UpdateSiteSettingsSocialLinkInput("Instagram", "https://instagram.com/x", 1)],
         [new UpdateSiteSettingsBankAccountInput("TR330006100519786457841326", "Ziraat", "Dernek", null, 1, true)],
-        [new UpdateSiteSettingsTranslationInput("tr", "Gençlik Merkezi", "Ana Sayfa", "Açıklama", "Footer")],
+        [new UpdateSiteSettingsTranslationInput("tr", "Gençlik Merkezi", "Ana Sayfa", "Açıklama", "Footer", "Bakımdayız")],
         new UpdateSiteSettingsFeatureFlagsInput(false, false, false, false, true),
         false,
-        null);
+        "0x4AAA...");
 
     [Fact]
     public async Task Handle_WhenNoSettingsPersistedYet_CreatesAndPersistsTheSingleton()
@@ -39,6 +45,8 @@ public class UpdateSiteSettingsCommandHandlerTests
         Assert.Single(settings.SocialLinks);
         Assert.Single(settings.BankAccounts);
         Assert.Single(settings.Translations);
+        Assert.Equal("Bakımdayız", settings.Translations.Single().MaintenanceMessage);
+        Assert.Equal("0x4AAA...", settings.TurnstileSiteKey);
         Assert.Equal(1, _unitOfWork.SaveChangesCallCount);
     }
 
@@ -125,7 +133,7 @@ public class UpdateSiteSettingsCommandHandlerTests
     {
         var command = BuildValidCommand() with
         {
-            Translations = [new UpdateSiteSettingsTranslationInput("123", null, null, null, null)],
+            Translations = [new UpdateSiteSettingsTranslationInput("123", null, null, null, null, null)],
         };
 
         var result = await CreateHandler().Handle(command, CancellationToken.None);

@@ -10,6 +10,7 @@ namespace GenclikMerkezi.Modules.Website.Features.CreateSiteLanguage;
 public sealed class CreateSiteLanguageCommandHandler(
     ISiteLanguageRepository siteLanguageRepository,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<CreateSiteLanguageCommand, Result<CreateSiteLanguageResponse>>
 {
@@ -34,6 +35,8 @@ public sealed class CreateSiteLanguageCommandHandler(
 
         siteLanguageRepository.Add(siteLanguage);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        WebsiteCacheInvalidator.InvalidatePublicSite(cacheService);
 
         return Result.Success(new CreateSiteLanguageResponse(
             siteLanguage.Id, siteLanguage.Code.Value, siteLanguage.Name, siteLanguage.SortOrder,

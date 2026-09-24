@@ -5,4 +5,5 @@ public sealed record UpdateSiteSettingsTranslationInput(
     string? SiteName,
     string? DefaultSeoTitle,
     string? DefaultSeoDescription,
-    string? FooterText);
+    string? FooterText,
+    string? MaintenanceMessage);

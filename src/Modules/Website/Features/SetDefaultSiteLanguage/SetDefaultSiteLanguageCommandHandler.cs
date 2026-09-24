@@ -9,6 +9,7 @@ namespace GenclikMerkezi.Modules.Website.Features.SetDefaultSiteLanguage;
 public sealed class SetDefaultSiteLanguageCommandHandler(
     ISiteLanguageRepository siteLanguageRepository,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<SetDefaultSiteLanguageCommand, Result>
 {
@@ -43,6 +44,8 @@ public sealed class SetDefaultSiteLanguageCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        WebsiteCacheInvalidator.InvalidatePublicSite(cacheService);
 
         return Result.Success();
     }

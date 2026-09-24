@@ -10,7 +10,7 @@ public sealed class UpdateSiteSettingsCommandValidator : AbstractValidator<Updat
         RuleFor(c => c.Theme).NotNull();
         RuleFor(c => c.Contact).NotNull();
         RuleFor(c => c.FeatureFlags).NotNull();
-        RuleFor(c => c.MaintenanceMessage).MaximumLength(1000);
+        RuleFor(c => c.TurnstileSiteKey).MaximumLength(200);
 
         RuleForEach(c => c.SocialLinks).ChildRules(link =>
         {
@@ -30,6 +30,7 @@ public sealed class UpdateSiteSettingsCommandValidator : AbstractValidator<Updat
         {
             translation.RuleFor(t => t.LanguageCode).NotEmpty();
             translation.RuleFor(t => t.SiteName).MaximumLength(SiteSettingsTranslation.MaxSiteNameLength);
+            translation.RuleFor(t => t.MaintenanceMessage).MaximumLength(SiteSettingsTranslation.MaxMaintenanceMessageLength);
         });
     }
 }

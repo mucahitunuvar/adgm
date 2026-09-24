@@ -9,6 +9,7 @@ namespace GenclikMerkezi.Modules.Website.Features.DeactivateSiteLanguage;
 public sealed class DeactivateSiteLanguageCommandHandler(
     ISiteLanguageRepository siteLanguageRepository,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<DeactivateSiteLanguageCommand, Result>
 {
@@ -27,6 +28,8 @@ public sealed class DeactivateSiteLanguageCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        WebsiteCacheInvalidator.InvalidatePublicSite(cacheService);
 
         return Result.Success();
     }

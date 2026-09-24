@@ -32,14 +32,15 @@ public sealed class GetSiteSettingsQueryHandler(
             .ToList();
 
         var translations = settings.Translations
-            .Select(t => new SiteSettingsTranslationResponse(t.LanguageCode.Value, t.SiteName, t.DefaultSeoTitle, t.DefaultSeoDescription, t.FooterText))
+            .Select(t => new SiteSettingsTranslationResponse(
+                t.LanguageCode.Value, t.SiteName, t.DefaultSeoTitle, t.DefaultSeoDescription, t.FooterText, t.MaintenanceMessage))
             .ToList();
 
         return Result.Success(new SiteSettingsResponse(
             themeResponse, contactResponse, socialLinks, bankAccounts, translations,
             settings.GlobalSearchEnabled, settings.NewsletterEnabled, settings.PublicJobListingsEnabled,
             settings.DonationPageEnabled, settings.BotProtectionEnabled,
-            settings.MaintenanceModeEnabled, settings.MaintenanceMessage, settings.UpdatedAtUtc));
+            settings.MaintenanceModeEnabled, settings.TurnstileSiteKey, settings.UpdatedAtUtc));
     }
 
     private async Task<string?> ResolveMediaUrlAsync(Guid? mediaAssetId, CancellationToken cancellationToken)

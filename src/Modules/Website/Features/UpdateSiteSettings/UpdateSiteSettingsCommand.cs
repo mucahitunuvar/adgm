@@ -11,4 +11,4 @@ public sealed record UpdateSiteSettingsCommand(
     IReadOnlyList<UpdateSiteSettingsTranslationInput> Translations,
     UpdateSiteSettingsFeatureFlagsInput FeatureFlags,
     bool MaintenanceModeEnabled,
-    string? MaintenanceMessage) : IRequest<Result>;
+    string? TurnstileSiteKey) : IRequest<Result>;

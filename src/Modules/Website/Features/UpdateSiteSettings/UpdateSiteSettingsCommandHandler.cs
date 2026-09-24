@@ -11,6 +11,7 @@ public sealed class UpdateSiteSettingsCommandHandler(
     ISiteSettingsRepository siteSettingsRepository,
     IMediaAssetRepository mediaAssetRepository,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<UpdateSiteSettingsCommand, Result>
 {
@@ -66,7 +67,7 @@ public sealed class UpdateSiteSettingsCommandHandler(
                 ibanResult.Value, input.BankName, input.AccountHolder, input.Description, input.SortOrder, input.IsActive));
         }
 
-        var translations = new List<(LanguageCode LanguageCode, string? SiteName, string? SeoTitle, string? SeoDescription, string? FooterText)>();
+        var translations = new List<(LanguageCode LanguageCode, string? SiteName, string? SeoTitle, string? SeoDescription, string? FooterText, string? MaintenanceMessage)>();
         foreach (var input in request.Translations)
         {
             var languageCodeResult = LanguageCode.Create(input.LanguageCode);
@@ -75,7 +76,9 @@ public sealed class UpdateSiteSettingsCommandHandler(
                 return languageCodeResult;
             }
 
-            translations.Add((languageCodeResult.Value, input.SiteName, input.DefaultSeoTitle, input.DefaultSeoDescription, input.FooterText));
+            translations.Add((
+                languageCodeResult.Value, input.SiteName, input.DefaultSeoTitle, input.DefaultSeoDescription,
+                input.FooterText, input.MaintenanceMessage));
         }
 
         var settings = await siteSettingsRepository.GetAsync(cancellationToken);
@@ -94,9 +97,9 @@ public sealed class UpdateSiteSettingsCommandHandler(
         settings.ReplaceSocialLinks(socialLinks, userId, now);
         settings.ReplaceBankAccounts(bankAccounts, userId, now);
 
-        foreach (var (languageCode, siteName, seoTitle, seoDescription, footerText) in translations)
+        foreach (var (languageCode, siteName, seoTitle, seoDescription, footerText, maintenanceMessage) in translations)
         {
-            settings.SetTranslation(languageCode, siteName, seoTitle, seoDescription, footerText, userId, now);
+            settings.SetTranslation(languageCode, siteName, seoTitle, seoDescription, footerText, maintenanceMessage, userId, now);
         }
 
         settings.UpdateFeatureFlags(
@@ -104,9 +107,12 @@ public sealed class UpdateSiteSettingsCommandHandler(
             request.FeatureFlags.PublicJobListingsEnabled, request.FeatureFlags.DonationPageEnabled,
             request.FeatureFlags.BotProtectionEnabled, userId, now);
 
-        settings.SetMaintenanceMode(request.MaintenanceModeEnabled, request.MaintenanceMessage, userId, now);
+        settings.SetMaintenanceMode(request.MaintenanceModeEnabled, userId, now);
+        settings.SetTurnstileSiteKey(request.TurnstileSiteKey, userId, now);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        WebsiteCacheInvalidator.InvalidatePublicSite(cacheService);
 
         return Result.Success();
     }

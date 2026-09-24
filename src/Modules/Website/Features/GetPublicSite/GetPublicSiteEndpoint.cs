@@ -4,21 +4,21 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-namespace GenclikMerkezi.Modules.Website.Features.GetPublicSiteSettings;
+namespace GenclikMerkezi.Modules.Website.Features.GetPublicSite;
 
-internal static class GetPublicSiteSettingsEndpoint
+internal static class GetPublicSiteEndpoint
 {
     public static void Map(IEndpointRouteBuilder app)
     {
         app.MapGet(
-                "/api/v1/public/website/settings",
-                async (ISender sender, CancellationToken cancellationToken) =>
+                "/api/v1/public/site",
+                async (string? lang, ISender sender, CancellationToken cancellationToken) =>
                 {
-                    var result = await sender.Send(new GetPublicSiteSettingsQuery(), cancellationToken);
+                    var result = await sender.Send(new GetPublicSiteQuery(lang), cancellationToken);
                     return result.ToOkOrProblem();
                 })
             .AllowAnonymous()
-            .WithName("GetPublicSiteSettings")
+            .WithName("GetPublicSite")
             .WithTags("Website");
     }
 }

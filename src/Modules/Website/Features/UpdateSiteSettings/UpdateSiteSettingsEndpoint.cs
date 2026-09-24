@@ -16,7 +16,7 @@ internal static class UpdateSiteSettingsEndpoint
                 {
                     var command = new UpdateSiteSettingsCommand(
                         request.Theme, request.Contact, request.SocialLinks, request.BankAccounts,
-                        request.Translations, request.FeatureFlags, request.MaintenanceModeEnabled, request.MaintenanceMessage);
+                        request.Translations, request.FeatureFlags, request.MaintenanceModeEnabled, request.TurnstileSiteKey);
                     var result = await sender.Send(command, cancellationToken);
                     return result.ToNoContentOrProblem();
                 })

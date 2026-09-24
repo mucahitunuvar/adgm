@@ -67,10 +67,11 @@ public class SiteSettingsTests
         var settings = SiteSettings.CreateDefault();
         var tr = LanguageCode.Create("tr").Value;
 
-        settings.SetTranslation(tr, "Gençlik Merkezi", "Ana Sayfa", "Açıklama", "Footer", Guid.NewGuid(), DateTime.UtcNow);
+        settings.SetTranslation(tr, "Gençlik Merkezi", "Ana Sayfa", "Açıklama", "Footer", "Bakımdayız", Guid.NewGuid(), DateTime.UtcNow);
 
         var translation = Assert.Single(settings.Translations);
         Assert.Equal("Gençlik Merkezi", translation.SiteName);
+        Assert.Equal("Bakımdayız", translation.MaintenanceMessage);
     }
 
     [Fact]
@@ -78,23 +79,42 @@ public class SiteSettingsTests
     {
         var settings = SiteSettings.CreateDefault();
         var tr = LanguageCode.Create("tr").Value;
-        settings.SetTranslation(tr, "İlk", null, null, null, Guid.NewGuid(), DateTime.UtcNow);
+        settings.SetTranslation(tr, "İlk", null, null, null, null, Guid.NewGuid(), DateTime.UtcNow);
 
-        settings.SetTranslation(tr, "Güncel", null, null, null, Guid.NewGuid(), DateTime.UtcNow);
+        settings.SetTranslation(tr, "Güncel", null, null, null, null, Guid.NewGuid(), DateTime.UtcNow);
 
         var translation = Assert.Single(settings.Translations);
         Assert.Equal("Güncel", translation.SiteName);
     }
 
     [Fact]
-    public void SetMaintenanceMode_WithBlankMessage_StoresNullMessage()
+    public void SetMaintenanceMode_TogglesTheGlobalSwitchOnly()
     {
         var settings = SiteSettings.CreateDefault();
 
-        settings.SetMaintenanceMode(true, "   ", Guid.NewGuid(), DateTime.UtcNow);
+        settings.SetMaintenanceMode(true, Guid.NewGuid(), DateTime.UtcNow);
 
         Assert.True(settings.MaintenanceModeEnabled);
-        Assert.Null(settings.MaintenanceMessage);
+    }
+
+    [Fact]
+    public void SetTurnstileSiteKey_WithBlankValue_StoresEmptyString()
+    {
+        var settings = SiteSettings.CreateDefault();
+
+        settings.SetTurnstileSiteKey("   ", Guid.NewGuid(), DateTime.UtcNow);
+
+        Assert.Equal(string.Empty, settings.TurnstileSiteKey);
+    }
+
+    [Fact]
+    public void SetTurnstileSiteKey_TrimsAndStoresValue()
+    {
+        var settings = SiteSettings.CreateDefault();
+
+        settings.SetTurnstileSiteKey("  0x4AAA...  ", Guid.NewGuid(), DateTime.UtcNow);
+
+        Assert.Equal("0x4AAA...", settings.TurnstileSiteKey);
     }
 
     [Fact]

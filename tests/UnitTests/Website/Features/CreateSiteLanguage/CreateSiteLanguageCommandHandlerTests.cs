@@ -1,8 +1,12 @@
+using GenclikMerkezi.BuildingBlocks.Infrastructure.Caching;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.Modules.Website.Features.CreateSiteLanguage;
+using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Results;
 using GenclikMerkezi.UnitTests.BuildingBlocks.TestDoubles;
 using GenclikMerkezi.UnitTests.Website.TestDoubles;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 
 namespace GenclikMerkezi.UnitTests.Website.Features.CreateSiteLanguage;
 
@@ -10,9 +14,11 @@ public class CreateSiteLanguageCommandHandlerTests
 {
     private readonly FakeSiteLanguageRepository _repository = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
+    private readonly ICacheService _cacheService =
+        new MemoryCacheService(new MemoryCache(new MemoryCacheOptions()), Options.Create(new CacheSettings()));
 
     private CreateSiteLanguageCommandHandler CreateHandler() =>
-        new(_repository, new FakeCurrentUserContext(Guid.NewGuid()), _unitOfWork);
+        new(_repository, new FakeCurrentUserContext(Guid.NewGuid()), _cacheService, _unitOfWork);
 
     [Fact]
     public async Task Handle_WithNewCode_CreatesInactiveDefaultFalseLanguage()
