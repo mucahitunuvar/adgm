@@ -20,6 +20,17 @@ public sealed class HtmlSanitizerContentSanitizer : IHtmlContentSanitizer
     private const string YouTubeNoCookieHost = "www.youtube-nocookie.com";
     private const string YouTubeNoCookieEmbedPathPrefix = "/embed/";
 
+    // Tags the whitelist deliberately excludes (div/span/section/article/font - never had semantic
+    // meaning worth preserving) or didn't add every level of (h1/h5/h6 - only h2-h4 made AllowedTags)
+    // but whose CONTENT is still safe once their own attributes have gone through the same
+    // sanitization pass as everything else. Unwrapped, not removed with their content - unlike
+    // script/style/noscript/template/object/embed/form/svg/math/disallowed-iframe, which stay fully
+    // removed (see OnRemovingTag remarks).
+    private static readonly HashSet<string> UnwrappableTags = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "div", "span", "section", "article", "font", "h1", "h5", "h6",
+    };
+
     private readonly HtmlSanitizer _sanitizer;
     private readonly string _publicMediaRootPrefix;
     private readonly string? _publicBaseUrlPrefix;
@@ -58,22 +69,46 @@ public sealed class HtmlSanitizerContentSanitizer : IHtmlContentSanitizer
         options.UriAttributes.Add("href");
 
         // KeepChildNodes stays at its default (false): a disallowed tag is removed together with its
-        // content, not unwrapped. The alternative (true) was tried and rejected - it also unwraps
-        // <script>/<style>, leaving their text content behind as plain (inert, but still unwanted)
-        // page text, which is worse than losing a stray disallowed wrapper's content.
+        // content unless OnRemovingTag below chooses to unwrap it instead. Turning this flag on
+        // globally was tried and rejected - it also unwraps <script>/<style>, leaving their text
+        // content behind as plain (inert, but still unwanted) page text.
         _sanitizer = new HtmlSanitizer(options);
+        _sanitizer.RemovingTag += OnRemovingTag;
         _sanitizer.PostProcessNode += OnPostProcessNode;
     }
 
     public string Sanitize(string html) => _sanitizer.Sanitize(html ?? string.Empty);
 
+    // The sanitizer's own "remove disallowed tag" pass (RemoveReason.NotAllowedTag) would otherwise
+    // drop harmless wrappers together with their safe content. Cancel just for those and unwrap them
+    // by hand, the same way HtmlSanitizer's own KeepChildNodes flag would - but scoped to this list so
+    // script/style/noscript/template/object/embed/form/svg/math (also NotAllowedTag, since none of
+    // them are in AllowedTags) still lose their content along with the tag itself.
+    private void OnRemovingTag(object? sender, RemovingTagEventArgs e)
+    {
+        if (e.Reason != RemoveReason.NotAllowedTag || !UnwrappableTags.Contains(e.Tag.NodeName))
+        {
+            return;
+        }
+
+        e.Cancel = true;
+
+        if (e.Tag.HasChildNodes)
+        {
+            e.Tag.Replace([.. e.Tag.ChildNodes]);
+        }
+        else
+        {
+            e.Tag.Remove();
+        }
+    }
+
     private void OnPostProcessNode(object? sender, PostProcessNodeEventArgs e)
     {
         switch (e.Node)
         {
-            case IHtmlAnchorElement anchor when anchor.Target == "_blank":
-                anchor.RelationList.Add("noopener");
-                anchor.RelationList.Add("noreferrer");
+            case IHtmlAnchorElement anchor:
+                ProcessAnchor(anchor);
                 break;
 
             case IHtmlImageElement image:
@@ -83,6 +118,27 @@ public sealed class HtmlSanitizerContentSanitizer : IHtmlContentSanitizer
             case IHtmlInlineFrameElement iframe when !IsAllowedIframeSource(iframe.GetAttribute("src")):
                 iframe.Remove();
                 break;
+        }
+    }
+
+    // A protocol-relative href ("//evil.com/x") carries no scheme token, so the library's own scheme
+    // check - built to recognize things like "javascript:" or "https:" - never inspects it and lets it
+    // through untouched, as if it were an ordinary in-site relative link. A browser instead resolves
+    // it against the current page's own scheme, i.e. treats it exactly like an absolute URL to another
+    // host. Reject it here since only href's declared AllowedSchemes (http/https/mailto/tel) are meant
+    // to reach an absolute destination.
+    private static void ProcessAnchor(IHtmlAnchorElement anchor)
+    {
+        var href = anchor.GetAttribute("href");
+        if (href is not null && href.StartsWith("//", StringComparison.Ordinal))
+        {
+            anchor.RemoveAttribute("href");
+        }
+
+        if (anchor.Target == "_blank")
+        {
+            anchor.RelationList.Add("noopener");
+            anchor.RelationList.Add("noreferrer");
         }
     }
 

@@ -171,20 +171,64 @@ public class HtmlSanitizerContentSanitizerTests
         Assert.DoesNotContain("tracker.example.com", result);
     }
 
-    [Fact]
-    public void Sanitize_RemovesDisallowedTagTogetherWithItsContent()
+    [Theory]
+    [InlineData("<div><p>metin</p></div>")]
+    [InlineData("<span>metin</span>")]
+    public void Sanitize_UnwrapsHarmlessWrapperTag_ButKeepsItsSafeContent(string html)
     {
-        // KeepChildNodes stays false (the library's own default): unwrapping disallowed tags instead
-        // would also unwrap <script>/<style>, leaving their text content behind as inert but
-        // unwanted page text (verified by hand while building this policy - see
-        // Sanitize_RemovesScriptTagEntirely for the case that ruled it out).
-        const string html = "<p>önce</p><div>izinsiz sarmalayıcı içeriği</div><p>sonra</p>";
+        var result = _sanitizer.Sanitize(html);
+
+        Assert.DoesNotContain("<div", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("<span", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("metin", result);
+    }
+
+    [Fact]
+    public void Sanitize_UnwrapsNestedHarmlessWrapperTags_KeepingAllowedContentAtEachLevel()
+    {
+        const string html = "<div><section><p>önce</p><span>sonra</span></section></div>";
 
         var result = _sanitizer.Sanitize(html);
 
         Assert.DoesNotContain("<div", result, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("izinsiz sarmalayıcı içeriği", result);
-        Assert.Contains("önce", result);
+        Assert.DoesNotContain("<section", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("<span", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("<p>önce</p>", result);
         Assert.Contains("sonra", result);
+    }
+
+    [Fact]
+    public void Sanitize_RemovesScriptTagAndItsContent_EvenThoughOtherWrappersAreUnwrapped()
+    {
+        const string html = "<p>Merhaba</p><script>alert('xss')</script>";
+
+        var result = _sanitizer.Sanitize(html);
+
+        Assert.Contains("Merhaba", result);
+        Assert.DoesNotContain("<script", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("alert", result);
+    }
+
+    [Fact]
+    public void Sanitize_RemovesStyleTagAndItsContent_EvenThoughOtherWrappersAreUnwrapped()
+    {
+        const string html = "<p>Merhaba</p><style>body { color: red; }</style>";
+
+        var result = _sanitizer.Sanitize(html);
+
+        Assert.Contains("Merhaba", result);
+        Assert.DoesNotContain("<style", result, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("color: red", result);
+    }
+
+    [Fact]
+    public void Sanitize_RemovesProtocolRelativeHref_ButKeepsLinkText()
+    {
+        const string html = "<a href=\"//evil.example.com/steal\">tıkla</a>";
+
+        var result = _sanitizer.Sanitize(html);
+
+        Assert.DoesNotContain("evil.example.com", result);
+        Assert.Contains("tıkla", result);
     }
 }
