@@ -568,6 +568,43 @@ Raw SQL kullanılması gerekiyorsa güvenli parametrization uygulanmalıdır.
 
 String concatenation ile SQL oluşturulmamalıdır.
 
+## 16.1 Zengin Metin İçerik Güvenliği (HTML Sanitizer)
+
+Kullanıcının (Admin/içerik editörü) zengin metin editöründen girdiği HTML, veritabanına yazılmadan
+önce sunucu tarafında sanitize edilmelidir. Frontend'in kendi doğrulaması (editör kısıtlamaları,
+istemci tarafı temizleme) bir güvenlik sınırı sayılmaz — AGENTS.md §19, "Never rely on frontend
+validation for security or business correctness" ilkesi burada da geçerlidir.
+
+Website modülünün `IHtmlContentSanitizer` portu ve `HtmlSanitizerContentSanitizer` implementasyonu
+(ADR-024 §16, Faz 0 Görev 3) bu politikayı uygular:
+
+* **Beyaz liste, kara liste değil.** İzin verilen etiket ve attribute kümesi HtmlSanitizer
+  kütüphanesinin kendi (çok daha geniş) varsayılanlarından değil, sıfırdan kurulu, açıkça listelenmiş
+  bir kümeden gelir: `p, br, strong, b, em, i, u, s, h2, h3, h4, ul, ol, li, blockquote, a, img,
+  figure, figcaption, table, thead, tbody, tr, th, td, hr, iframe` ve `href, title, target, src, alt,
+  width, height` attribute'ları.
+* **`href` (`<a>`):** yalnızca göreli linkler (kısıtlama yok) veya `http`/`https`/`mailto`/`tel`
+  şemalı mutlak URL'ler kabul edilir. `javascript:`/`data:` gibi şemalar reddedilir. Protokolden
+  bağımsız (`//evil.com`) href'ler de mutlak URL sayılarak aynı şema kontrolüne tabi tutulur — aksi
+  halde tarayıcı bunu sayfanın kendi şemasıyla çözer ve fiilen bir mutlak URL gibi davranır.
+  `target="_blank"` olan linklere otomatik `rel="noopener noreferrer"` eklenir.
+* **`src` (`<img>`):** yalnızca bu kurulumun kendi medya kütüphanesinden gelen görsellere izin
+  verilir — göreli bir yol (yapılandırılmış `PublicRequestPath` altında) veya medya kütüphanesinin
+  `GetUrlAsync`'inin döndürdüğü mutlak URL (yapılandırılmış `PublicBaseUrl` ile eşleşen), ki bu ikincisi
+  saklanmadan önce göreli yola normalize edilir. Başka bir kaynaktan (izleyici pikseli, başka bir
+  siteden hotlink) gelen `src` kabul edilmez; kabul edilmeyen bir `<img>` yalnızca `src`'siz
+  bırakılmaz, etiketin tamamı kaldırılır.
+* **`src` (`<iframe>`):** yalnızca `https://www.youtube-nocookie.com/embed/...` biçimindeki mutlak
+  URL'lere izin verilir; başka her `iframe` içeriğiyle birlikte tamamen kaldırılır.
+* **Beyaz listede olmayan zararsız sarmalayıcılar** (`div`, `span`, `section`, `article`, `font`,
+  ayrıca beyaz listeye eklenmeyen `h1`/`h5`/`h6` başlık seviyeleri) yalnızca kendi etiketini kaybeder;
+  içindeki izinli içerik (kendi sanitizasyon geçişinden ayrıca geçmiş olarak) korunur.
+* **Tehlikeli etiketler** (`script`, `style`, `noscript`, `template`, `object`, `embed`, `form`,
+  `svg`, `math` ve izin verilmeyen `iframe`) içerikleriyle birlikte tamamen kaldırılır — yalnızca
+  etiketin kendisi değil. Bu ayrım kütüphanenin `KeepChildNodes` bayrağının global açılmasıyla elde
+  edilemez (o zaman `script`/`style` içeriği de açılır ve sayfada görünmez ama devre dışı düz metin
+  olarak kalır); bunun yerine yalnızca zararsız sarmalayıcı etiketler için seçici bir unwrap uygulanır.
+
 ---
 
 # 17. File Upload Security
