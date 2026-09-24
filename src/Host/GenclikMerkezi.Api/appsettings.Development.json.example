@@ -13,5 +13,8 @@
     "Password": "your-smtp-password-or-app-password",
     "FromAddress": "no-reply@example.com",
     "FromName": "Gençlik Merkezi"
+  },
+  "Turnstile": {
+    "SecretKey": "your-cloudflare-turnstile-secret-key"
   }
 }

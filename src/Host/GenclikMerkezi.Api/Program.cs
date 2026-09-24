@@ -83,6 +83,12 @@ builder.Services.AddWebsiteModule(builder.Configuration);
 // Notification's public contract - Website itself depends on neither.
 builder.Services.AddScoped<IWebsiteEmailSender, NotificationWebsiteEmailSender>();
 
+// ADR-024 §1/§12.3 Görev 8: Website's IBotProtectionVerifier port, wired at the Host composition
+// root to Cloudflare Turnstile. Website itself never references Cloudflare or HttpClient.
+builder.Services.Configure<TurnstileSettings>(builder.Configuration.GetSection(TurnstileSettings.SectionName));
+builder.Services.AddHttpClient<IBotProtectionVerifier, CloudflareTurnstileBotProtectionVerifier>(
+    client => client.BaseAddress = new Uri("https://challenges.cloudflare.com/"));
+
 var isTestingEnvironment = builder.Environment.IsEnvironment("Testing");
 
 // Part 0 (Hangfire altyapısı): tüm modüllerin yeniden kullanabileceği genel bir background-job

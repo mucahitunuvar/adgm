@@ -1,3 +1,4 @@
+using GenclikMerkezi.Contracts.Website;
 using GenclikMerkezi.Modules.Candidate.Infrastructure;
 using GenclikMerkezi.Modules.CareerAdvisor.Infrastructure;
 using GenclikMerkezi.Modules.CareerDevelopment.Infrastructure;
@@ -113,6 +114,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
     public FakeEmailSender EmailSender { get; } = new();
 
+    public FakeBotProtectionVerifier BotProtectionVerifier { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -176,11 +179,13 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             scope.ServiceProvider.GetRequiredService<WebsiteDbContext>().Database.EnsureCreated();
         });
 
-        // Runs after Program.cs's own AddNotificationModule() registration, so this replaces the
-        // real SmtpEmailSender - no real mail server is involved in these tests.
+        // Runs after Program.cs's own registrations, so this replaces the real SmtpEmailSender (no
+        // real mail server involved) and the real CloudflareTurnstileBotProtectionVerifier (no real
+        // Cloudflare call involved) in these tests.
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton<IEmailSender>(EmailSender);
+            services.AddSingleton<IBotProtectionVerifier>(BotProtectionVerifier);
         });
     }
 
