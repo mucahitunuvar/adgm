@@ -34,11 +34,11 @@ Mevcut kısıtlar:
 
 Website'in tanımladığı portlar:
 
-| Port | Amaç | Bu projedeki Host adaptörü |
+| Port | Amaç | Bu projedeki implementasyon |
 |---|---|---|
-| `IWebsiteEmailSender` | Doğrulama, bildirim, bülten e-postaları | Notification modülünün public contract'ı |
-| `IBotProtectionVerifier` | Anonim formlarda bot doğrulaması | Cloudflare Turnstile (bkz. §12) |
-| `IExternalSearchSource` | Dış kaynakların (ör. ilanlar) genel arama indeksine periyodik olarak çekilmesi | Employer public contract'ından yayındaki ilanları okuyan adaptör (bkz. §10) |
+| `IWebsiteEmailSender` | Doğrulama, bildirim, bülten e-postaları | Host adaptörü → Notification modülünün public contract'ı (başka bir iş modülüne dokunuyor, ARCHITECTURE.md §50.1) |
+| `IBotProtectionVerifier` | Anonim formlarda bot doğrulaması | Website'in kendi Infrastructure'ı → Cloudflare Turnstile (bkz. §12) — yalnızca harici bir servise dokunduğu için Host adaptörüne gerek yok (ARCHITECTURE.md §50.1) |
+| `IExternalSearchSource` | Dış kaynakların (ör. ilanlar) genel arama indeksine periyodik olarak çekilmesi | Host adaptörü → Employer public contract'ından yayındaki ilanları okuyan adaptör (başka bir iş modülüne dokunuyor, bkz. §10) |
 
 ### 2. Yetkilendirme
 
@@ -151,7 +151,7 @@ Draft ──► Published ◄──► Unpublished (pasif)
 
 - `MediaAsset` aggregate'i ADR-019'daki `IFileStorageService` üzerine kurulur; ADR-019'daki kapalı `FileCategory` listesine Website kategorileri eklenir: `website-images`, `website-documents` (public) ve `website-form-attachments` (özel).
 - Alanlar: dosya, klasör, dile göre alt metin ve açıklama, kaynak/telif, kullanım izni, `ContainsPersonalData`, genişlik/yükseklik, boyut, MIME, yükleyen.
-- **Görsel işleme:** Yükleme anında **SkiaSharp (MIT)** ile birkaç sabit boyut üretilir (ör. `thumb` 320px, `card` 640px, `hero` 1600px) ve WebP'ye dönüştürülür; orijinal de saklanır. Kesin boyutlar Faz 0 master prompt'unda belirlenir.
+- **Görsel işleme:** Yükleme anında **SkiaSharp (MIT)** ile üç sabit genişlik üretilir - `small` 400px, `medium` 800px, `large` 1600px - ve WebP'ye (kalite 82) dönüştürülür; orijinal, yön düzeltilmiş ve metadata'sı temizlenmiş halde kendi formatında ayrıca saklanır. En-boy oranı her zaman korunur; orijinal bir varyant genişliğinden küçük veya eşitse o varyant üretilmez (büyütme yapılmaz).
 - **Kullanım takibi:** Bir içerikte, blokta, slider'da vb. kullanılan medya silinemez; kullanıldığı yerler listelenir.
 - Public medya uzun süreli cache header'larıyla doğrudan servis edilir. Form ekleri gibi özel dosyalar yalnızca yetkili endpoint'ten stream edilir.
 
