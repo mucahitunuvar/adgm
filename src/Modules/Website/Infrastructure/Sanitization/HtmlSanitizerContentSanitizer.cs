@@ -169,19 +169,38 @@ public sealed class HtmlSanitizerContentSanitizer : IHtmlContentSanitizer
             return null;
         }
 
+        string? candidate;
         if (_publicBaseUrlPrefix is not null && src.StartsWith(_publicBaseUrlPrefix, StringComparison.Ordinal))
         {
             var fileKey = src[_publicBaseUrlPrefix.Length..];
-            return fileKey.Length == 0 ? null : _publicMediaRootPrefix + fileKey;
+            candidate = fileKey.Length == 0 ? null : _publicMediaRootPrefix + fileKey;
         }
-
-        if (Uri.TryCreate(src, UriKind.Absolute, out _))
+        else if (Uri.TryCreate(src, UriKind.Absolute, out _))
         {
-            return null;
+            candidate = null;
+        }
+        else
+        {
+            candidate = src.StartsWith(_publicMediaRootPrefix, StringComparison.Ordinal) ? src : null;
         }
 
-        return src.StartsWith(_publicMediaRootPrefix, StringComparison.Ordinal) ? src : null;
+        return candidate is not null && !ContainsPathTraversal(candidate) ? candidate : null;
     }
+
+    // Nothing outside PublicRootDirectory is served today (LocalDiskFileStorageService only ever
+    // writes/reads within it), so a "..", a backslash, or a percent-encoded variant of either cannot
+    // currently escape to a real file - but a stored src is never allowed to describe a path that
+    // would, in case that ever changes. "?"/"#" are rejected too: neither can appear in a fileKey this
+    // installation ever generates (ADR-019's "{category}/{yyyy}/{MM}/{dd}/{guid}.{ext}"), so their
+    // presence only ever means someone hand-crafted the value.
+    private static bool ContainsPathTraversal(string path) =>
+        path.Contains("..", StringComparison.Ordinal)
+        || path.Contains('\\')
+        || path.Contains('?')
+        || path.Contains('#')
+        || path.Contains("%2e", StringComparison.OrdinalIgnoreCase)
+        || path.Contains("%2f", StringComparison.OrdinalIgnoreCase)
+        || path.Contains("%5c", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsAllowedIframeSource(string? src) =>
         Uri.TryCreate(src, UriKind.Absolute, out var uri)

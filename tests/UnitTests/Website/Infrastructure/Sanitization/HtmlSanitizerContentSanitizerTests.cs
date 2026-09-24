@@ -172,6 +172,47 @@ public class HtmlSanitizerContentSanitizerTests
     }
 
     [Theory]
+    [InlineData("/webuploads/../uploads/secret.png")]
+    [InlineData("/webuploads/website-images/../../uploads/secret.png")]
+    [InlineData("/webuploads\\website-images\\..\\uploads\\secret.png")]
+    [InlineData("/webuploads/%2e%2e/uploads/secret.png")]
+    [InlineData("/webuploads/%2E%2E/uploads/secret.png")]
+    [InlineData("/webuploads/website-images%2fsecret.png")]
+    [InlineData("/webuploads/website-images%2Fsecret.png")]
+    [InlineData("/webuploads/website-images%5csecret.png")]
+    [InlineData("/webuploads/website-images%5Csecret.png")]
+    [InlineData("/webuploads/website-images/logo.png?x=1")]
+    [InlineData("/webuploads/website-images/logo.png#frag")]
+    public void Sanitize_RemovesImageWithPathTraversalInSource(string src)
+    {
+        var html = $"<img src=\"{src}\" alt=\"\">";
+
+        var result = _sanitizer.Sanitize(html);
+
+        Assert.DoesNotContain("<img", result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Sanitize_KeepsValidNestedPublicMediaPath()
+    {
+        const string html = "<img src=\"/webuploads/website-images/2026/09/24/logo.png\" alt=\"Logo\">";
+
+        var result = _sanitizer.Sanitize(html);
+
+        Assert.Contains("src=\"/webuploads/website-images/2026/09/24/logo.png\"", result);
+    }
+
+    [Fact]
+    public void Sanitize_RemovesImageWithPathTraversalInSource_EvenWhenNormalizedFromOwnMediaLibraryUrl()
+    {
+        const string html = "<img src=\"http://localhost:5289/webuploads/../../uploads/secret.png\" alt=\"\">";
+
+        var result = _sanitizerWithPublicBaseUrl.Sanitize(html);
+
+        Assert.DoesNotContain("<img", result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
     [InlineData("<div><p>metin</p></div>")]
     [InlineData("<span>metin</span>")]
     public void Sanitize_UnwrapsHarmlessWrapperTag_ButKeepsItsSafeContent(string html)
