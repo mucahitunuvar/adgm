@@ -4,6 +4,7 @@ using GenclikMerkezi.Modules.Website.Infrastructure;
 using GenclikMerkezi.Modules.Website.Infrastructure.BotProtection;
 using GenclikMerkezi.Modules.Website.Infrastructure.Media;
 using GenclikMerkezi.Modules.Website.Infrastructure.Persistence;
+using GenclikMerkezi.Modules.Website.Infrastructure.Sanitization;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -44,6 +45,7 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddSingleton<IImageProcessor, SkiaSharpImageProcessor>();
         services.AddScoped<IMediaUsageChecker, CompositeMediaUsageChecker>();
         services.AddScoped<IMediaUsageProvider, SiteSettingsMediaUsageProvider>();
+        services.AddSingleton<IHtmlContentSanitizer, HtmlSanitizerContentSanitizer>();
 
         // ADR-024 §1/§12.3 Görev 8: IBotProtectionVerifier's Cloudflare Turnstile implementation
         // lives here (not a Host adapter) since it never touches another business module -
