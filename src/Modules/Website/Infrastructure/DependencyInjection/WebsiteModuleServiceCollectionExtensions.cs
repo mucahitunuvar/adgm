@@ -39,8 +39,10 @@ public static class WebsiteModuleServiceCollectionExtensions
 
         services.AddScoped<ISiteLanguageRepository, SiteLanguageRepository>();
         services.AddScoped<IMediaAssetRepository, MediaAssetRepository>();
+        services.AddScoped<ISiteSettingsRepository, SiteSettingsRepository>();
         services.AddSingleton<IImageProcessor, SkiaSharpImageProcessor>();
         services.AddScoped<IMediaUsageChecker, CompositeMediaUsageChecker>();
+        services.AddScoped<IMediaUsageProvider, SiteSettingsMediaUsageProvider>();
 
         // ADR-024 §2: named policies, all resolving to the literal Admin role for now. Only this
         // block changes when a real permission system arrives - endpoints stay untouched.

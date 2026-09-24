@@ -14,6 +14,8 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
 
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
 
+    public DbSet<SiteSettings> SiteSettingsEntries => Set<SiteSettings>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(WebsiteDbContext).Assembly);
