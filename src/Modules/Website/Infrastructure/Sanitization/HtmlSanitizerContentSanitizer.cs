@@ -22,10 +22,20 @@ public sealed class HtmlSanitizerContentSanitizer : IHtmlContentSanitizer
 
     private readonly HtmlSanitizer _sanitizer;
     private readonly string _publicMediaRootPrefix;
+    private readonly string? _publicBaseUrlPrefix;
 
     public HtmlSanitizerContentSanitizer(IOptions<FileStorageSettings> fileStorageOptions)
     {
-        _publicMediaRootPrefix = fileStorageOptions.Value.PublicRequestPath.TrimEnd('/') + "/";
+        var fileStorageSettings = fileStorageOptions.Value;
+        _publicMediaRootPrefix = fileStorageSettings.PublicRequestPath.TrimEnd('/') + "/";
+
+        // The media library's own GetUrlAsync always returns an absolute "{PublicBaseUrl}/{fileKey}"
+        // URL (ADR-019), so an editor inserting an image it just picked from that library writes an
+        // absolute URL, not a relative one - only this installation's own configured PublicBaseUrl is
+        // ever accepted as such and normalized back to a relative path (see NormalizeImageSource).
+        _publicBaseUrlPrefix = string.IsNullOrWhiteSpace(fileStorageSettings.PublicBaseUrl)
+            ? null
+            : fileStorageSettings.PublicBaseUrl.TrimEnd('/') + "/";
 
         var options = new HtmlSanitizerOptions();
         options.AllowedTags.Clear();
@@ -66,8 +76,8 @@ public sealed class HtmlSanitizerContentSanitizer : IHtmlContentSanitizer
                 anchor.RelationList.Add("noreferrer");
                 break;
 
-            case IHtmlImageElement image when !IsAllowedImageSource(image.GetAttribute("src")):
-                image.RemoveAttribute("src");
+            case IHtmlImageElement image:
+                ProcessImage(image);
                 break;
 
             case IHtmlInlineFrameElement iframe when !IsAllowedIframeSource(iframe.GetAttribute("src")):
@@ -76,12 +86,46 @@ public sealed class HtmlSanitizerContentSanitizer : IHtmlContentSanitizer
         }
     }
 
-    // Absolute URLs are never allowed here, even http/https ones pointing elsewhere - only a
-    // relative path under this installation's own configured public media root may be embedded.
-    private bool IsAllowedImageSource(string? src) =>
-        !string.IsNullOrWhiteSpace(src)
-        && !Uri.TryCreate(src, UriKind.Absolute, out _)
-        && src.StartsWith(_publicMediaRootPrefix, StringComparison.Ordinal);
+    private void ProcessImage(IHtmlImageElement image)
+    {
+        var normalized = NormalizeImageSource(image.GetAttribute("src"));
+        if (normalized is null)
+        {
+            // A disallowed src does not become an image with no src - it becomes no image at all,
+            // so nothing (a broken-image icon, an editor-added alt/caption around an empty image)
+            // survives to suggest an image was ever there.
+            image.Remove();
+            return;
+        }
+
+        image.SetAttribute("src", normalized);
+    }
+
+    // Accepts either a relative path already under this installation's configured public media root,
+    // or an absolute URL matching this installation's own configured PublicBaseUrl - the latter is
+    // normalized back to a relative path so stored content never hardcodes a host/scheme (and still
+    // resolves correctly behind a different host, e.g. after a domain change). Any other absolute URL
+    // (a tracking pixel, an image hotlinked from elsewhere) is rejected.
+    private string? NormalizeImageSource(string? src)
+    {
+        if (string.IsNullOrWhiteSpace(src))
+        {
+            return null;
+        }
+
+        if (_publicBaseUrlPrefix is not null && src.StartsWith(_publicBaseUrlPrefix, StringComparison.Ordinal))
+        {
+            var fileKey = src[_publicBaseUrlPrefix.Length..];
+            return fileKey.Length == 0 ? null : _publicMediaRootPrefix + fileKey;
+        }
+
+        if (Uri.TryCreate(src, UriKind.Absolute, out _))
+        {
+            return null;
+        }
+
+        return src.StartsWith(_publicMediaRootPrefix, StringComparison.Ordinal) ? src : null;
+    }
 
     private static bool IsAllowedIframeSource(string? src) =>
         Uri.TryCreate(src, UriKind.Absolute, out var uri)

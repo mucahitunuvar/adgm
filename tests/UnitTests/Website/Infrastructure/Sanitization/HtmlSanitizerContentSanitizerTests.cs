@@ -6,7 +6,15 @@ namespace GenclikMerkezi.UnitTests.Website.Infrastructure.Sanitization;
 
 public class HtmlSanitizerContentSanitizerTests
 {
+    private const string PublicBaseUrl = "http://localhost:5289/webuploads";
+
     private readonly HtmlSanitizerContentSanitizer _sanitizer = new(Options.Create(new FileStorageSettings()));
+
+    // A second instance with PublicBaseUrl configured, matching a real deployment (appsettings.json
+    // always sets one) - the default-settings instance above leaves it empty on purpose, to prove the
+    // absolute-URL acceptance path is opt-in and never activates by accident.
+    private readonly HtmlSanitizerContentSanitizer _sanitizerWithPublicBaseUrl = new(
+        Options.Create(new FileStorageSettings { PublicBaseUrl = PublicBaseUrl }));
 
     [Fact]
     public void Sanitize_WithAllowedTagsAndFormatting_PreservesThem()
@@ -126,6 +134,40 @@ public class HtmlSanitizerContentSanitizerTests
 
         var result = _sanitizer.Sanitize(html);
 
+        Assert.DoesNotContain("tracker.example.com", result);
+    }
+
+    [Fact]
+    public void Sanitize_RemovesImageWithDisallowedSourceEntirely_NotJustTheSrcAttribute()
+    {
+        const string html = "<img src=\"https://tracker.example.com/pixel.gif\" alt=\"izlenen\">";
+
+        var result = _sanitizer.Sanitize(html);
+
+        Assert.DoesNotContain("<img", result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Sanitize_WithAbsoluteUrlFromOwnMediaLibrary_KeepsImageAndNormalizesToRelativePath()
+    {
+        // The exact shape LocalDiskFileStorageService.GetUrlAsync returns: "{PublicBaseUrl}/{fileKey}"
+        // (ADR-019), which is what the editor writes when an image is picked from the media library.
+        const string html = "<img src=\"http://localhost:5289/webuploads/public/2026/09/24/logo.webp\" alt=\"Logo\">";
+
+        var result = _sanitizerWithPublicBaseUrl.Sanitize(html);
+
+        Assert.Contains("src=\"/webuploads/public/2026/09/24/logo.webp\"", result);
+        Assert.DoesNotContain("localhost:5289", result);
+    }
+
+    [Fact]
+    public void Sanitize_WithAbsoluteUrlFromAnotherHost_RemovesImageEvenWhenPublicBaseUrlIsConfigured()
+    {
+        const string html = "<img src=\"https://tracker.example.com/webuploads/public/2026/09/24/logo.webp\" alt=\"\">";
+
+        var result = _sanitizerWithPublicBaseUrl.Sanitize(html);
+
+        Assert.DoesNotContain("<img", result, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("tracker.example.com", result);
     }
 
