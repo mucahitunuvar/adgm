@@ -594,6 +594,10 @@ Sorumlulukları:
 
 Dosyanın fiziksel olarak nerede tutulduğu Website modülünün business logic'ine gömülmemelidir; depolama sağlayıcısına özgü detaylar AGENTS.md §34'teki `IFileStorage` soyutlaması arkasında tutulur. Bu, her modülün kendi dosyalarını (ör. Candidate'ın CV dosyaları) aynı paylaşılan storage abstraction'ı kullanarak, ancak kendi veri sahipliğinde tutmasını engellemez — Website yalnızca kendi içerik/etkinlik/medya verisinin sahibidir, sistemdeki her dosyanın değil.
 
+Not: Yukarıdaki taslak `docs/DECISIONS/ADR-024-Website-Module-Design.md` ile ayrıntılandırılıp kabul edilmiştir; modülün tam tasarımı (çok dillilik, içerik çekirdeği, medya kütüphanesi, site ayarları, form motoru, etkinlik kaydı, arama, SEO, güvenlik) için o ADR tek kaynaktır. ADR-024'ün Faz 0'ı (`WebsiteDbContext`, `SiteLanguage`, `MediaAsset` + SkiaSharp tabanlı görsel işleme, `SiteSettings`, isimli policy'ler, `IWebsiteEmailSender`/`IBotProtectionVerifier` port'ları ve Host adaptörleri) tamamlanmıştır; içerik çekirdeği ve sonrası (Faz 1-5) henüz uygulanmamıştır.
+
+Website, ADR-024 §1'de tanımlanan **port + Host adaptörü** desenini kullanan ilk modüldür (bkz. §50 Contracts) - projeye özgü bağımlılıklar (e-posta gönderimi, bot doğrulama) modülün kendi kodunda değil, yalnızca Host composition root'unda kurulur; bu, modülün başka bir projede kod değişikliği olmadan yeniden kullanılabilmesini sağlar.
+
 ---
 
 ## 8.12. Support
@@ -2067,6 +2071,14 @@ Employment.Contracts
 Contract'lar implementation detaylarını expose etmemelidir.
 
 Entity paylaşmak yerine DTO/contract paylaşılmalıdır.
+
+## 50.1. Port + Host Adaptörü Deseni
+
+Yukarıdaki "Contracts" deseninde bir modül, kendi contract'ını **kendi Infrastructure katmanında implemente eder** ve başka modüller onu doğrudan çağırır (ör. `INotificationModuleContract`, `IIdentityService`). Bu, modüllerin birbirini tanıdığı, tek kurulumlu bu proje için doğru varsayılan yaklaşımdır.
+
+Website gibi **başka projelerde de kullanılabilir olması gereken** bir modül için bu yeterli değildir: modülün kendisi hiçbir iş moduluna (ör. Notification, Employer) bağımlı olmamalıdır, çünkü o modüller her projede bulunmayabilir. Bu durumda modül kendi **port** arayüzünü (`GenclikMerkezi.Contracts.<Modül>` altında) tanımlar, ama onu **implemente etmez** - implementasyon yalnızca Host composition root'ta, o projeye özgü bir adaptör sınıfıyla yapılır. Adaptör başka bir modülün contract'ını çağırabilir (ör. `NotificationWebsiteEmailSender → INotificationModuleContract`) veya harici bir servisi çağırabilir (ör. `CloudflareTurnstileBotProtectionVerifier`). Başka bir projede yalnızca bu adaptör değişir; modülün kendi kodu hiç değişmez.
+
+Bkz. `docs/DECISIONS/ADR-024-Website-Module-Design.md` §1 (`IWebsiteEmailSender`, `IBotProtectionVerifier`, `IExternalSearchSource` port'ları ve bunların Host'taki karşılıkları).
 
 ---
 

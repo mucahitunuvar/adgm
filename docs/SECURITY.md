@@ -463,7 +463,23 @@ Bilinç Kaybı Durumu
 * Bu verilerin retention süresi, genel candidate verisinden **daha kısa
   ve daha sıkı** tutulmalıdır; rıza geri çekildiğinde veya hesap
   silindiğinde öncelikli olarak temizlenir.
-  
+
+## 12.2 Yurt Dışına Veri Aktarımı (Üçüncü Taraf Servisler)
+
+Bazı üçüncü taraf servisler, çağrı sırasında ziyaretçinin IP adresi, TLS
+parmak izi ve User-Agent gibi bilgileri kendi (yurt dışındaki) altyapılarında
+işler. Bu projede bilinen örnek: Website modülünün anonim form/etkinlik
+kaydı/bülten uçlarını koruyan **Cloudflare Turnstile** (bkz.
+`docs/DECISIONS/ADR-024-Website-Module-Design.md` §12.3).
+
+* Bu tür bir entegrasyon eklenirken, işlenen veri türleri ve yurt dışına
+  aktarım açıkça tespit edilmeli ve ilgili aydınlatma metnine yazılmalıdır.
+* Aktarım için gereken sözleşmesel/hukuki yükümlülükler (KVKK madde 9)
+  hukuk danışmanıyla netleştirilmeden prod'a alınmamalıdır.
+* Entegrasyon açık/kapalı yapılabilir olmalı ve devre dışı bırakıldığında
+  hiçbir veri o servise gönderilmemelidir (Website'de bu,
+  `SiteSettings.BotProtectionEnabled` bayrağıyla sağlanır).
+
 ---
 
 # 13. Sensitive Data
@@ -556,7 +572,7 @@ String concatenation ile SQL oluşturulmamalıdır.
 
 # 17. File Upload Security
 
-Media modülü dosya yüklemelerini yönetir.
+Dosya yükleme, `IFileStorage` soyutlaması (AGENTS.md §34) arkasında her modülün kendi verisi için kullandığı ortak bir altyapıdır (ör. Candidate'ın CV dosyaları, Website'in medya kütüphanesi - bkz. §8.11).
 
 Dosya yükleme işlemlerinde:
 
@@ -605,6 +621,8 @@ akışı üzerinden yapılmalıdır.
 Gerektiğinde kısa ömürlü signed URL kullanılabilir.
 
 Dosyanın storage'da bulunması, kullanıcının dosyaya erişme yetkisi olduğu anlamına gelmez.
+
+**Kasıtlı istisna - herkese açık dosyalar:** `FileCategory` her kategoriyi baştan "public" veya "private" olarak işaretler (`FileCategoryExtensions.TryGetIsPublic`, ADR-019 Ek). Yalnızca public kategoriler (ör. Website'in logo/görsel kütüphanesi) ayrı bir kök dizinden statik dosya olarak, kimlik doğrulama olmadan servis edilir; private kategoriler (CV, sözleşme, Website form eki vb.) için hâlâ herhangi bir HTTP yolu yoktur. Bu, yukarıdaki kuralın ihlali değil, kategori bazında baştan tanımlı bir istisnadır - yeni bir `FileCategory` eklerken hangi grupta olduğu bilinçli seçilmelidir.
 
 ---
 
