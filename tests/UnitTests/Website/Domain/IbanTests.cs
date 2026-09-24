@@ -35,4 +35,19 @@ public class IbanTests
         Assert.True(result.IsFailure);
         Assert.Equal("Iban.InvalidFormat", result.Error.Code);
     }
+
+    // TR330006100519786457841326 is a real, mod-97-valid TR IBAN (already exercised as the happy
+    // path above). Each case below is that same IBAN with exactly one digit changed - correct shape,
+    // wrong checksum - which the format regex alone (before this fix) could not have caught.
+    [Theory]
+    [InlineData("TR330006100519786457841327")]
+    [InlineData("TR330006100519786457941326")]
+    [InlineData("TR230006100519786457841326")]
+    public void Create_WithSingleDigitAlteredValidIban_FailsChecksum(string input)
+    {
+        var result = Iban.Create(input);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Iban.InvalidChecksum", result.Error.Code);
+    }
 }
