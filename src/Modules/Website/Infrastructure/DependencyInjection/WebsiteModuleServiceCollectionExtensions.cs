@@ -1,6 +1,7 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Application.Media;
 using GenclikMerkezi.Modules.Website.Infrastructure;
+using GenclikMerkezi.Modules.Website.Infrastructure.BotProtection;
 using GenclikMerkezi.Modules.Website.Infrastructure.Media;
 using GenclikMerkezi.Modules.Website.Infrastructure.Persistence;
 using GenclikMerkezi.SharedKernel.Abstractions;
@@ -43,6 +44,16 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddSingleton<IImageProcessor, SkiaSharpImageProcessor>();
         services.AddScoped<IMediaUsageChecker, CompositeMediaUsageChecker>();
         services.AddScoped<IMediaUsageProvider, SiteSettingsMediaUsageProvider>();
+
+        // ADR-024 §1/§12.3 Görev 8: IBotProtectionVerifier's Cloudflare Turnstile implementation
+        // lives here (not a Host adapter) since it never touches another business module -
+        // ARCHITECTURE.md §50.1.
+        services.Configure<TurnstileSettings>(configuration.GetSection(TurnstileSettings.SectionName));
+        services.AddHttpClient<IBotProtectionVerifier, TurnstileBotProtectionVerifier>(client =>
+        {
+            client.BaseAddress = new Uri("https://challenges.cloudflare.com/");
+            client.Timeout = TimeSpan.FromSeconds(5);
+        });
 
         // ADR-024 §2: named policies, all resolving to the literal Admin role for now. Only this
         // block changes when a real permission system arrives - endpoints stay untouched.

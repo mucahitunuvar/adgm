@@ -1,17 +1,19 @@
 using System.Net;
 using System.Text;
-using GenclikMerkezi.Api.Website;
+using GenclikMerkezi.Modules.Website.Infrastructure.BotProtection;
 using Microsoft.Extensions.Options;
 
-namespace GenclikMerkezi.IntegrationTests.Website;
+namespace GenclikMerkezi.UnitTests.Website.Infrastructure.BotProtection;
 
 // Exercises the real Cloudflare-calling adapter directly (no ASP.NET host, no DI) against a stub
 // HttpMessageHandler, so its request/response handling is proven without ever reaching the real
-// Cloudflare API. Lives here (not in UnitTests) only because GenclikMerkezi.Api - the adapter's
-// project - is not referenced by GenclikMerkezi.UnitTests, matching how every other Host-only class
-// (e.g. CareerAdvisorDeactivationOrchestrator) is verified from this project instead.
-public class CloudflareTurnstileBotProtectionVerifierTests
+// Cloudflare API. Lives in this project (unlike its previous, Host-only incarnation) because moving
+// the adapter into Website's own Infrastructure (Görev 8 fix) means GenclikMerkezi.UnitTests, which
+// already references GenclikMerkezi.Modules.Website, can reach it directly.
+public class TurnstileBotProtectionVerifierTests
 {
+    private const string AllowedHostname = "example.org";
+
     private sealed class StubHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler
     {
         public int CallCount { get; private set; }
@@ -26,19 +28,23 @@ public class CloudflareTurnstileBotProtectionVerifierTests
     private static HttpResponseMessage JsonResponse(string json) =>
         new(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
-    private static (CloudflareTurnstileBotProtectionVerifier Verifier, StubHttpMessageHandler Handler) CreateVerifier(
-        Func<HttpRequestMessage, HttpResponseMessage> respond)
+    private static (TurnstileBotProtectionVerifier Verifier, StubHttpMessageHandler Handler) CreateVerifier(
+        Func<HttpRequestMessage, HttpResponseMessage> respond, IReadOnlyList<string>? allowedHostnames = null)
     {
         var handler = new StubHttpMessageHandler(respond);
         var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://challenges.cloudflare.com/") };
-        var options = Options.Create(new TurnstileSettings { SecretKey = "test-secret" });
-        return (new CloudflareTurnstileBotProtectionVerifier(httpClient, options), handler);
+        var options = Options.Create(new TurnstileSettings
+        {
+            TurnstileSecretKey = "test-secret",
+            AllowedHostnames = allowedHostnames ?? [AllowedHostname],
+        });
+        return (new TurnstileBotProtectionVerifier(httpClient, options), handler);
     }
 
     [Fact]
-    public async Task VerifyAsync_WithSuccessfulSiteverifyResponse_ReturnsSuccess()
+    public async Task VerifyAsync_WithSuccessfulResponseAndAllowedHostname_ReturnsSuccess()
     {
-        var (verifier, _) = CreateVerifier(_ => JsonResponse("""{"success":true}"""));
+        var (verifier, _) = CreateVerifier(_ => JsonResponse($$"""{"success":true,"hostname":"{{AllowedHostname}}"}"""));
 
         var result = await verifier.VerifyAsync("valid-token", "203.0.113.1", CancellationToken.None);
 
@@ -58,9 +64,32 @@ public class CloudflareTurnstileBotProtectionVerifierTests
     }
 
     [Fact]
+    public async Task VerifyAsync_WithSuccessfulResponseButUnrecognizedHostname_FailsClosed()
+    {
+        var (verifier, _) = CreateVerifier(_ => JsonResponse("""{"success":true,"hostname":"attacker.example"}"""));
+
+        var result = await verifier.VerifyAsync("valid-token", "203.0.113.1", CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("BotProtection.HostnameNotAllowed", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task VerifyAsync_WithSuccessfulResponseButNoAllowedHostnamesConfigured_FailsClosed()
+    {
+        var (verifier, _) = CreateVerifier(
+            _ => JsonResponse($$"""{"success":true,"hostname":"{{AllowedHostname}}"}"""), allowedHostnames: []);
+
+        var result = await verifier.VerifyAsync("valid-token", "203.0.113.1", CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("BotProtection.HostnameNotAllowed", result.Error.Code);
+    }
+
+    [Fact]
     public async Task VerifyAsync_WithMissingToken_FailsWithoutCallingCloudflare()
     {
-        var (verifier, handler) = CreateVerifier(_ => JsonResponse("""{"success":true}"""));
+        var (verifier, handler) = CreateVerifier(_ => JsonResponse($$"""{"success":true,"hostname":"{{AllowedHostname}}"}"""));
 
         var result = await verifier.VerifyAsync(null, "203.0.113.1", CancellationToken.None);
 
@@ -100,7 +129,7 @@ public class CloudflareTurnstileBotProtectionVerifierTests
         {
             capturedRequest = request;
             capturedBody = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
-            return JsonResponse("""{"success":true}""");
+            return JsonResponse($$"""{"success":true,"hostname":"{{AllowedHostname}}"}""");
         });
 
         await verifier.VerifyAsync("the-token", "203.0.113.1", CancellationToken.None);

@@ -1,16 +1,16 @@
-using GenclikMerkezi.Contracts.Website;
 using GenclikMerkezi.IntegrationTests.Identity;
+using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GenclikMerkezi.IntegrationTests.Website;
 
 // ADR-024 §1/§12.3 Görev 8: no Website feature calls IBotProtectionVerifier yet (anonymous
 // form/event-registration endpoints arrive in later Faz'lar), so nothing else in this suite
-// exercises the DI wiring across Website's port and the Host's registration. Same reasoning as
-// WebsiteEmailSenderTests for IWebsiteEmailSender - resolves the port the way a future handler
-// would via constructor injection, against the test-swapped FakeBotProtectionVerifier (never the
-// real Cloudflare-calling adapter, which is covered separately by
-// CloudflareTurnstileBotProtectionVerifierTests).
+// exercises the DI wiring for this port. Same reasoning as WebsiteEmailSenderTests for
+// IWebsiteEmailSender - resolves the port the way a future handler would via constructor injection,
+// against the test-swapped FakeBotProtectionVerifier (never the real Cloudflare-calling adapter,
+// which is covered separately by
+// GenclikMerkezi.UnitTests.Website.Infrastructure.BotProtection.TurnstileBotProtectionVerifierTests).
 public class BotProtectionVerifierResolutionTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly CustomWebApplicationFactory _factory;

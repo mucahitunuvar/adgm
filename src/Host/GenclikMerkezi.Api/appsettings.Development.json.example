@@ -14,7 +14,10 @@
     "FromAddress": "no-reply@example.com",
     "FromName": "Gençlik Merkezi"
   },
-  "Turnstile": {
-    "SecretKey": "your-cloudflare-turnstile-secret-key"
+  "Website": {
+    "BotProtection": {
+      "TurnstileSecretKey": "your-cloudflare-turnstile-secret-key",
+      "AllowedHostnames": ["your-website-domain.com"]
+    }
   }
 }

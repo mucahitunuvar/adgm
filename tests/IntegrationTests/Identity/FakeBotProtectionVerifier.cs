@@ -1,11 +1,11 @@
-using GenclikMerkezi.Contracts.Website;
+using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.SharedKernel.Results;
 
 namespace GenclikMerkezi.IntegrationTests.Identity;
 
-// Replaces the real CloudflareTurnstileBotProtectionVerifier for integration tests (no real
-// Cloudflare call involved). Succeeds by default - toggle ShouldSucceed to exercise a rejected
-// submission once a Faz 3/4 anonymous endpoint actually calls this port.
+// Replaces the real TurnstileBotProtectionVerifier for integration tests (no real Cloudflare call
+// involved). Succeeds by default - toggle ShouldSucceed to exercise a rejected submission once a
+// Faz 3/4 anonymous endpoint actually calls this port.
 public sealed class FakeBotProtectionVerifier : IBotProtectionVerifier
 {
     private readonly List<(string? Token, string? RemoteIpAddress)> _verifiedTokens = [];

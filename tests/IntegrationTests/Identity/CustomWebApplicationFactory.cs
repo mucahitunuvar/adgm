@@ -1,4 +1,3 @@
-using GenclikMerkezi.Contracts.Website;
 using GenclikMerkezi.Modules.Candidate.Infrastructure;
 using GenclikMerkezi.Modules.CareerAdvisor.Infrastructure;
 using GenclikMerkezi.Modules.CareerDevelopment.Infrastructure;
@@ -13,6 +12,7 @@ using GenclikMerkezi.Modules.Matching.Infrastructure;
 using GenclikMerkezi.Modules.Notification.Application.Abstractions;
 using GenclikMerkezi.Modules.Notification.Infrastructure;
 using GenclikMerkezi.Modules.ReferenceData.Infrastructure;
+using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Infrastructure;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using Microsoft.AspNetCore.Hosting;

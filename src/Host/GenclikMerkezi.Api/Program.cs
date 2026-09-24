@@ -80,14 +80,11 @@ builder.Services.AddSupportModule(builder.Configuration);
 builder.Services.AddWebsiteModule(builder.Configuration);
 
 // ADR-024 §1 Görev 7: Website's IWebsiteEmailSender port, wired at the Host composition root to
-// Notification's public contract - Website itself depends on neither.
+// Notification's public contract - Website itself depends on neither. Unlike this, Website's
+// IBotProtectionVerifier port (Cloudflare Turnstile) needs no Host adapter: it is registered
+// directly by AddWebsiteModule, since it never touches another business module (ARCHITECTURE.md
+// §50.1).
 builder.Services.AddScoped<IWebsiteEmailSender, NotificationWebsiteEmailSender>();
-
-// ADR-024 §1/§12.3 Görev 8: Website's IBotProtectionVerifier port, wired at the Host composition
-// root to Cloudflare Turnstile. Website itself never references Cloudflare or HttpClient.
-builder.Services.Configure<TurnstileSettings>(builder.Configuration.GetSection(TurnstileSettings.SectionName));
-builder.Services.AddHttpClient<IBotProtectionVerifier, CloudflareTurnstileBotProtectionVerifier>(
-    client => client.BaseAddress = new Uri("https://challenges.cloudflare.com/"));
 
 var isTestingEnvironment = builder.Environment.IsEnvironment("Testing");
 

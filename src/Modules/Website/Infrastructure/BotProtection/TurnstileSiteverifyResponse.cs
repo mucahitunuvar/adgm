@@ -1,9 +1,9 @@
 using System.Text.Json.Serialization;
 
-namespace GenclikMerkezi.Api.Website;
+namespace GenclikMerkezi.Modules.Website.Infrastructure.BotProtection;
 
 // Shape of https://challenges.cloudflare.com/turnstile/v0/siteverify's JSON response. Several other
-// fields exist (challenge_ts, hostname, action, cdata) but nothing here needs them yet.
+// fields exist (challenge_ts, action, cdata) but nothing here needs them yet.
 internal sealed class TurnstileSiteverifyResponse
 {
     [JsonPropertyName("success")]
@@ -11,4 +11,7 @@ internal sealed class TurnstileSiteverifyResponse
 
     [JsonPropertyName("error-codes")]
     public IReadOnlyList<string>? ErrorCodes { get; init; }
+
+    [JsonPropertyName("hostname")]
+    public string? Hostname { get; init; }
 }
