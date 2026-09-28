@@ -10,6 +10,11 @@ public interface IContentTypeRepository
 
     Task<IReadOnlyList<ContentType>> GetAllAsync(CancellationToken cancellationToken = default);
 
+    // ADR-024 §15 (Faz 1a Görev 6): public route resolution's Listing step - a single-segment path
+    // matches at most one ContentType per language (RoutePrefixExistsAsync's own uniqueness check
+    // guarantees this).
+    Task<ContentType?> GetByRoutePrefixAsync(LanguageCode languageCode, string routePrefix, CancellationToken cancellationToken = default);
+
     // Cross-aggregate uniqueness check (ADR-024 §4.1): a language's RoutePrefix must be unique across
     // every ContentType, empty prefixes excluded - excludeId lets an update check against every OTHER
     // type without a query for "does this type collide with itself" always trivially succeeding.

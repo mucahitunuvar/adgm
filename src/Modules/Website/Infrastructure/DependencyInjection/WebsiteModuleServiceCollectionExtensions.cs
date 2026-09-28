@@ -1,6 +1,7 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Application.ContentPaths;
 using GenclikMerkezi.Modules.Website.Application.Media;
+using GenclikMerkezi.Modules.Website.Application.RouteResolution;
 using GenclikMerkezi.Modules.Website.Infrastructure;
 using GenclikMerkezi.Modules.Website.Infrastructure.BotProtection;
 using GenclikMerkezi.Modules.Website.Infrastructure.Jobs;
@@ -49,6 +50,7 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IRedirectRepository, RedirectRepository>();
         services.AddScoped<INotFoundLogRepository, NotFoundLogRepository>();
         services.AddScoped<ContentPathCascadeService>();
+        services.AddScoped<RouteResolutionService>();
         // CleanupStaleNotFoundLogsJob only takes singleton-safe dependencies (IServiceScopeFactory), so
         // it is registered Transient here and resolved by Program.cs's RecurringJob.AddOrUpdate<T>() -
         // the same pattern Support's CloseOverdueSupportTicketsJob already uses.

@@ -26,6 +26,11 @@ public interface IContentItemRepository
     // whole module, not just within a content type.
     Task<bool> FullPathExistsAsync(LanguageCode languageCode, string fullPath, Guid? excludeId, CancellationToken cancellationToken = default);
 
+    // ADR-024 §15 (Faz 1a Görev 6): the single-row (LanguageCode, FullPath) lookup public route
+    // resolution's Detail step uses - backed by the same unique index FullPathExistsAsync's
+    // uniqueness rule relies on.
+    Task<ContentItem?> GetByFullPathAsync(LanguageCode languageCode, string fullPath, CancellationToken cancellationToken = default);
+
     // Every ContentItem referencing mediaAssetId as its cover, detail or (in any language) OG image -
     // used by ContentItemMediaUsageProvider to block deleting a MediaAsset still in use.
     Task<IReadOnlyList<ContentItem>> GetByMediaAssetIdAsync(Guid mediaAssetId, CancellationToken cancellationToken = default);

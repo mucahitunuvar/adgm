@@ -184,6 +184,29 @@ public sealed class ContentPathCascadeService(IContentItemRepository contentItem
         return Result.Success();
     }
 
+    // ADR-024 §15 (Faz 1a Görev 6): "içerik ancak kendisi ve tüm ataları görünürse görünür" (Görev 4)
+    // - public route resolution's Detail step and a Redirect record's target-content-item check both
+    // need this. At most 2 extra GetByIdAsync calls given the max hierarchy depth of 3.
+    public async Task<bool> IsVisibleWithAncestorsAsync(ContentItem item, DateTime now, CancellationToken cancellationToken)
+    {
+        var current = item;
+        while (true)
+        {
+            if (!current.IsVisible(now))
+            {
+                return false;
+            }
+
+            if (current.ParentId is null)
+            {
+                return true;
+            }
+
+            current = await contentItemRepository.GetByIdAsync(current.ParentId.Value, cancellationToken)
+                ?? throw new InvalidOperationException($"Content item '{current.ParentId}' referenced as a parent could not be found.");
+        }
+    }
+
     private async Task<int> ComputeDepthAsync(ContentItem item, CancellationToken cancellationToken)
     {
         var depth = 1;

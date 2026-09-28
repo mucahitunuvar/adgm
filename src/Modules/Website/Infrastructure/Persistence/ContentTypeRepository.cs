@@ -18,6 +18,12 @@ public sealed class ContentTypeRepository(WebsiteDbContext dbContext) : IContent
             .OrderBy(ct => ct.SortOrder)
             .ToListAsync(cancellationToken);
 
+    public Task<ContentType?> GetByRoutePrefixAsync(LanguageCode languageCode, string routePrefix, CancellationToken cancellationToken = default) =>
+        string.IsNullOrEmpty(routePrefix)
+            ? Task.FromResult<ContentType?>(null)
+            : dbContext.ContentTypes.FirstOrDefaultAsync(
+                ct => ct.Translations.Any(t => t.LanguageCode == languageCode && t.RoutePrefix == routePrefix), cancellationToken);
+
     public Task<bool> RoutePrefixExistsAsync(
         LanguageCode languageCode, string routePrefix, Guid? excludeId, CancellationToken cancellationToken = default)
     {

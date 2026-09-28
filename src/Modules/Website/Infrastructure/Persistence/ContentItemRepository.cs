@@ -85,6 +85,10 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
             .Where(ci => excludeId == null || ci.Id != excludeId.Value)
             .AnyAsync(ci => ci.Translations.Any(t => t.LanguageCode == languageCode && t.FullPath == fullPath), cancellationToken);
 
+    public Task<ContentItem?> GetByFullPathAsync(LanguageCode languageCode, string fullPath, CancellationToken cancellationToken = default) =>
+        dbContext.ContentItems.FirstOrDefaultAsync(
+            ci => ci.Translations.Any(t => t.LanguageCode == languageCode && t.FullPath == fullPath), cancellationToken);
+
     public async Task<IReadOnlyList<ContentItem>> GetByMediaAssetIdAsync(Guid mediaAssetId, CancellationToken cancellationToken = default) =>
         await dbContext.ContentItems
             .Where(ci =>

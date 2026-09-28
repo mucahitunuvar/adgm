@@ -26,6 +26,7 @@ using GenclikMerkezi.Modules.Website.Features.GetRedirects;
 using GenclikMerkezi.Modules.Website.Features.GetSiteLanguages;
 using GenclikMerkezi.Modules.Website.Features.GetSiteSettings;
 using GenclikMerkezi.Modules.Website.Features.PublishContentItem;
+using GenclikMerkezi.Modules.Website.Features.ResolveRoute;
 using GenclikMerkezi.Modules.Website.Features.ScheduleContentItem;
 using GenclikMerkezi.Modules.Website.Features.SetContentItemParent;
 using GenclikMerkezi.Modules.Website.Features.SetDefaultSiteLanguage;
@@ -108,6 +109,8 @@ public static class WebsiteModuleEndpointExtensions
         GetNotFoundPathsEndpoint.Map(app);
         DeleteNotFoundPathEndpoint.Map(app);
         ConvertNotFoundPathToRedirectEndpoint.Map(app);
+
+        ResolveRouteEndpoint.Map(app);
 
         return app;
     }

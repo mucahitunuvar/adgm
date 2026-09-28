@@ -23,6 +23,10 @@ public sealed class FakeContentItemRepository : IContentItemRepository
     public Task<bool> FullPathExistsAsync(LanguageCode languageCode, string fullPath, Guid? excludeId, CancellationToken cancellationToken = default) =>
         Task.FromResult(FullPathExistsResult);
 
+    public Task<ContentItem?> GetByFullPathAsync(LanguageCode languageCode, string fullPath, CancellationToken cancellationToken = default) =>
+        Task.FromResult(_contentItems.FirstOrDefault(
+            c => c.Translations.Any(t => t.LanguageCode == languageCode && t.FullPath == fullPath)));
+
     public Task<IReadOnlyList<ContentItem>> GetByMediaAssetIdAsync(Guid mediaAssetId, CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<ContentItem>>([]);
 
