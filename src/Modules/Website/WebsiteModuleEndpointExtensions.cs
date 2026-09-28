@@ -1,7 +1,13 @@
+using GenclikMerkezi.Modules.Website.Features.ActivateContentType;
 using GenclikMerkezi.Modules.Website.Features.ActivateSiteLanguage;
+using GenclikMerkezi.Modules.Website.Features.CreateContentType;
 using GenclikMerkezi.Modules.Website.Features.CreateSiteLanguage;
+using GenclikMerkezi.Modules.Website.Features.DeactivateContentType;
 using GenclikMerkezi.Modules.Website.Features.DeactivateSiteLanguage;
+using GenclikMerkezi.Modules.Website.Features.DeleteContentTypeTranslation;
 using GenclikMerkezi.Modules.Website.Features.DeleteMediaAsset;
+using GenclikMerkezi.Modules.Website.Features.GetContentTypeById;
+using GenclikMerkezi.Modules.Website.Features.GetContentTypes;
 using GenclikMerkezi.Modules.Website.Features.GetMediaAssetById;
 using GenclikMerkezi.Modules.Website.Features.GetMediaAssetFolders;
 using GenclikMerkezi.Modules.Website.Features.GetMediaAssets;
@@ -9,6 +15,8 @@ using GenclikMerkezi.Modules.Website.Features.GetPublicSite;
 using GenclikMerkezi.Modules.Website.Features.GetSiteLanguages;
 using GenclikMerkezi.Modules.Website.Features.GetSiteSettings;
 using GenclikMerkezi.Modules.Website.Features.SetDefaultSiteLanguage;
+using GenclikMerkezi.Modules.Website.Features.UpdateContentType;
+using GenclikMerkezi.Modules.Website.Features.UpdateContentTypeTranslation;
 using GenclikMerkezi.Modules.Website.Features.UpdateMediaAsset;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteLanguage;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsBankAccounts;
@@ -50,6 +58,15 @@ public static class WebsiteModuleEndpointExtensions
         UpdateSiteSettingsMaintenanceEndpoint.Map(app);
         UpdateSiteSettingsBotProtectionEndpoint.Map(app);
         GetPublicSiteEndpoint.Map(app);
+
+        CreateContentTypeEndpoint.Map(app);
+        UpdateContentTypeEndpoint.Map(app);
+        UpdateContentTypeTranslationEndpoint.Map(app);
+        DeleteContentTypeTranslationEndpoint.Map(app);
+        ActivateContentTypeEndpoint.Map(app);
+        DeactivateContentTypeEndpoint.Map(app);
+        GetContentTypesEndpoint.Map(app);
+        GetContentTypeByIdEndpoint.Map(app);
 
         return app;
     }

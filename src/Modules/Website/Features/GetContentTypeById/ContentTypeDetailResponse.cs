@@ -1,0 +1,27 @@
+namespace GenclikMerkezi.Modules.Website.Features.GetContentTypeById;
+
+public sealed record ContentTypeDetailResponse(
+    Guid Id,
+    string Key,
+    string ListTemplate,
+    string DetailTemplate,
+    string SortMode,
+    bool IsActive,
+    int SortOrder,
+    bool SupportsHierarchy,
+    bool SupportsCategories,
+    bool SupportsTags,
+    bool SupportsDetailImage,
+    bool SupportsGallery,
+    bool SupportsVideos,
+    bool SupportsAttachments,
+    bool SupportsEvent,
+    bool SupportsBlockLayout,
+    bool SupportsForm,
+    bool SupportsRelatedContent,
+    bool HasDetailPage,
+    bool HasListingPage,
+    bool IsSearchable,
+    bool RequiresReview,
+    byte[] RowVersion,
+    IReadOnlyList<ContentTypeTranslationResponse> Translations);

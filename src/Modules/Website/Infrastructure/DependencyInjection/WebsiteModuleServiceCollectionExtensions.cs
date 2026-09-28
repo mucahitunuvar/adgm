@@ -42,6 +42,7 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<ISiteLanguageRepository, SiteLanguageRepository>();
         services.AddScoped<IMediaAssetRepository, MediaAssetRepository>();
         services.AddScoped<ISiteSettingsRepository, SiteSettingsRepository>();
+        services.AddScoped<IContentTypeRepository, ContentTypeRepository>();
         services.AddSingleton<IImageProcessor, SkiaSharpImageProcessor>();
         services.AddScoped<IMediaUsageChecker, CompositeMediaUsageChecker>();
         services.AddScoped<IMediaUsageProvider, SiteSettingsMediaUsageProvider>();
