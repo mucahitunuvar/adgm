@@ -49,7 +49,8 @@ public sealed class ContentItemTranslation : Entity
     }
 
     public static Result<ContentItemTranslation> Create(
-        LanguageCode languageCode, string? title, string? slug, string routePrefix, string? summary, string? body, SeoMetadata seo)
+        LanguageCode languageCode, string? title, string? slug, string routePrefix,
+        IReadOnlyList<string> ancestorSlugsRootToParent, string? summary, string? body, SeoMetadata seo)
     {
         var titleResult = NormalizeTitle(title);
         if (titleResult.IsFailure)
@@ -69,14 +70,16 @@ public sealed class ContentItemTranslation : Entity
             return Result.Failure<ContentItemTranslation>(summaryResult.Error);
         }
 
-        var fullPath = ComputeFullPath(routePrefix, slugResult.Value.Value);
+        var fullPath = ContentPathService.ComputeFullPath(routePrefix, ancestorSlugsRootToParent, slugResult.Value.Value);
 
         return Result.Success(new ContentItemTranslation(
             Guid.NewGuid(), languageCode, titleResult.Value, slugResult.Value.Value, fullPath, summaryResult.Value,
             (body ?? string.Empty).Trim(), seo));
     }
 
-    internal Result Update(string? title, string? slug, string routePrefix, string? summary, string? body, SeoMetadata seo)
+    internal Result Update(
+        string? title, string? slug, string routePrefix, IReadOnlyList<string> ancestorSlugsRootToParent,
+        string? summary, string? body, SeoMetadata seo)
     {
         var titleResult = NormalizeTitle(title);
         if (titleResult.IsFailure)
@@ -98,7 +101,7 @@ public sealed class ContentItemTranslation : Entity
 
         Title = titleResult.Value;
         Slug = slugResult.Value.Value;
-        FullPath = ComputeFullPath(routePrefix, Slug);
+        FullPath = ContentPathService.ComputeFullPath(routePrefix, ancestorSlugsRootToParent, Slug);
         Summary = summaryResult.Value;
         Body = (body ?? string.Empty).Trim();
         Seo = seo;
@@ -106,8 +109,11 @@ public sealed class ContentItemTranslation : Entity
         return Result.Success();
     }
 
-    private static string ComputeFullPath(string routePrefix, string slug) =>
-        string.IsNullOrEmpty(routePrefix) ? slug : $"{routePrefix}/{slug}";
+    // Recomputes FullPath alone, leaving Title/Slug/Summary/Body/Seo untouched - called when an
+    // ancestor's RoutePrefix or slug changes and this translation's own text did not (Faz 1a Görev 4's
+    // cascade). Idempotent no-op when the path does not actually move.
+    internal void RecomputeFullPath(string routePrefix, IReadOnlyList<string> ancestorSlugsRootToParent) =>
+        FullPath = ContentPathService.ComputeFullPath(routePrefix, ancestorSlugsRootToParent, Slug);
 
     private static Result<string> NormalizeTitle(string? title)
     {

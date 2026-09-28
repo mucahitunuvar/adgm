@@ -26,7 +26,8 @@ public sealed class UnpublishContentItemCommandHandler(
                 "ContentItem.ConcurrencyConflict", "The content item was changed by someone else. Reload and try again."));
         }
 
-        var unpublishResult = contentItem.Unpublish(currentUserContext.UserId!.Value, DateTime.UtcNow);
+        var publishedChildCount = await contentItemRepository.CountPublishedChildrenAsync(contentItem.Id, cancellationToken);
+        var unpublishResult = contentItem.Unpublish(publishedChildCount, currentUserContext.UserId!.Value, DateTime.UtcNow);
         if (unpublishResult.IsFailure)
         {
             return unpublishResult;

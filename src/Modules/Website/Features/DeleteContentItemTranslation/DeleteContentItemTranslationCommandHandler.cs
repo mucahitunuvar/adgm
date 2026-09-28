@@ -40,6 +40,17 @@ public sealed class DeleteContentItemTranslationCommandHandler(
             return Result.Failure(Error.Failure("ContentItem.NoDefaultLanguage", "No default site language is configured."));
         }
 
+        // ADR-024 §4.3 Görev 4: a child's translation can never outlive its parent's translation in
+        // that same language.
+        var children = await contentItemRepository.GetChildrenAsync(contentItem.Id, cancellationToken);
+        var childrenWithLanguage = children.Count(c => c.Translations.Any(t => t.LanguageCode == languageCodeResult.Value));
+        if (childrenWithLanguage > 0)
+        {
+            return Result.Failure(Error.Conflict(
+                "ContentItem.ChildrenStillHaveTranslation",
+                $"Cannot delete: {childrenWithLanguage} child content item(s) still have a translation in language '{languageCodeResult.Value}'."));
+        }
+
         var removeResult = contentItem.RemoveTranslation(
             languageCodeResult.Value, defaultLanguage.Code, currentUserContext.UserId!.Value, DateTime.UtcNow);
         if (removeResult.IsFailure)

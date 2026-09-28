@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
+using GenclikMerkezi.Modules.Website.Application.ContentPaths;
 using GenclikMerkezi.Modules.Website.Application.Media;
 using GenclikMerkezi.Modules.Website.Infrastructure;
 using GenclikMerkezi.Modules.Website.Infrastructure.BotProtection;
@@ -44,6 +45,8 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<ISiteSettingsRepository, SiteSettingsRepository>();
         services.AddScoped<IContentTypeRepository, ContentTypeRepository>();
         services.AddScoped<IContentItemRepository, ContentItemRepository>();
+        services.AddScoped<IRedirectRepository, RedirectRepository>();
+        services.AddScoped<ContentPathCascadeService>();
         services.AddSingleton<IImageProcessor, SkiaSharpImageProcessor>();
         services.AddScoped<IMediaUsageChecker, CompositeMediaUsageChecker>();
         services.AddScoped<IMediaUsageProvider, SiteSettingsMediaUsageProvider>();

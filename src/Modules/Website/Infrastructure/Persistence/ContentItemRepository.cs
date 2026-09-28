@@ -93,5 +93,16 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
                 || ci.Translations.Any(t => t.Seo.OgImageMediaId == mediaAssetId))
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<ContentItem>> GetChildrenAsync(Guid parentId, CancellationToken cancellationToken = default) =>
+        await dbContext.ContentItems.Where(ci => ci.ParentId == parentId).ToListAsync(cancellationToken);
+
+    public Task<int> CountPublishedChildrenAsync(Guid parentId, CancellationToken cancellationToken = default) =>
+        dbContext.ContentItems.CountAsync(ci => ci.ParentId == parentId && ci.Status == ContentItemStatus.Published, cancellationToken);
+
+    public async Task<IReadOnlyList<ContentItem>> GetRootItemsByContentTypeIdAsync(Guid contentTypeId, CancellationToken cancellationToken = default) =>
+        await dbContext.ContentItems
+            .Where(ci => ci.ContentTypeId == contentTypeId && ci.ParentId == null)
+            .ToListAsync(cancellationToken);
+
     public void Add(ContentItem contentItem) => dbContext.ContentItems.Add(contentItem);
 }

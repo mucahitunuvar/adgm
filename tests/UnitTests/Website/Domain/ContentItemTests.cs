@@ -12,10 +12,12 @@ public class ContentItemTests
     private static readonly Guid ContentTypeId = Guid.NewGuid();
     private static readonly DateTime Now = new(2026, 9, 24, 12, 0, 0, DateTimeKind.Utc);
 
-    private static Result<ContentItem> CreateItem(bool contentTypeSupportsDetailImage = false, Guid? detailImageMediaId = null) =>
+    private static Result<ContentItem> CreateItem(
+        bool contentTypeSupportsDetailImage = false, Guid? detailImageMediaId = null, Guid? parentId = null,
+        IReadOnlyList<string>? ancestorSlugs = null) =>
         ContentItem.Create(
-            ContentTypeId, contentTypeSupportsDetailImage, 1, false, null, detailImageMediaId,
-            Tr, "Yeni Haber", null, "haberler", null, "<p>gövde</p>", EmptySeo, UserId, Now);
+            ContentTypeId, parentId, contentTypeSupportsDetailImage, 1, false, null, detailImageMediaId,
+            Tr, "Yeni Haber", null, "haberler", ancestorSlugs ?? [], null, "<p>gövde</p>", EmptySeo, UserId, Now);
 
     [Fact]
     public void Create_WithValidInput_Succeeds()
@@ -26,6 +28,15 @@ public class ContentItemTests
         Assert.Equal(ContentItemStatus.Draft, result.Value.Status);
         Assert.Single(result.Value.Translations);
         Assert.Equal("haberler/yeni-haber", result.Value.Translations[0].FullPath);
+    }
+
+    [Fact]
+    public void Create_WithAncestorSlugs_ComputesNestedFullPath()
+    {
+        var result = CreateItem(ancestorSlugs: ["ust-kategori", "alt-kategori"]);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("haberler/ust-kategori/alt-kategori/yeni-haber", result.Value.Translations[0].FullPath);
     }
 
     [Fact]
@@ -50,7 +61,7 @@ public class ContentItemTests
     {
         var item = CreateItem().Value;
 
-        var result = item.SetTranslation(En, "News", null, "news", null, "<p>body</p>", EmptySeo, UserId, Now);
+        var result = item.SetTranslation(En, "News", null, "news", [], null, "<p>body</p>", EmptySeo, UserId, Now);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(2, item.Translations.Count);
@@ -61,7 +72,7 @@ public class ContentItemTests
     public void RemoveTranslation_DefaultLanguage_Fails()
     {
         var item = CreateItem().Value;
-        item.SetTranslation(En, "News", null, "news", null, null, EmptySeo, UserId, Now);
+        item.SetTranslation(En, "News", null, "news", [], null, null, EmptySeo, UserId, Now);
 
         var result = item.RemoveTranslation(Tr, Tr, UserId, Now);
 
@@ -73,7 +84,7 @@ public class ContentItemTests
     public void RemoveTranslation_NonDefaultLanguage_Succeeds()
     {
         var item = CreateItem().Value;
-        item.SetTranslation(En, "News", null, "news", null, null, EmptySeo, UserId, Now);
+        item.SetTranslation(En, "News", null, "news", [], null, null, EmptySeo, UserId, Now);
 
         var result = item.RemoveTranslation(En, Tr, UserId, Now);
 
@@ -91,7 +102,7 @@ public class ContentItemTests
         var item = CreateItem().Value;
         MoveTo(item, fromStatus);
 
-        var result = item.Publish(null, null, contentTypeIsActive: true, Tr, UserId, Now);
+        var result = item.Publish(null, null, contentTypeIsActive: true, parentIsPublished: true, Tr, UserId, Now);
 
         Assert.Equal(expectSuccess, result.IsSuccess);
         if (expectSuccess)
@@ -107,10 +118,31 @@ public class ContentItemTests
     {
         var item = CreateItem().Value;
 
-        var result = item.Publish(null, null, contentTypeIsActive: false, Tr, UserId, Now);
+        var result = item.Publish(null, null, contentTypeIsActive: false, parentIsPublished: true, Tr, UserId, Now);
 
         Assert.True(result.IsFailure);
         Assert.Equal("ContentItem.ContentTypeInactive", result.Error.Code);
+    }
+
+    [Fact]
+    public void Publish_WithUnpublishedParent_Fails()
+    {
+        var item = CreateItem(parentId: Guid.NewGuid()).Value;
+
+        var result = item.Publish(null, null, contentTypeIsActive: true, parentIsPublished: false, Tr, UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItem.ParentNotPublished", result.Error.Code);
+    }
+
+    [Fact]
+    public void Publish_WithPublishedParent_Succeeds()
+    {
+        var item = CreateItem(parentId: Guid.NewGuid()).Value;
+
+        var result = item.Publish(null, null, contentTypeIsActive: true, parentIsPublished: true, Tr, UserId, Now);
+
+        Assert.True(result.IsSuccess);
     }
 
     [Fact]
@@ -118,7 +150,7 @@ public class ContentItemTests
     {
         var item = CreateItem().Value;
 
-        var result = item.Publish(null, Now.AddMinutes(-1), contentTypeIsActive: true, Tr, UserId, Now);
+        var result = item.Publish(null, Now.AddMinutes(-1), contentTypeIsActive: true, parentIsPublished: true, Tr, UserId, Now);
 
         Assert.True(result.IsFailure);
         Assert.Equal("ContentItem.UnpublishBeforePublish", result.Error.Code);
@@ -130,7 +162,7 @@ public class ContentItemTests
         var item = CreateItem().Value;
         var publishAt = Now.AddDays(1);
 
-        var result = item.Publish(publishAt, publishAt.AddMinutes(-1), contentTypeIsActive: true, Tr, UserId, Now);
+        var result = item.Publish(publishAt, publishAt.AddMinutes(-1), contentTypeIsActive: true, parentIsPublished: true, Tr, UserId, Now);
 
         Assert.True(result.IsFailure);
         Assert.Equal("ContentItem.UnpublishBeforePublish", result.Error.Code);
@@ -141,13 +173,25 @@ public class ContentItemTests
     {
         var item = CreateItem().Value;
 
-        Assert.True(item.Unpublish(UserId, Now).IsFailure);
+        Assert.True(item.Unpublish(0, UserId, Now).IsFailure);
 
-        item.Publish(null, null, true, Tr, UserId, Now);
-        var result = item.Unpublish(UserId, Now);
+        item.Publish(null, null, true, true, Tr, UserId, Now);
+        var result = item.Unpublish(0, UserId, Now);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(ContentItemStatus.Unpublished, item.Status);
+    }
+
+    [Fact]
+    public void Unpublish_WithPublishedChildren_Fails()
+    {
+        var item = CreateItem().Value;
+        item.Publish(null, null, true, true, Tr, UserId, Now);
+
+        var result = item.Unpublish(2, UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItem.HasPublishedChildren", result.Error.Code);
     }
 
     [Theory]
@@ -160,13 +204,25 @@ public class ContentItemTests
         var item = CreateItem().Value;
         MoveTo(item, fromStatus);
 
-        var result = item.Archive(UserId, Now);
+        var result = item.Archive(0, UserId, Now);
 
         Assert.Equal(expectSuccess, result.IsSuccess);
         if (expectSuccess)
         {
             Assert.Equal(ContentItemStatus.Archived, item.Status);
         }
+    }
+
+    [Fact]
+    public void Archive_WithPublishedChildren_Fails()
+    {
+        var item = CreateItem().Value;
+        item.Publish(null, null, true, true, Tr, UserId, Now);
+
+        var result = item.Archive(1, UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItem.HasPublishedChildren", result.Error.Code);
     }
 
     [Fact]
@@ -200,7 +256,7 @@ public class ContentItemTests
         var beforePublish = item.Schedule(null, Now.AddDays(1), UserId, Now);
         Assert.True(beforePublish.IsFailure);
 
-        item.Publish(null, null, true, Tr, UserId, Now);
+        item.Publish(null, null, true, true, Tr, UserId, Now);
         var afterPublish = item.Schedule(null, Now.AddDays(1), UserId, Now);
         Assert.True(afterPublish.IsSuccess);
         Assert.Equal(Now.AddDays(1), item.UnpublishAtUtc);
@@ -212,7 +268,7 @@ public class ContentItemTests
         var item = CreateItem().Value;
         Assert.False(item.IsVisible(Now));
 
-        item.Publish(null, null, true, Tr, UserId, Now);
+        item.Publish(null, null, true, true, Tr, UserId, Now);
         Assert.True(item.IsVisible(Now));
 
         item.Schedule(Now.AddDays(1), null, UserId, Now);
@@ -224,11 +280,24 @@ public class ContentItemTests
     public void IsVisible_FalseAfterUnpublishAtUtcPasses()
     {
         var item = CreateItem().Value;
-        item.Publish(null, null, true, Tr, UserId, Now);
+        item.Publish(null, null, true, true, Tr, UserId, Now);
         item.Schedule(null, Now.AddDays(1), UserId, Now);
 
         Assert.True(item.IsVisible(Now));
         Assert.False(item.IsVisible(Now.AddDays(2)));
+    }
+
+    [Fact]
+    public void SetParent_UpdatesParentIdAndTouchesRowVersion()
+    {
+        var item = CreateItem().Value;
+        var originalRowVersion = item.RowVersion;
+        var parentId = Guid.NewGuid();
+
+        item.SetParent(parentId, UserId, Now);
+
+        Assert.Equal(parentId, item.ParentId);
+        Assert.NotEqual(originalRowVersion, item.RowVersion);
     }
 
     private static void MoveTo(ContentItem item, ContentItemStatus status)
@@ -238,15 +307,15 @@ public class ContentItemTests
             case ContentItemStatus.Draft:
                 return;
             case ContentItemStatus.Published:
-                item.Publish(null, null, true, Tr, UserId, Now);
+                item.Publish(null, null, true, true, Tr, UserId, Now);
                 return;
             case ContentItemStatus.Unpublished:
-                item.Publish(null, null, true, Tr, UserId, Now);
-                item.Unpublish(UserId, Now);
+                item.Publish(null, null, true, true, Tr, UserId, Now);
+                item.Unpublish(0, UserId, Now);
                 return;
             case ContentItemStatus.Archived:
-                item.Publish(null, null, true, Tr, UserId, Now);
-                item.Archive(UserId, Now);
+                item.Publish(null, null, true, true, Tr, UserId, Now);
+                item.Archive(0, UserId, Now);
                 return;
         }
     }

@@ -26,7 +26,8 @@ public sealed class ArchiveContentItemCommandHandler(
                 "ContentItem.ConcurrencyConflict", "The content item was changed by someone else. Reload and try again."));
         }
 
-        var archiveResult = contentItem.Archive(currentUserContext.UserId!.Value, DateTime.UtcNow);
+        var publishedChildCount = await contentItemRepository.CountPublishedChildrenAsync(contentItem.Id, cancellationToken);
+        var archiveResult = contentItem.Archive(publishedChildCount, currentUserContext.UserId!.Value, DateTime.UtcNow);
         if (archiveResult.IsFailure)
         {
             return archiveResult;

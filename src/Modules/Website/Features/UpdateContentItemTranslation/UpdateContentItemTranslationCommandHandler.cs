@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
+using GenclikMerkezi.Modules.Website.Application.ContentPaths;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Results;
@@ -13,6 +14,7 @@ public sealed class UpdateContentItemTranslationCommandHandler(
     ISiteLanguageRepository siteLanguageRepository,
     IMediaAssetRepository mediaAssetRepository,
     IHtmlContentSanitizer htmlContentSanitizer,
+    ContentPathCascadeService contentPathCascadeService,
     ICurrentUserContext currentUserContext,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<UpdateContentItemTranslationCommand, Result>
@@ -37,19 +39,35 @@ public sealed class UpdateContentItemTranslationCommandHandler(
             return languageCodeResult;
         }
 
+        var languageCode = languageCodeResult.Value;
+
         var contentType = await contentTypeRepository.GetByIdAsync(contentItem.ContentTypeId, cancellationToken);
         if (contentType is null)
         {
             return Result.Failure(Error.Failure("ContentItem.ContentTypeNotFound", "The content item's content type could not be found."));
         }
 
-        var contentTypeTranslation = contentType.Translations.FirstOrDefault(t => t.LanguageCode == languageCodeResult.Value);
+        var contentTypeTranslation = contentType.Translations.FirstOrDefault(t => t.LanguageCode == languageCode);
         if (contentTypeTranslation is null)
         {
             return Result.Failure(Error.Conflict(
                 "ContentItem.ContentTypeTranslationMissing",
-                $"The content type has no translation for language '{languageCodeResult.Value}' yet; add that first."));
+                $"The content type has no translation for language '{languageCode}' yet; add that first."));
         }
+
+        ContentItem? parent = null;
+        if (contentItem.ParentId is not null)
+        {
+            parent = await contentItemRepository.GetByIdAsync(contentItem.ParentId.Value, cancellationToken);
+            if (parent is null || parent.Translations.All(t => t.LanguageCode != languageCode))
+            {
+                return Result.Failure(Error.Conflict(
+                    "ContentItem.ParentTranslationMissing",
+                    $"The parent content item has no translation for language '{languageCode}' yet; add that first."));
+            }
+        }
+
+        var ancestorSlugs = await contentPathCascadeService.GetAncestorSlugsAsync(parent, languageCode, cancellationToken);
 
         var ogImageCheck = await MediaImageReferenceGuard.CheckAsync(request.Seo.OgImageMediaId, "SeoOgImage", mediaAssetRepository, cancellationToken);
         if (ogImageCheck.IsFailure)
@@ -66,22 +84,42 @@ public sealed class UpdateContentItemTranslationCommandHandler(
         }
 
         var sanitizedBody = htmlContentSanitizer.Sanitize(request.Body ?? string.Empty);
+        var previousFullPath = contentItem.Translations.FirstOrDefault(t => t.LanguageCode == languageCode)?.FullPath;
+        var now = DateTime.UtcNow;
+        var userId = currentUserContext.UserId!.Value;
 
         var setResult = contentItem.SetTranslation(
-            languageCodeResult.Value, request.Title, request.Slug, contentTypeTranslation.RoutePrefix, request.Summary,
-            sanitizedBody, seoResult.Value, currentUserContext.UserId!.Value, DateTime.UtcNow);
+            languageCode, request.Title, request.Slug, contentTypeTranslation.RoutePrefix, ancestorSlugs, request.Summary,
+            sanitizedBody, seoResult.Value, userId, now);
         if (setResult.IsFailure)
         {
             return setResult;
         }
 
-        var translation = contentItem.Translations.First(t => t.LanguageCode == languageCodeResult.Value);
+        var translation = contentItem.Translations.First(t => t.LanguageCode == languageCode);
         var fullPathCheck = await ContentItemFullPathGuard.CheckAsync(
-            translation.FullPath, contentTypeTranslation.RoutePrefix, translation.Slug, languageCodeResult.Value, contentItem.Id,
-            siteLanguageRepository, contentTypeRepository, contentItemRepository, cancellationToken);
+            translation.FullPath, contentTypeTranslation.RoutePrefix, translation.Slug, contentItem.ParentId, languageCode,
+            contentItem.Id, siteLanguageRepository, contentTypeRepository, contentItemRepository, cancellationToken);
         if (fullPathCheck.IsFailure)
         {
             return fullPathCheck;
+        }
+
+        if (previousFullPath is not null && previousFullPath != translation.FullPath)
+        {
+            var redirectResult = await contentPathCascadeService.CreateAutomaticRedirectAsync(
+                languageCode, previousFullPath, translation.FullPath, contentItem.Id, userId, now, cancellationToken);
+            if (redirectResult.IsFailure)
+            {
+                return redirectResult;
+            }
+
+            var cascadeResult = await contentPathCascadeService.CascadeDescendantPathsAsync(
+                contentItem, languageCode, contentTypeTranslation.RoutePrefix, ancestorSlugs, userId, now, cancellationToken);
+            if (cascadeResult.IsFailure)
+            {
+                return cascadeResult;
+            }
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

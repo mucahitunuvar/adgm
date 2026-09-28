@@ -20,6 +20,8 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
 
     public DbSet<ContentItem> ContentItems => Set<ContentItem>();
 
+    public DbSet<Redirect> Redirects => Set<Redirect>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(WebsiteDbContext).Assembly);

@@ -30,5 +30,15 @@ public interface IContentItemRepository
     // used by ContentItemMediaUsageProvider to block deleting a MediaAsset still in use.
     Task<IReadOnlyList<ContentItem>> GetByMediaAssetIdAsync(Guid mediaAssetId, CancellationToken cancellationToken = default);
 
+    // Direct children only (ADR-024 §4.3 Görev 4) - ContentPathCascadeService walks these to compute
+    // hierarchy depth/cycles and to cascade a path change down a subtree.
+    Task<IReadOnlyList<ContentItem>> GetChildrenAsync(Guid parentId, CancellationToken cancellationToken = default);
+
+    Task<int> CountPublishedChildrenAsync(Guid parentId, CancellationToken cancellationToken = default);
+
+    // Every root-level (ParentId == null) item of this content type - used when a ContentType's
+    // RoutePrefix changes and every item's FullPath in that language must be recomputed (Görev 4).
+    Task<IReadOnlyList<ContentItem>> GetRootItemsByContentTypeIdAsync(Guid contentTypeId, CancellationToken cancellationToken = default);
+
     void Add(ContentItem contentItem);
 }

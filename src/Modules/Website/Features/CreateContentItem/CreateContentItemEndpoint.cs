@@ -15,7 +15,7 @@ internal static class CreateContentItemEndpoint
                 async (CreateContentItemRequest request, ISender sender, CancellationToken cancellationToken) =>
                 {
                     var command = new CreateContentItemCommand(
-                        request.ContentTypeId, request.SortOrder, request.IsFeatured, request.CoverImageMediaId,
+                        request.ContentTypeId, request.ParentId, request.SortOrder, request.IsFeatured, request.CoverImageMediaId,
                         request.DetailImageMediaId, request.DefaultLanguageTitle, request.DefaultLanguageSlug,
                         request.DefaultLanguageSummary, request.DefaultLanguageBody, request.Seo);
                     var result = await sender.Send(command, cancellationToken);

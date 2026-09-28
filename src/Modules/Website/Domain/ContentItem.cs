@@ -3,15 +3,14 @@ using GenclikMerkezi.SharedKernel.Results;
 
 namespace GenclikMerkezi.Modules.Website.Domain;
 
-// ADR-024 §4.2/§4.4 (Faz 1a Görev 3). RowVersion follows the same application-managed optimistic-
-// concurrency pattern as SiteSettings/ContentType.
+// ADR-024 §4.2/§4.4 (Faz 1a Görev 3, hierarchy/path-cascade added in Görev 4). RowVersion follows the
+// same application-managed optimistic-concurrency pattern as SiteSettings/ContentType.
 //
-// ParentId always stays null in this phase - hierarchy, and the redirect/FullPath-recompute cascade
-// that a RoutePrefix or slug change triggers, are Görev 4's scope (ADR-024 §4.3). Everything this type
-// cannot check by itself - ContentType existence/flags/RoutePrefix, FullPath uniqueness across the
-// whole module, MediaAsset existence/kind, whether the default site language even is what the caller
-// claims - is the Application-layer command handler's responsibility, the same separation ContentType
-// already uses for its own cross-aggregate invariants.
+// Everything this type cannot check by itself - ContentType existence/flags/RoutePrefix, FullPath
+// uniqueness across the whole module, hierarchy depth/cycle checks against sibling aggregates,
+// MediaAsset existence/kind, whether the default site language even is what the caller claims - is the
+// Application-layer command handler's responsibility (using ContentPathService for the pure hierarchy/
+// path math), the same separation ContentType already uses for its own cross-aggregate invariants.
 public sealed class ContentItem : AggregateRoot
 {
     private readonly List<ContentItemTranslation> _translations = [];
@@ -51,11 +50,12 @@ public sealed class ContentItem : AggregateRoot
     public DateTime? PublishedAtUtc { get; private set; }
 
     private ContentItem(
-        Guid id, Guid contentTypeId, int sortOrder, bool isFeatured, Guid? coverImageMediaId, Guid? detailImageMediaId,
-        Guid createdByUserId, DateTime createdAtUtc)
+        Guid id, Guid contentTypeId, Guid? parentId, int sortOrder, bool isFeatured, Guid? coverImageMediaId,
+        Guid? detailImageMediaId, Guid createdByUserId, DateTime createdAtUtc)
         : base(id)
     {
         ContentTypeId = contentTypeId;
+        ParentId = parentId;
         Status = ContentItemStatus.Draft;
         SortOrder = sortOrder;
         IsFeatured = isFeatured;
@@ -69,8 +69,13 @@ public sealed class ContentItem : AggregateRoot
     {
     }
 
+    // ancestorSlugsRootToParent: every ancestor's slug in defaultLanguageCode, root-to-immediate-
+    // parent order (empty for a root-level item) - the caller (Application layer) resolves this and
+    // validates the hierarchy itself (ContentPathService.ValidateParentAssignment) before calling
+    // Create; this method trusts parentId is already valid.
     public static Result<ContentItem> Create(
         Guid contentTypeId,
+        Guid? parentId,
         bool contentTypeSupportsDetailImage,
         int sortOrder,
         bool isFeatured,
@@ -80,6 +85,7 @@ public sealed class ContentItem : AggregateRoot
         string? defaultTitle,
         string? defaultSlug,
         string defaultRoutePrefix,
+        IReadOnlyList<string> ancestorSlugsRootToParent,
         string? defaultSummary,
         string? defaultBody,
         SeoMetadata defaultSeo,
@@ -93,14 +99,15 @@ public sealed class ContentItem : AggregateRoot
         }
 
         var translationResult = ContentItemTranslation.Create(
-            defaultLanguageCode, defaultTitle, defaultSlug, defaultRoutePrefix, defaultSummary, defaultBody, defaultSeo);
+            defaultLanguageCode, defaultTitle, defaultSlug, defaultRoutePrefix, ancestorSlugsRootToParent,
+            defaultSummary, defaultBody, defaultSeo);
         if (translationResult.IsFailure)
         {
             return Result.Failure<ContentItem>(translationResult.Error);
         }
 
         var contentItem = new ContentItem(
-            Guid.NewGuid(), contentTypeId, sortOrder, isFeatured, coverImageMediaId, detailImageMediaId,
+            Guid.NewGuid(), contentTypeId, parentId, sortOrder, isFeatured, coverImageMediaId, detailImageMediaId,
             createdByUserId, createdAtUtc);
         contentItem._translations.Add(translationResult.Value);
 
@@ -108,7 +115,8 @@ public sealed class ContentItem : AggregateRoot
     }
 
     // "sıra, öne çıkan, görseller" (ADR-024 §4.1 Görev 3's single PUT endpoint) - translations are
-    // SetTranslation's job, status/scheduling are Publish/Unpublish/Archive/Unarchive/Schedule's.
+    // SetTranslation's job, status/scheduling are Publish/Unpublish/Archive/Unarchive/Schedule's,
+    // parent is SetParent's (Görev 4).
     public Result UpdateCore(
         int sortOrder, bool isFeatured, Guid? coverImageMediaId, Guid? detailImageMediaId, bool contentTypeSupportsDetailImage,
         Guid updatedByUserId, DateTime updatedAtUtc)
@@ -128,23 +136,35 @@ public sealed class ContentItem : AggregateRoot
         return Result.Success();
     }
 
+    // The caller has already run ContentPathService.ValidateParentAssignment and recomputed this
+    // item's (and every descendant's) FullPath/Redirects for the new position - this method only
+    // records the new parent itself.
+    public void SetParent(Guid? parentId, Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        ParentId = parentId;
+        Touch(updatedByUserId, updatedAtUtc);
+    }
+
     // Upserts the translation for languageCode - one call per language the caller wants to set.
-    // routePrefix is the owning ContentType's current RoutePrefix for this language, resolved by the
-    // caller (ContentItem has no ContentType access) and used only to (re)compute FullPath.
+    // routePrefix/ancestorSlugsRootToParent describe the owning ContentType/ancestor chain's current
+    // state for this language, resolved by the caller (ContentItem has no ContentType/repository
+    // access) and used only to (re)compute FullPath.
     public Result SetTranslation(
-        LanguageCode languageCode, string? title, string? slug, string routePrefix, string? summary, string? body,
-        SeoMetadata seo, Guid updatedByUserId, DateTime updatedAtUtc)
+        LanguageCode languageCode, string? title, string? slug, string routePrefix,
+        IReadOnlyList<string> ancestorSlugsRootToParent, string? summary, string? body, SeoMetadata seo,
+        Guid updatedByUserId, DateTime updatedAtUtc)
     {
         var existing = _translations.FirstOrDefault(t => t.LanguageCode == languageCode);
 
         Result result;
         if (existing is not null)
         {
-            result = existing.Update(title, slug, routePrefix, summary, body, seo);
+            result = existing.Update(title, slug, routePrefix, ancestorSlugsRootToParent, summary, body, seo);
         }
         else
         {
-            var createResult = ContentItemTranslation.Create(languageCode, title, slug, routePrefix, summary, body, seo);
+            var createResult = ContentItemTranslation.Create(
+                languageCode, title, slug, routePrefix, ancestorSlugsRootToParent, summary, body, seo);
             if (createResult.IsSuccess)
             {
                 _translations.Add(createResult.Value);
@@ -185,12 +205,31 @@ public sealed class ContentItem : AggregateRoot
         return Result.Success();
     }
 
+    // Called by the Application-layer path cascade (Görev 4) when an ancestor's RoutePrefix or slug
+    // changed and this item's own translation text did not - only FullPath moves, nothing else, and
+    // only for languages this item actually has (RemoveTranslation/SetTranslation's own-language rule
+    // means a language absent here is absent on every descendant too, so callers simply skip this item
+    // for that language rather than treating a missing translation as an error).
+    internal void RecomputeFullPath(
+        LanguageCode languageCode, string routePrefix, IReadOnlyList<string> ancestorSlugsRootToParent,
+        Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        var translation = _translations.FirstOrDefault(t => t.LanguageCode == languageCode);
+        if (translation is null)
+        {
+            return;
+        }
+
+        translation.RecomputeFullPath(routePrefix, ancestorSlugsRootToParent);
+        Touch(updatedByUserId, updatedAtUtc);
+    }
+
     // Covers both the initial publish (Draft -> Published) and a "republish" (Unpublished ->
     // Published) - the master prompt's diagram draws them as two arrows into the same state, but they
-    // are the same operation.
+    // are the same operation. parentIsPublished is irrelevant (and ignored) for a root-level item.
     public Result Publish(
-        DateTime? publishAtUtc, DateTime? unpublishAtUtc, bool contentTypeIsActive, LanguageCode defaultLanguageCode,
-        Guid updatedByUserId, DateTime now)
+        DateTime? publishAtUtc, DateTime? unpublishAtUtc, bool contentTypeIsActive, bool parentIsPublished,
+        LanguageCode defaultLanguageCode, Guid updatedByUserId, DateTime now)
     {
         if (Status is not (ContentItemStatus.Draft or ContentItemStatus.Unpublished))
         {
@@ -201,6 +240,12 @@ public sealed class ContentItem : AggregateRoot
         if (!contentTypeIsActive)
         {
             return Result.Failure(Error.Conflict("ContentItem.ContentTypeInactive", "The content type is not active."));
+        }
+
+        if (ParentId is not null && !parentIsPublished)
+        {
+            return Result.Failure(Error.Conflict(
+                "ContentItem.ParentNotPublished", "The parent content item must be published first."));
         }
 
         // Structurally guaranteed by Create/RemoveTranslation (the default-language translation is
@@ -228,12 +273,19 @@ public sealed class ContentItem : AggregateRoot
         return Result.Success();
     }
 
-    public Result Unpublish(Guid updatedByUserId, DateTime updatedAtUtc)
+    public Result Unpublish(int publishedChildCount, Guid updatedByUserId, DateTime updatedAtUtc)
     {
         if (Status != ContentItemStatus.Published)
         {
             return Result.Failure(Error.Conflict(
                 "ContentItem.InvalidStatusTransition", $"Cannot unpublish content from status '{Status}'."));
+        }
+
+        if (publishedChildCount > 0)
+        {
+            return Result.Failure(Error.Conflict(
+                "ContentItem.HasPublishedChildren",
+                $"Cannot unpublish: {publishedChildCount} published child content item(s) depend on this being published."));
         }
 
         Status = ContentItemStatus.Unpublished;
@@ -242,12 +294,19 @@ public sealed class ContentItem : AggregateRoot
         return Result.Success();
     }
 
-    public Result Archive(Guid updatedByUserId, DateTime updatedAtUtc)
+    public Result Archive(int publishedChildCount, Guid updatedByUserId, DateTime updatedAtUtc)
     {
         if (Status is not (ContentItemStatus.Published or ContentItemStatus.Unpublished))
         {
             return Result.Failure(Error.Conflict(
                 "ContentItem.InvalidStatusTransition", $"Cannot archive content from status '{Status}'."));
+        }
+
+        if (publishedChildCount > 0)
+        {
+            return Result.Failure(Error.Conflict(
+                "ContentItem.HasPublishedChildren",
+                $"Cannot archive: {publishedChildCount} published child content item(s) depend on this being published."));
         }
 
         Status = ContentItemStatus.Archived;
@@ -295,9 +354,11 @@ public sealed class ContentItem : AggregateRoot
         return Result.Success();
     }
 
-    // ADR-024 §4.4's single definition of "visible on the public site" - every future public query
-    // (Görev 6 onward) is meant to build on this exact condition, not re-derive it. now is a parameter,
-    // not DateTime.UtcNow read internally, so callers (and their tests) can fix it.
+    // ADR-024 §4.4's single definition of "visible on the public site" for THIS item alone - it does
+    // not consider ancestors (Görev 4: "içerik ancak kendisi ve tüm ataları görünürse görünür"), which
+    // is a separate, Application-layer check across multiple aggregates (IsVisible has no ancestor
+    // access to do it itself). now is a parameter, not DateTime.UtcNow read internally, so callers
+    // (and their tests) can fix it.
     public bool IsVisible(DateTime now) =>
         Status == ContentItemStatus.Published
         && (PublishAtUtc is null || PublishAtUtc <= now)

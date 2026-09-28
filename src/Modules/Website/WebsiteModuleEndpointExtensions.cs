@@ -21,6 +21,7 @@ using GenclikMerkezi.Modules.Website.Features.GetSiteLanguages;
 using GenclikMerkezi.Modules.Website.Features.GetSiteSettings;
 using GenclikMerkezi.Modules.Website.Features.PublishContentItem;
 using GenclikMerkezi.Modules.Website.Features.ScheduleContentItem;
+using GenclikMerkezi.Modules.Website.Features.SetContentItemParent;
 using GenclikMerkezi.Modules.Website.Features.SetDefaultSiteLanguage;
 using GenclikMerkezi.Modules.Website.Features.UnarchiveContentItem;
 using GenclikMerkezi.Modules.Website.Features.UnpublishContentItem;
@@ -88,6 +89,7 @@ public static class WebsiteModuleEndpointExtensions
         ArchiveContentItemEndpoint.Map(app);
         UnarchiveContentItemEndpoint.Map(app);
         ScheduleContentItemEndpoint.Map(app);
+        SetContentItemParentEndpoint.Map(app);
         GetContentItemsEndpoint.Map(app);
         GetContentItemByIdEndpoint.Map(app);
 

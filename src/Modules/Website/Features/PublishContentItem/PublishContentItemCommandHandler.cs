@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
+using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
@@ -40,8 +41,15 @@ public sealed class PublishContentItemCommandHandler(
             return Result.Failure(Error.Failure("ContentItem.NoDefaultLanguage", "No default site language is configured."));
         }
 
+        var parentIsPublished = true;
+        if (contentItem.ParentId is not null)
+        {
+            var parent = await contentItemRepository.GetByIdAsync(contentItem.ParentId.Value, cancellationToken);
+            parentIsPublished = parent?.Status == ContentItemStatus.Published;
+        }
+
         var publishResult = contentItem.Publish(
-            request.PublishAtUtc, request.UnpublishAtUtc, contentType.IsActive, defaultLanguage.Code,
+            request.PublishAtUtc, request.UnpublishAtUtc, contentType.IsActive, parentIsPublished, defaultLanguage.Code,
             currentUserContext.UserId!.Value, DateTime.UtcNow);
         if (publishResult.IsFailure)
         {

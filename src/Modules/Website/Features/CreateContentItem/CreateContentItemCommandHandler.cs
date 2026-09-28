@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
+using GenclikMerkezi.Modules.Website.Application.ContentPaths;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Results;
@@ -13,6 +14,7 @@ public sealed class CreateContentItemCommandHandler(
     ISiteLanguageRepository siteLanguageRepository,
     IMediaAssetRepository mediaAssetRepository,
     IHtmlContentSanitizer htmlContentSanitizer,
+    ContentPathCascadeService contentPathCascadeService,
     ICurrentUserContext currentUserContext,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<CreateContentItemCommand, Result<CreateContentItemResponse>>
@@ -33,9 +35,20 @@ public sealed class CreateContentItemCommandHandler(
                 Error.Failure("ContentItem.NoDefaultLanguage", "No default site language is configured."));
         }
 
-        // Guaranteed by ContentType's own invariant (the default-language translation is mandatory and
-        // can never be removed) - see ContentType.Create/RemoveTranslation.
+        var parentCheck = await contentPathCascadeService.ValidateParentAsync(
+            Guid.Empty, request.ContentTypeId, contentType.SupportsHierarchy, request.ParentId, cancellationToken);
+        if (parentCheck.IsFailure)
+        {
+            return Result.Failure<CreateContentItemResponse>(parentCheck.Error);
+        }
+
+        var parent = parentCheck.Value;
+
+        // A parent's translation in the default language is guaranteed to exist (SetTranslation
+        // enforces "a child's language requires the parent to have it too"), the same way ContentType's
+        // own default-language translation is guaranteed by ContentType.Create/RemoveTranslation.
         var routePrefix = contentType.Translations.First(t => t.LanguageCode == defaultLanguage.Code).RoutePrefix;
+        var ancestorSlugs = await contentPathCascadeService.GetAncestorSlugsAsync(parent, defaultLanguage.Code, cancellationToken);
 
         var coverImageCheck = await MediaImageReferenceGuard.CheckAsync(request.CoverImageMediaId, "CoverImage", mediaAssetRepository, cancellationToken);
         if (coverImageCheck.IsFailure)
@@ -66,10 +79,10 @@ public sealed class CreateContentItemCommandHandler(
         var sanitizedBody = htmlContentSanitizer.Sanitize(request.DefaultLanguageBody ?? string.Empty);
 
         var contentItemResult = ContentItem.Create(
-            request.ContentTypeId, contentType.SupportsDetailImage, request.SortOrder, request.IsFeatured,
+            request.ContentTypeId, request.ParentId, contentType.SupportsDetailImage, request.SortOrder, request.IsFeatured,
             request.CoverImageMediaId, request.DetailImageMediaId, defaultLanguage.Code, request.DefaultLanguageTitle,
-            request.DefaultLanguageSlug, routePrefix, request.DefaultLanguageSummary, sanitizedBody, seoResult.Value,
-            currentUserContext.UserId!.Value, DateTime.UtcNow);
+            request.DefaultLanguageSlug, routePrefix, ancestorSlugs, request.DefaultLanguageSummary, sanitizedBody,
+            seoResult.Value, currentUserContext.UserId!.Value, DateTime.UtcNow);
         if (contentItemResult.IsFailure)
         {
             return Result.Failure<CreateContentItemResponse>(contentItemResult.Error);
@@ -77,7 +90,7 @@ public sealed class CreateContentItemCommandHandler(
 
         var translation = contentItemResult.Value.Translations[0];
         var fullPathCheck = await ContentItemFullPathGuard.CheckAsync(
-            translation.FullPath, routePrefix, translation.Slug, defaultLanguage.Code, excludeContentItemId: null,
+            translation.FullPath, routePrefix, translation.Slug, request.ParentId, defaultLanguage.Code, excludeContentItemId: null,
             siteLanguageRepository, contentTypeRepository, contentItemRepository, cancellationToken);
         if (fullPathCheck.IsFailure)
         {

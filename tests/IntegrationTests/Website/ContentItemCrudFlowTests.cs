@@ -75,9 +75,9 @@ public class ContentItemCrudFlowTests : IClassFixture<CustomWebApplicationFactor
     }
 
     private async Task<(HttpStatusCode StatusCode, CreateContentItemResponse? Body)> CreateItemAsync(
-        string accessToken, Guid contentTypeId, string title, string? body = null)
+        string accessToken, Guid contentTypeId, string title, string? body = null, Guid? parentId = null)
     {
-        var request = new CreateContentItemRequest(contentTypeId, 1, false, null, null, title, null, null, body, EmptySeo);
+        var request = new CreateContentItemRequest(contentTypeId, parentId, 1, false, null, null, title, null, null, body, EmptySeo);
         var response = await _client.SendAsync(Authorized(HttpMethod.Post, "/api/v1/admin/website/contents", accessToken, request));
         var responseBody = response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<CreateContentItemResponse>() : null;
         return (response.StatusCode, responseBody);
@@ -137,7 +137,7 @@ public class ContentItemCrudFlowTests : IClassFixture<CustomWebApplicationFactor
         var pageTypeId = await GetContentTypeIdAsync(accessToken, "page");
         // "haberler" is the seeded "news" type's own RoutePrefix - a root-level page item cannot
         // reuse it as its own single-segment path.
-        var request = new CreateContentItemRequest(pageTypeId, 1, false, null, null, "haberler", "haberler", null, null, EmptySeo);
+        var request = new CreateContentItemRequest(pageTypeId, null, 1, false, null, null, "haberler", "haberler", null, null, EmptySeo);
 
         var response = await _client.SendAsync(Authorized(HttpMethod.Post, "/api/v1/admin/website/contents", accessToken, request));
 
@@ -148,7 +148,7 @@ public class ContentItemCrudFlowTests : IClassFixture<CustomWebApplicationFactor
     public async Task CreateContentItem_WithInvalidContentType_ReturnsNotFound()
     {
         var accessToken = await LoginAsAdminAsync();
-        var request = new CreateContentItemRequest(Guid.NewGuid(), 1, false, null, null, "Başlık", null, null, null, EmptySeo);
+        var request = new CreateContentItemRequest(Guid.NewGuid(), null, 1, false, null, null, "Başlık", null, null, null, EmptySeo);
 
         var response = await _client.SendAsync(Authorized(HttpMethod.Post, "/api/v1/admin/website/contents", accessToken, request));
 
@@ -166,7 +166,7 @@ public class ContentItemCrudFlowTests : IClassFixture<CustomWebApplicationFactor
         var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
         var adminToken = await LoginAsAdminAsync();
         var newsTypeId = await GetContentTypeIdAsync(adminToken, "news");
-        var request = new CreateContentItemRequest(newsTypeId, 1, false, null, null, "Başlık", null, null, null, EmptySeo);
+        var request = new CreateContentItemRequest(newsTypeId, null, 1, false, null, null, "Başlık", null, null, null, EmptySeo);
 
         var response = await _client.SendAsync(Authorized(HttpMethod.Post, "/api/v1/admin/website/contents", login!.AccessToken, request));
 
@@ -366,11 +366,11 @@ public class ContentItemCrudFlowTests : IClassFixture<CustomWebApplicationFactor
         var accessToken = await LoginAsAdminAsync();
         var newsTypeId = await GetContentTypeIdAsync(accessToken, "news");
         var slug = $"ayni-slug-{Guid.NewGuid():N}";
-        var firstRequest = new CreateContentItemRequest(newsTypeId, 1, false, null, null, "Birinci Başlık", slug, null, null, EmptySeo);
+        var firstRequest = new CreateContentItemRequest(newsTypeId, null, 1, false, null, null, "Birinci Başlık", slug, null, null, EmptySeo);
         var firstResponse = await _client.SendAsync(Authorized(HttpMethod.Post, "/api/v1/admin/website/contents", accessToken, firstRequest));
         Assert.Equal(HttpStatusCode.Created, firstResponse.StatusCode);
 
-        var secondRequest = new CreateContentItemRequest(newsTypeId, 1, false, null, null, "İkinci Başlık", slug, null, null, EmptySeo);
+        var secondRequest = new CreateContentItemRequest(newsTypeId, null, 1, false, null, null, "İkinci Başlık", slug, null, null, EmptySeo);
         var secondResponse = await _client.SendAsync(Authorized(HttpMethod.Post, "/api/v1/admin/website/contents", accessToken, secondRequest));
 
         Assert.Equal(HttpStatusCode.Conflict, secondResponse.StatusCode);
