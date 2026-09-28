@@ -43,9 +43,11 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IMediaAssetRepository, MediaAssetRepository>();
         services.AddScoped<ISiteSettingsRepository, SiteSettingsRepository>();
         services.AddScoped<IContentTypeRepository, ContentTypeRepository>();
+        services.AddScoped<IContentItemRepository, ContentItemRepository>();
         services.AddSingleton<IImageProcessor, SkiaSharpImageProcessor>();
         services.AddScoped<IMediaUsageChecker, CompositeMediaUsageChecker>();
         services.AddScoped<IMediaUsageProvider, SiteSettingsMediaUsageProvider>();
+        services.AddScoped<IMediaUsageProvider, ContentItemMediaUsageProvider>();
         services.AddSingleton<IHtmlContentSanitizer, HtmlSanitizerContentSanitizer>();
 
         // ADR-024 §1/§12.3 Görev 8: IBotProtectionVerifier's Cloudflare Turnstile implementation

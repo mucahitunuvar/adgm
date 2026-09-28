@@ -18,6 +18,8 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
 
     public DbSet<ContentType> ContentTypes => Set<ContentType>();
 
+    public DbSet<ContentItem> ContentItems => Set<ContentItem>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(WebsiteDbContext).Assembly);
