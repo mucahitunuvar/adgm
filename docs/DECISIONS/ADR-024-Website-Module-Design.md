@@ -85,6 +85,12 @@ Yalnızca `Website.Structure.Manage` yetkisiyle yönetilir.
 
 `RequiresReview` tasarımda yer alır ama bu projede tüm türler için kapalı başlar (bkz. §4.4).
 
+`SortMode: EventDateAsc` yalnızca `SupportsEvent` açık bir türde seçilebilir; etkinlik takvimi Faz 4'te gelene kadar liste sorguları bunu `PublishDateDesc` ile aynı şekilde uygular (şimdilik farklı davranamayan, saklanmış bir seçim - hata değil).
+
+Boş `RoutePrefix`'li bir tür (`page` gibi kök seviye türler) `HasListingPage` olamaz - liste sayfasının bir URL'si olmaz. `RoutePrefix` (ve kök seviye bir `ContentItem`'ın ilk yol segmenti) statik altyapı yollarıyla ve hiçbir `SiteLanguage` koduyla (aktif/pasif fark etmez) çakışamaz; ayrılmış segmentler: `api`, `admin`, `portal`, `webuploads`, `uploads`, `media`, `assets`, `static`, `sitemap.xml`, `robots.txt`.
+
+Faz 1b'de uygulanacak (bu ADR'de henüz kod karşılığı yoktur, yalnızca tasarım kararı): kategoriler tür başına tanımlanır, en fazla 2 seviye derinliğinde ve çevrilebilirdir (her dilde ayrı ad); etiketler ise türden bağımsız, her dile ait ayrı bir kümedir (aynı kavramın farklı dillerdeki etiketleri birbirinden ayrı satırlardır, ortak bir kimlikle eşleştirilmez).
+
 Türe özgü özel alanlar (ör. yalnızca Proje'de bitiş tarihi) **bu ADR kapsamında yoktur.** İhtiyaç doğarsa tipli özel alan tanımı ayrı bir ADR ile eklenir; EAV modeli bilinçli olarak reddedilmiştir.
 
 Bu proje için seed türleri: Sayfa, Haber, Duyuru, Proje, Faaliyet, Başarı Hikayesi, Etkinlik, Eğitim/Atölye, Gönüllülük Fırsatı, SSS, Ekip, Belge, Basın Bülteni.
@@ -113,10 +119,10 @@ Dile bağlı alanlar (`ContentItemTranslation`):
 
 #### 4.3. Hiyerarşi ve URL
 
-- **İç içe yol** kullanılır: `/kurumsal/hakkimizda`. Tam yol (`FullPath`) çeviri başına hesaplanıp saklanır; sorgu anında hesaplanmaz.
+- **İç içe yol** kullanılır: `/kurumsal/hakkimizda`. Tam yol (`FullPath`) çeviri başına hesaplanıp saklanır; sorgu anında hesaplanmaz. `FullPath`, bir dil içinde **tüm modül genelinde** benzersizdir - yalnızca aynı tür içinde değil, farklı türlere ait içerikler arasında da çakışamaz (tek bir global URL alanı).
 - Kurallar (domain invariant): parent aynı türden olmalı, döngü yasak, maksimum derinlik 3.
 - Slug `Slug` value object'i ile üretilir: Türkçe karakter dönüşümü (ç→c, ğ→g, ı→i, ö→o, ş→s, ü→u), küçük harf, tire ayracı. (tür + dil + parent) içinde benzersizdir.
-- Slug veya parent değiştiğinde etkilenen tüm alt içeriklerin `FullPath`'i güncellenir ve **eski her yol için otomatik 301 `Redirect` kaydı** oluşturulur.
+- Slug veya parent değiştiğinde etkilenen tüm alt içeriklerin `FullPath`'i güncellenir ve **eski her yol için otomatik 301 `Redirect` kaydı** oluşturulur. Otomatik bir `Redirect`, statik bir hedef yol değil, **hedef `ContentItem`'ın kendisini** tutar - çözümleme her seferinde o içeriğin güncel `FullPath`'ini canlı okur. Bu sayede bir içerik birden çok kez taşınsa bile zincir oluşmaz: her taşınma için ayrı, birbirinden bağımsız geçerli bir kayıt eklenir, var olan hiçbir kayıt güncellenmez veya takip edilmez.
 
 #### 4.4. Durum modeli
 
@@ -124,12 +130,14 @@ Ayrı bir aktif/pasif alanı **yoktur**; tek durum alanı kullanılır:
 
 ```text
 Draft ──► Published ◄──► Unpublished (pasif)
-             │
-             ▼
-          Archived
+                              │
+                              ▼
+                          Archived
 ```
 
-- Yayında görünme koşulu: `Status == Published && (PublishAtUtc == null || PublishAtUtc <= now) && (UnpublishAtUtc == null || UnpublishAtUtc > now) && DeletedAtUtc == null`.
+- `Draft`, yalnızca `Published`'a geçebilir (ilk yayınlama) - `Unpublished`'a veya `Archived`'a doğrudan bir geçiş yoktur.
+- `Archived`, yalnızca `Unpublished`'a geri döner (`Unarchive`); doğrudan `Published`'a dönemez - bir editörün tekrar gözden geçirmesi gerekir. (`Unpublished`'dan tekrar `Published`'a geçmek ayrı, normal bir "republish" adımıdır.)
+- Yayında görünme koşulu: `Status == Published && (PublishAtUtc == null || PublishAtUtc <= now) && (UnpublishAtUtc == null || UnpublishAtUtc > now) && DeletedAtUtc == null`. Bir içerik ancak **kendisi ve tüm ataları** bu koşulu sağlıyorsa görünürdür - zamanlanmış veya yayından kaldırılmış bir ebeveynin altındaki, kendi başına yayında olan bir çocuk da görünmez sayılır.
 - Zamanlanmış yayın için arka plan job'ı gerekmez; koşul sorguda uygulanır.
 - `RequiresReview` açık bir türde `Draft → InReview → Published` akışı ve yazan ≠ yayınlayan kuralı devreye girer. Bu projede kapalı.
 
@@ -312,9 +320,9 @@ Başka modüllerin backend davranışını değiştiren bayraklar (ör. istihdam
 
 ### 15. SEO altyapısı ve route çözümleme
 
-- **`Redirect`**: kaynak yol → hedef yol, 301/302, otomatik veya elle oluşturulmuş.
-- **404 kaydı:** Bulunamayan yollar sayılarak loglanır (yol + sayı + son görülme; IP tutulmaz). Admin panelinde en çok 404 alan yollar listelenir, tek adımda yönlendirme oluşturulur.
-- **Route çözümleme:** `GET /api/v1/public/routes/resolve?path=...&lang=...` → `Listing` / `Detail` / `Home` / `Redirect` / `NotFound` ve gerekli kimlikler.
+- **`Redirect`**: kaynak yol → hedef yol, 301/302, otomatik veya elle oluşturulmuş. Kaynak yol (`FromPath`) dil içinde benzersizdir; bir yönlendirmenin hedefi başka bir yönlendirmenin kaynağı olamaz (zincir reddedilir). Elle oluşturulan yönlendirmeler düzenlenebilir/silinebilir, otomatik olanlar yalnızca silinebilir.
+- **404 kaydı (`NotFoundLog`):** Bulunamayan yollar sayılarak loglanır (yol + sayı + ilk/son görülme; IP veya User-Agent tutulmaz). Bu bir **komuttur** (`RecordNotFoundPathCommand`), route çözümleme sorgusunun kendisi değil - AGENTS.md §13 (bir sorgu yazmaz) gereği, çözümleme isteğini işleyen public endpoint, sonucu `NotFound` olduğunda bu komutu ayrıca gönderir; komut başarısız olursa yalnızca loglanır, ziyaretçinin yanıtını etkilemez. En fazla 10.000 farklı yol tutulur (sınıra ulaşınca yeni yol eklenmez, var olanların sayacı artmaya devam eder); günlük bir arka plan job'ı 90 günden eski ve sayacı 5'in altında kalan kayıtları siler. Admin panelinde en çok 404 alan yollar listelenir, tek adımda (ve tek transaction'da) yönlendirmeye dönüştürülebilir.
+- **Route çözümleme:** `GET /api/v1/public/routes/resolve?path=...` (anonim). İlk yol segmenti aktif ve varsayılan olmayan bir dilin koduysa o dil seçilir ve segment yoldan çıkarılır; varsayılan dilin kodu önek olarak kullanılmışsa öneksiz yola, pasif bir dilin kodu önek olarak gelirse `NotFound`'a çözümlenir. Yol küçük harfe çevrilir, ardışık `/` teke indirilir, sondaki `/` kaldırılır; sonuç istenen yoldan farklıysa tek bir 301 yönlendirmeyle kanonik yola gidilir (dil öneği düzeltmesiyle birlikte, tek kanonik URL). Çözümleme sırası: boş yol → `Home`; tam eşleşen görünür içerik (kendisi ve tüm ataları görünür, türü aktif ve `HasDetailPage`) → `Detail`; tek segment ve aktif, `HasListingPage` açık bir türün o dildeki `RoutePrefix`'i → `Listing`; bir `Redirect` kaydı (hedefi görünmeyen bir içerikse uygulanmaz) → `Redirect`; hiçbiri → `NotFound`. Çözümleme (dil, `FullPath`) ve (dil, `FromPath`) üzerindeki tekil indekslerle tek satır aramalarıdır. İçeriğin kendi verisi (başlık, gövde, breadcrumb, görseller) bu endpoint'te dönmez.
 - Sayfa başına tek istekte gerekli veriyi dönen public endpoint'ler (içerik + breadcrumb + SEO + hreflang + ilişkili içerik), ileride verilecek SSR/ön-render kararından bağımsız olarak kullanılabilir.
 - **Breadcrumb** hiyerarşiden otomatik üretilir.
 - **Sitemap ve robots:** backend tarafından dinamik üretilir; yalnızca yayındaki, `NoIndex` olmayan içerikler sitemap'e girer.
@@ -337,14 +345,15 @@ Başka modüllerin backend davranışını değiştiren bayraklar (ör. istihdam
 
 | Faz | Kapsam |
 |---|---|
-| **0 — Temel** | WebsiteDbContext, SiteLanguage, çeviri deseni, `Slug`/`Seo` value object'leri, HtmlSanitizer, isimli policy'ler, MediaAsset + SkiaSharp boyutları + public medya servisi, SiteSettings (tema, iletişim, IBAN, bayraklar, bakım modu), `IBotProtectionVerifier` + Turnstile adaptörü, `IWebsiteEmailSender` + Notification adaptörü |
-| **1 — İçerik çekirdeği** | ContentType, ContentItem (çeviri, hiyerarşi, kategori, etiket, görseller, galeri, ekler, durum/zamanlama, sıra, öne çıkan), Video, ilişkili içerik, Redirect + 404 kaydı, route çözümleme, breadcrumb, önizleme, çöp kutusu, kopyalama, public endpoint'ler, cache |
+| **0 — Temel** ✅ | WebsiteDbContext, SiteLanguage, çeviri deseni, `Slug`/`Seo` value object'leri, HtmlSanitizer, isimli policy'ler, MediaAsset + SkiaSharp boyutları + public medya servisi, SiteSettings (tema, iletişim, IBAN, bayraklar, bakım modu), `IBotProtectionVerifier` + Turnstile adaptörü, `IWebsiteEmailSender` + Notification adaptörü |
+| **1a — İçerik çekirdeği (tür, içerik, yol, yönlendirme)** ✅ | ContentType, ContentItem (çeviri, hiyerarşi, durum/zamanlama, sıra, öne çıkan), yol hesaplama + otomatik `Redirect`, elle yönlendirme yönetimi, 404 kaydı (`NotFoundLog`), public route çözümleme (`GET /api/v1/public/routes/resolve`) |
+| **1b — İçerik çekirdeği (devamı)** | Galeri, video kütüphanesi + içerik video listesi, dosya ekleri, kategoriler, etiketler, ilişkili içerik, form bağlantısı, önizleme linki, çöp kutusu + kalıcı silme job'ı, kopyalama, public liste/detay endpoint'leri, breadcrumb, public cache + invalidation |
 | **2 — Sunum** | Menü, PageLayout + bloklar, Slider, Partner, ImpactMetric, Pop-up/Banner |
 | **3 — Etkileşim** | LegalDocument, form motoru + içerik–form bağlantısı, bülten, script yönetimi |
 | **4 — Etkinlik** | EventSchedule, EventRegistration (doğrulama, kontenjan, yedek, iptal), `.ics`, katılımcı dışa aktarımı |
 | **5 — Keşif** | SearchDocument + genel arama + `IExternalSearchSource` + Employer Host adaptörü + senkron job'ı, sitemap/robots, schema.org verisi, revizyon geçmişi |
 
-Her faz, ayrı görevlere bölünmüş kendi master prompt'uyla uygulanır; her görev ayrı commit'tir.
+Her faz (gerektiğinde alt fazlara bölünerek, bkz. 1a/1b), ayrı görevlere bölünmüş kendi master prompt'uyla uygulanır; her görev ayrı commit'tir.
 
 **Paralel iş (Employer modülü, bu ADR'nin kapsamı dışında):** İlan listesine sayfalama ve filtre, ilan slug'ı ve public detay endpoint'i, public firma profili ve firmanın logosunun sitede gösterilmesine izin veren onay alanı, arama adaptörü için yayındaki ilan özetlerini sayfalı dönen public contract metodu.
 

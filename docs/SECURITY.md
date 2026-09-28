@@ -593,7 +593,14 @@ Website modülünün `IHtmlContentSanitizer` portu ve `HtmlSanitizerContentSanit
   `GetUrlAsync`'inin döndürdüğü mutlak URL (yapılandırılmış `PublicBaseUrl` ile eşleşen), ki bu ikincisi
   saklanmadan önce göreli yola normalize edilir. Başka bir kaynaktan (izleyici pikseli, başka bir
   siteden hotlink) gelen `src` kabul edilmez; kabul edilmeyen bir `<img>` yalnızca `src`'siz
-  bırakılmaz, etiketin tamamı kaldırılır.
+  bırakılmaz, etiketin tamamı kaldırılır. Normalize edilmiş göreli yol ayrıca yol atlama (path
+  traversal) açısından da doğrulanır: `..`, ters bölü (`\`), `?`, `#` karakterlerini veya bunların
+  yüzde-kodlanmış (`%2e`, `%2f`, `%5c`) hallerini içeren bir değer reddedilir — hiçbiri bu kurulumun
+  üretebileceği bir `fileKey`'de (ADR-019: `{category}/{yyyy}/{MM}/{dd}/{guid}.{ext}`) doğal olarak
+  bulunmaz, varlıkları yalnızca elle hazırlanmış bir değere işaret eder. Bugün genel medya kökü
+  dışında hiçbir şey servis edilmiyor olsa da (yalnızca `LocalDiskFileStorageService`'in yazdığı/
+  okuduğu dizin), sanitize edilmiş bir `src` hiçbir zaman bu kökün dışına çıkabilecek bir yolu
+  tanımlamamalıdır.
 * **`src` (`<iframe>`):** yalnızca `https://www.youtube-nocookie.com/embed/...` biçimindeki mutlak
   URL'lere izin verilir; başka her `iframe` içeriğiyle birlikte tamamen kaldırılır.
 * **Beyaz listede olmayan zararsız sarmalayıcılar** (`div`, `span`, `section`, `article`, `font`,
