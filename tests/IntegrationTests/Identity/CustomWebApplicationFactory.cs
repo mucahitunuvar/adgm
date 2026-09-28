@@ -12,7 +12,9 @@ using GenclikMerkezi.Modules.Matching.Infrastructure;
 using GenclikMerkezi.Modules.Notification.Application.Abstractions;
 using GenclikMerkezi.Modules.Notification.Infrastructure;
 using GenclikMerkezi.Modules.ReferenceData.Infrastructure;
+using GenclikMerkezi.Modules.Website;
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
+using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.Modules.Website.Infrastructure;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using Microsoft.AspNetCore.Hosting;
@@ -235,6 +237,28 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         await unitOfWork.SaveChangesAsync();
 
         return user.Id;
+    }
+
+    // NotFoundLog rows are only ever written by the public route-resolution endpoint (Görev 6, not
+    // yet built) via RecordNotFoundPathCommand, which has no HTTP endpoint of its own by design - so
+    // Görev 5's GetNotFoundPaths/DeleteNotFoundPath/ConvertNotFoundPathToRedirect flow tests seed rows
+    // directly here, the same way SeedAdminUserAsync bypasses the (nonexistent, for this case) HTTP path.
+    public async Task<Guid> SeedNotFoundLogAsync(string languageCode, string path, int hitCount = 1)
+    {
+        using var scope = Services.CreateScope();
+        var notFoundLogRepository = scope.ServiceProvider.GetRequiredService<INotFoundLogRepository>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredKeyedService<IUnitOfWork>(WebsiteModuleMarker.UnitOfWorkKey);
+
+        var log = NotFoundLog.Create(LanguageCode.Create(languageCode).Value, path, DateTime.UtcNow).Value;
+        for (var i = 1; i < hitCount; i++)
+        {
+            log.RecordHit(DateTime.UtcNow);
+        }
+
+        notFoundLogRepository.Add(log);
+        await unitOfWork.SaveChangesAsync();
+
+        return log.Id;
     }
 
     // No query endpoint reads this back on its own merits yet at the time some tests need it

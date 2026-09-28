@@ -22,6 +22,8 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
 
     public DbSet<Redirect> Redirects => Set<Redirect>();
 
+    public DbSet<NotFoundLog> NotFoundLogs => Set<NotFoundLog>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(WebsiteDbContext).Assembly);

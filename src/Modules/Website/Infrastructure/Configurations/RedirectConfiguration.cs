@@ -31,5 +31,7 @@ public sealed class RedirectConfiguration : IEntityTypeConfiguration<Redirect>
 
         builder.Property(r => r.CreatedByUserId).IsRequired();
         builder.Property(r => r.CreatedAtUtc).IsRequired();
+        builder.Property(r => r.UpdatedByUserId);
+        builder.Property(r => r.UpdatedAtUtc);
     }
 }

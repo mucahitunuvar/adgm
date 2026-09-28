@@ -3,6 +3,7 @@ using GenclikMerkezi.Modules.Website.Application.ContentPaths;
 using GenclikMerkezi.Modules.Website.Application.Media;
 using GenclikMerkezi.Modules.Website.Infrastructure;
 using GenclikMerkezi.Modules.Website.Infrastructure.BotProtection;
+using GenclikMerkezi.Modules.Website.Infrastructure.Jobs;
 using GenclikMerkezi.Modules.Website.Infrastructure.Media;
 using GenclikMerkezi.Modules.Website.Infrastructure.Persistence;
 using GenclikMerkezi.Modules.Website.Infrastructure.Sanitization;
@@ -46,7 +47,12 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IContentTypeRepository, ContentTypeRepository>();
         services.AddScoped<IContentItemRepository, ContentItemRepository>();
         services.AddScoped<IRedirectRepository, RedirectRepository>();
+        services.AddScoped<INotFoundLogRepository, NotFoundLogRepository>();
         services.AddScoped<ContentPathCascadeService>();
+        // CleanupStaleNotFoundLogsJob only takes singleton-safe dependencies (IServiceScopeFactory), so
+        // it is registered Transient here and resolved by Program.cs's RecurringJob.AddOrUpdate<T>() -
+        // the same pattern Support's CloseOverdueSupportTicketsJob already uses.
+        services.AddTransient<CleanupStaleNotFoundLogsJob>();
         services.AddSingleton<IImageProcessor, SkiaSharpImageProcessor>();
         services.AddScoped<IMediaUsageChecker, CompositeMediaUsageChecker>();
         services.AddScoped<IMediaUsageProvider, SiteSettingsMediaUsageProvider>();

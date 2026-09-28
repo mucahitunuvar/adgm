@@ -33,6 +33,7 @@ using GenclikMerkezi.Modules.Support.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.Support.Infrastructure.Jobs;
 using GenclikMerkezi.Modules.Website;
 using GenclikMerkezi.Modules.Website.Infrastructure.DependencyInjection;
+using GenclikMerkezi.Modules.Website.Infrastructure.Jobs;
 using Hangfire;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.FileProviders;
@@ -236,6 +237,8 @@ if (!isTestingEnvironment)
 {
     RecurringJob.AddOrUpdate<CloseOverdueSupportTicketsJob>(
         "support-close-overdue-tickets", job => job.ExecuteAsync(CancellationToken.None), Cron.Hourly);
+    RecurringJob.AddOrUpdate<CleanupStaleNotFoundLogsJob>(
+        "website-cleanup-stale-not-found-logs", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
 }
 
 app.Run();
