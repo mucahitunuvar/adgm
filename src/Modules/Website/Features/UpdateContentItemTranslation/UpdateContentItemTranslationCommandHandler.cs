@@ -69,7 +69,7 @@ public sealed class UpdateContentItemTranslationCommandHandler(
 
         var ancestorSlugs = await contentPathCascadeService.GetAncestorSlugsAsync(parent, languageCode, cancellationToken);
 
-        var ogImageCheck = await MediaImageReferenceGuard.CheckAsync(request.Seo.OgImageMediaId, "SeoOgImage", mediaAssetRepository, cancellationToken);
+        var ogImageCheck = await MediaImageReferenceGuard.CheckAsync(request.Seo.OgImageMediaId, "ContentItem", "SeoOgImage", mediaAssetRepository, cancellationToken);
         if (ogImageCheck.IsFailure)
         {
             return ogImageCheck;

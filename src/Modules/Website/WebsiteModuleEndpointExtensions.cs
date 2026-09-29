@@ -1,18 +1,23 @@
 using GenclikMerkezi.Modules.Website.Features.ActivateContentType;
 using GenclikMerkezi.Modules.Website.Features.ActivateSiteLanguage;
+using GenclikMerkezi.Modules.Website.Features.ActivateVideo;
 using GenclikMerkezi.Modules.Website.Features.ArchiveContentItem;
 using GenclikMerkezi.Modules.Website.Features.ConvertNotFoundPathToRedirect;
 using GenclikMerkezi.Modules.Website.Features.CreateContentItem;
 using GenclikMerkezi.Modules.Website.Features.CreateContentType;
 using GenclikMerkezi.Modules.Website.Features.CreateRedirect;
 using GenclikMerkezi.Modules.Website.Features.CreateSiteLanguage;
+using GenclikMerkezi.Modules.Website.Features.CreateVideo;
 using GenclikMerkezi.Modules.Website.Features.DeactivateContentType;
 using GenclikMerkezi.Modules.Website.Features.DeactivateSiteLanguage;
+using GenclikMerkezi.Modules.Website.Features.DeactivateVideo;
 using GenclikMerkezi.Modules.Website.Features.DeleteContentItemTranslation;
 using GenclikMerkezi.Modules.Website.Features.DeleteContentTypeTranslation;
 using GenclikMerkezi.Modules.Website.Features.DeleteMediaAsset;
 using GenclikMerkezi.Modules.Website.Features.DeleteNotFoundPath;
 using GenclikMerkezi.Modules.Website.Features.DeleteRedirect;
+using GenclikMerkezi.Modules.Website.Features.DeleteVideo;
+using GenclikMerkezi.Modules.Website.Features.DeleteVideoTranslation;
 using GenclikMerkezi.Modules.Website.Features.GetContentItemById;
 using GenclikMerkezi.Modules.Website.Features.GetContentItems;
 using GenclikMerkezi.Modules.Website.Features.GetContentTypeById;
@@ -22,9 +27,12 @@ using GenclikMerkezi.Modules.Website.Features.GetMediaAssetFolders;
 using GenclikMerkezi.Modules.Website.Features.GetMediaAssets;
 using GenclikMerkezi.Modules.Website.Features.GetNotFoundPaths;
 using GenclikMerkezi.Modules.Website.Features.GetPublicSite;
+using GenclikMerkezi.Modules.Website.Features.GetPublicVideos;
 using GenclikMerkezi.Modules.Website.Features.GetRedirects;
 using GenclikMerkezi.Modules.Website.Features.GetSiteLanguages;
 using GenclikMerkezi.Modules.Website.Features.GetSiteSettings;
+using GenclikMerkezi.Modules.Website.Features.GetVideoById;
+using GenclikMerkezi.Modules.Website.Features.GetVideos;
 using GenclikMerkezi.Modules.Website.Features.PublishContentItem;
 using GenclikMerkezi.Modules.Website.Features.ResolveRoute;
 using GenclikMerkezi.Modules.Website.Features.ScheduleContentItem;
@@ -39,6 +47,8 @@ using GenclikMerkezi.Modules.Website.Features.UpdateContentTypeTranslation;
 using GenclikMerkezi.Modules.Website.Features.UpdateMediaAsset;
 using GenclikMerkezi.Modules.Website.Features.UpdateRedirect;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteLanguage;
+using GenclikMerkezi.Modules.Website.Features.UpdateVideo;
+using GenclikMerkezi.Modules.Website.Features.UpdateVideoTranslation;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsBankAccounts;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsBotProtection;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsContact;
@@ -111,6 +121,17 @@ public static class WebsiteModuleEndpointExtensions
         ConvertNotFoundPathToRedirectEndpoint.Map(app);
 
         ResolveRouteEndpoint.Map(app);
+
+        CreateVideoEndpoint.Map(app);
+        UpdateVideoEndpoint.Map(app);
+        UpdateVideoTranslationEndpoint.Map(app);
+        DeleteVideoTranslationEndpoint.Map(app);
+        ActivateVideoEndpoint.Map(app);
+        DeactivateVideoEndpoint.Map(app);
+        DeleteVideoEndpoint.Map(app);
+        GetVideosEndpoint.Map(app);
+        GetVideoByIdEndpoint.Map(app);
+        GetPublicVideosEndpoint.Map(app);
 
         return app;
     }

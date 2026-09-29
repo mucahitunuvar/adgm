@@ -50,19 +50,19 @@ public sealed class CreateContentItemCommandHandler(
         var routePrefix = contentType.Translations.First(t => t.LanguageCode == defaultLanguage.Code).RoutePrefix;
         var ancestorSlugs = await contentPathCascadeService.GetAncestorSlugsAsync(parent, defaultLanguage.Code, cancellationToken);
 
-        var coverImageCheck = await MediaImageReferenceGuard.CheckAsync(request.CoverImageMediaId, "CoverImage", mediaAssetRepository, cancellationToken);
+        var coverImageCheck = await MediaImageReferenceGuard.CheckAsync(request.CoverImageMediaId, "ContentItem", "CoverImage", mediaAssetRepository, cancellationToken);
         if (coverImageCheck.IsFailure)
         {
             return Result.Failure<CreateContentItemResponse>(coverImageCheck.Error);
         }
 
-        var detailImageCheck = await MediaImageReferenceGuard.CheckAsync(request.DetailImageMediaId, "DetailImage", mediaAssetRepository, cancellationToken);
+        var detailImageCheck = await MediaImageReferenceGuard.CheckAsync(request.DetailImageMediaId, "ContentItem", "DetailImage", mediaAssetRepository, cancellationToken);
         if (detailImageCheck.IsFailure)
         {
             return Result.Failure<CreateContentItemResponse>(detailImageCheck.Error);
         }
 
-        var ogImageCheck = await MediaImageReferenceGuard.CheckAsync(request.Seo.OgImageMediaId, "SeoOgImage", mediaAssetRepository, cancellationToken);
+        var ogImageCheck = await MediaImageReferenceGuard.CheckAsync(request.Seo.OgImageMediaId, "ContentItem", "SeoOgImage", mediaAssetRepository, cancellationToken);
         if (ogImageCheck.IsFailure)
         {
             return Result.Failure<CreateContentItemResponse>(ogImageCheck.Error);

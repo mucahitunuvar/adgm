@@ -34,13 +34,13 @@ public sealed class UpdateContentItemCommandHandler(
             return Result.Failure(Error.Failure("ContentItem.ContentTypeNotFound", "The content item's content type could not be found."));
         }
 
-        var coverImageCheck = await MediaImageReferenceGuard.CheckAsync(request.CoverImageMediaId, "CoverImage", mediaAssetRepository, cancellationToken);
+        var coverImageCheck = await MediaImageReferenceGuard.CheckAsync(request.CoverImageMediaId, "ContentItem", "CoverImage", mediaAssetRepository, cancellationToken);
         if (coverImageCheck.IsFailure)
         {
             return coverImageCheck;
         }
 
-        var detailImageCheck = await MediaImageReferenceGuard.CheckAsync(request.DetailImageMediaId, "DetailImage", mediaAssetRepository, cancellationToken);
+        var detailImageCheck = await MediaImageReferenceGuard.CheckAsync(request.DetailImageMediaId, "ContentItem", "DetailImage", mediaAssetRepository, cancellationToken);
         if (detailImageCheck.IsFailure)
         {
             return detailImageCheck;

@@ -24,6 +24,8 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
 
     public DbSet<NotFoundLog> NotFoundLogs => Set<NotFoundLog>();
 
+    public DbSet<Video> Videos => Set<Video>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(WebsiteDbContext).Assembly);

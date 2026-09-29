@@ -49,6 +49,7 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IContentItemRepository, ContentItemRepository>();
         services.AddScoped<IRedirectRepository, RedirectRepository>();
         services.AddScoped<INotFoundLogRepository, NotFoundLogRepository>();
+        services.AddScoped<IVideoRepository, VideoRepository>();
         services.AddScoped<ContentPathCascadeService>();
         services.AddScoped<RouteResolutionService>();
         // CleanupStaleNotFoundLogsJob only takes singleton-safe dependencies (IServiceScopeFactory), so
@@ -59,6 +60,8 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IMediaUsageChecker, CompositeMediaUsageChecker>();
         services.AddScoped<IMediaUsageProvider, SiteSettingsMediaUsageProvider>();
         services.AddScoped<IMediaUsageProvider, ContentItemMediaUsageProvider>();
+        services.AddScoped<IMediaUsageProvider, VideoMediaUsageProvider>();
+        services.AddScoped<IVideoUsageChecker, VideoUsageChecker>();
         services.AddSingleton<IHtmlContentSanitizer, HtmlSanitizerContentSanitizer>();
 
         // ADR-024 §1/§12.3 Görev 8: IBotProtectionVerifier's Cloudflare Turnstile implementation
