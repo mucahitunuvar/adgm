@@ -26,6 +26,10 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
 
     public DbSet<Video> Videos => Set<Video>();
 
+    public DbSet<ContentCategory> ContentCategories => Set<ContentCategory>();
+
+    public DbSet<ContentTag> ContentTags => Set<ContentTag>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(WebsiteDbContext).Assembly);

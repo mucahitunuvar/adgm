@@ -1,23 +1,30 @@
+using GenclikMerkezi.Modules.Website.Features.ActivateContentCategory;
 using GenclikMerkezi.Modules.Website.Features.ActivateContentType;
 using GenclikMerkezi.Modules.Website.Features.ActivateSiteLanguage;
 using GenclikMerkezi.Modules.Website.Features.ActivateVideo;
 using GenclikMerkezi.Modules.Website.Features.ArchiveContentItem;
 using GenclikMerkezi.Modules.Website.Features.ConvertNotFoundPathToRedirect;
+using GenclikMerkezi.Modules.Website.Features.CreateContentCategory;
 using GenclikMerkezi.Modules.Website.Features.CreateContentItem;
 using GenclikMerkezi.Modules.Website.Features.CreateContentType;
 using GenclikMerkezi.Modules.Website.Features.CreateRedirect;
 using GenclikMerkezi.Modules.Website.Features.CreateSiteLanguage;
 using GenclikMerkezi.Modules.Website.Features.CreateVideo;
+using GenclikMerkezi.Modules.Website.Features.DeactivateContentCategory;
 using GenclikMerkezi.Modules.Website.Features.DeactivateContentType;
 using GenclikMerkezi.Modules.Website.Features.DeactivateSiteLanguage;
 using GenclikMerkezi.Modules.Website.Features.DeactivateVideo;
+using GenclikMerkezi.Modules.Website.Features.DeleteContentCategory;
+using GenclikMerkezi.Modules.Website.Features.DeleteContentCategoryTranslation;
 using GenclikMerkezi.Modules.Website.Features.DeleteContentItemTranslation;
 using GenclikMerkezi.Modules.Website.Features.DeleteContentTypeTranslation;
 using GenclikMerkezi.Modules.Website.Features.DeleteMediaAsset;
 using GenclikMerkezi.Modules.Website.Features.DeleteNotFoundPath;
 using GenclikMerkezi.Modules.Website.Features.DeleteRedirect;
+using GenclikMerkezi.Modules.Website.Features.DeleteTag;
 using GenclikMerkezi.Modules.Website.Features.DeleteVideo;
 using GenclikMerkezi.Modules.Website.Features.DeleteVideoTranslation;
+using GenclikMerkezi.Modules.Website.Features.GetContentCategoriesByType;
 using GenclikMerkezi.Modules.Website.Features.GetContentItemById;
 using GenclikMerkezi.Modules.Website.Features.GetContentItems;
 using GenclikMerkezi.Modules.Website.Features.GetContentTypeById;
@@ -31,15 +38,21 @@ using GenclikMerkezi.Modules.Website.Features.GetPublicVideos;
 using GenclikMerkezi.Modules.Website.Features.GetRedirects;
 using GenclikMerkezi.Modules.Website.Features.GetSiteLanguages;
 using GenclikMerkezi.Modules.Website.Features.GetSiteSettings;
+using GenclikMerkezi.Modules.Website.Features.GetTags;
 using GenclikMerkezi.Modules.Website.Features.GetVideoById;
 using GenclikMerkezi.Modules.Website.Features.GetVideos;
+using GenclikMerkezi.Modules.Website.Features.MergeTag;
 using GenclikMerkezi.Modules.Website.Features.PublishContentItem;
 using GenclikMerkezi.Modules.Website.Features.ResolveRoute;
 using GenclikMerkezi.Modules.Website.Features.ScheduleContentItem;
+using GenclikMerkezi.Modules.Website.Features.SetContentItemCategories;
 using GenclikMerkezi.Modules.Website.Features.SetContentItemParent;
+using GenclikMerkezi.Modules.Website.Features.SetContentItemTranslationTags;
 using GenclikMerkezi.Modules.Website.Features.SetDefaultSiteLanguage;
 using GenclikMerkezi.Modules.Website.Features.UnarchiveContentItem;
 using GenclikMerkezi.Modules.Website.Features.UnpublishContentItem;
+using GenclikMerkezi.Modules.Website.Features.UpdateContentCategory;
+using GenclikMerkezi.Modules.Website.Features.UpdateContentCategoryTranslation;
 using GenclikMerkezi.Modules.Website.Features.UpdateContentItem;
 using GenclikMerkezi.Modules.Website.Features.UpdateContentItemTranslation;
 using GenclikMerkezi.Modules.Website.Features.UpdateContentType;
@@ -56,6 +69,7 @@ using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsFeatures;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsIdentity;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsMaintenance;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsTheme;
+using GenclikMerkezi.Modules.Website.Features.UpdateTag;
 using GenclikMerkezi.Modules.Website.Features.UploadMediaAsset;
 using Microsoft.AspNetCore.Routing;
 
@@ -132,6 +146,23 @@ public static class WebsiteModuleEndpointExtensions
         GetVideosEndpoint.Map(app);
         GetVideoByIdEndpoint.Map(app);
         GetPublicVideosEndpoint.Map(app);
+
+        CreateContentCategoryEndpoint.Map(app);
+        UpdateContentCategoryEndpoint.Map(app);
+        UpdateContentCategoryTranslationEndpoint.Map(app);
+        DeleteContentCategoryTranslationEndpoint.Map(app);
+        ActivateContentCategoryEndpoint.Map(app);
+        DeactivateContentCategoryEndpoint.Map(app);
+        DeleteContentCategoryEndpoint.Map(app);
+        GetContentCategoriesByTypeEndpoint.Map(app);
+
+        GetTagsEndpoint.Map(app);
+        UpdateTagEndpoint.Map(app);
+        DeleteTagEndpoint.Map(app);
+        MergeTagEndpoint.Map(app);
+
+        SetContentItemCategoriesEndpoint.Map(app);
+        SetContentItemTranslationTagsEndpoint.Map(app);
 
         return app;
     }

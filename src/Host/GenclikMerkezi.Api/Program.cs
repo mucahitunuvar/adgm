@@ -282,6 +282,8 @@ if (!isTestingEnvironment)
         "support-close-overdue-tickets", job => job.ExecuteAsync(CancellationToken.None), Cron.Hourly);
     RecurringJob.AddOrUpdate<CleanupStaleNotFoundLogsJob>(
         "website-cleanup-stale-not-found-logs", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
+    RecurringJob.AddOrUpdate<CleanupUnusedContentTagsJob>(
+        "website-cleanup-unused-content-tags", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
 }
 
 app.Run();

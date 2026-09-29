@@ -45,5 +45,14 @@ public interface IContentItemRepository
     // RoutePrefix changes and every item's FullPath in that language must be recomputed (Görev 4).
     Task<IReadOnlyList<ContentItem>> GetRootItemsByContentTypeIdAsync(Guid contentTypeId, CancellationToken cancellationToken = default);
 
+    // ADR-024 §4.1 (Faz 1b Görev 3): every item with at least one translation whose TagIds references
+    // tagId - loaded as full aggregates so DeleteTag/MergeTagInto can update them through
+    // ContentItem.SetTranslationTags (one aggregate root mutates and persists itself, not a raw
+    // JSON-column rewrite).
+    Task<IReadOnlyList<ContentItem>> GetByTagIdAsync(Guid tagId, CancellationToken cancellationToken = default);
+
+    // ADR-024 §4.1 (Faz 1b Görev 3): DeleteContentCategoryCommandHandler's "içerik atanmışsa 409" guard.
+    Task<int> CountByCategoryIdAsync(Guid categoryId, CancellationToken cancellationToken = default);
+
     void Add(ContentItem contentItem);
 }

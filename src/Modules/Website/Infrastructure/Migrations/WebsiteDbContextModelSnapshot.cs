@@ -22,10 +22,56 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.ContentCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ContentTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentTypeId");
+
+                    b.ToTable("ContentCategories", (string)null);
+                });
+
             modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.ContentItem", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
+
+                    b.PrimitiveCollection<string>("CategoryIds")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("CategoryIds");
 
                     b.Property<Guid>("ContentTypeId")
                         .HasColumnType("uniqueidentifier");
@@ -84,6 +130,47 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                     b.HasIndex("ContentTypeId");
 
                     b.ToTable("ContentItems", (string)null);
+                });
+
+            modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.ContentTag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("LanguageCode")
+                        .IsRequired()
+                        .HasMaxLength(35)
+                        .HasColumnType("nvarchar(35)")
+                        .HasColumnName("LanguageCode");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LanguageCode", "Slug")
+                        .IsUnique();
+
+                    b.ToTable("ContentTags", (string)null);
                 });
 
             modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.ContentType", b =>
@@ -868,6 +955,105 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                     b.ToTable("Videos", (string)null);
                 });
 
+            modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.ContentCategory", b =>
+                {
+                    b.OwnsMany("GenclikMerkezi.Modules.Website.Domain.ContentCategoryTranslation", "Translations", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<Guid>("ContentCategoryId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("LanguageCode")
+                                .IsRequired()
+                                .HasMaxLength(35)
+                                .HasColumnType("nvarchar(35)")
+                                .HasColumnName("LanguageCode");
+
+                            b1.Property<string>("Name")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)");
+
+                            b1.Property<string>("Slug")
+                                .IsRequired()
+                                .HasMaxLength(200)
+                                .HasColumnType("nvarchar(200)");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("ContentCategoryId", "LanguageCode")
+                                .IsUnique();
+
+                            b1.ToTable("ContentCategoryTranslations", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("ContentCategoryId");
+
+                            b1.OwnsOne("GenclikMerkezi.Modules.Website.Domain.SeoMetadata", "Seo", b2 =>
+                                {
+                                    b2.Property<Guid>("ContentCategoryTranslationId")
+                                        .HasColumnType("uniqueidentifier");
+
+                                    b2.Property<string>("CanonicalUrl")
+                                        .HasMaxLength(2048)
+                                        .HasColumnType("nvarchar(2048)")
+                                        .HasColumnName("SeoCanonicalUrl");
+
+                                    b2.Property<string>("MetaDescription")
+                                        .IsRequired()
+                                        .HasMaxLength(160)
+                                        .HasColumnType("nvarchar(160)")
+                                        .HasColumnName("SeoMetaDescription");
+
+                                    b2.Property<string>("MetaKeywords")
+                                        .IsRequired()
+                                        .HasMaxLength(255)
+                                        .HasColumnType("nvarchar(255)")
+                                        .HasColumnName("SeoMetaKeywords");
+
+                                    b2.Property<string>("MetaTitle")
+                                        .IsRequired()
+                                        .HasMaxLength(70)
+                                        .HasColumnType("nvarchar(70)")
+                                        .HasColumnName("SeoMetaTitle");
+
+                                    b2.Property<bool>("NoIndex")
+                                        .HasColumnType("bit")
+                                        .HasColumnName("SeoNoIndex");
+
+                                    b2.Property<string>("OgDescription")
+                                        .IsRequired()
+                                        .HasMaxLength(200)
+                                        .HasColumnType("nvarchar(200)")
+                                        .HasColumnName("SeoOgDescription");
+
+                                    b2.Property<Guid?>("OgImageMediaId")
+                                        .HasColumnType("uniqueidentifier")
+                                        .HasColumnName("SeoOgImageMediaId");
+
+                                    b2.Property<string>("OgTitle")
+                                        .IsRequired()
+                                        .HasMaxLength(95)
+                                        .HasColumnType("nvarchar(95)")
+                                        .HasColumnName("SeoOgTitle");
+
+                                    b2.HasKey("ContentCategoryTranslationId");
+
+                                    b2.ToTable("ContentCategoryTranslations", (string)null);
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("ContentCategoryTranslationId");
+                                });
+
+                            b1.Navigation("Seo")
+                                .IsRequired();
+                        });
+
+                    b.Navigation("Translations");
+                });
+
             modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.ContentItem", b =>
                 {
                     b.OwnsMany("GenclikMerkezi.Modules.Website.Domain.ContentItemTranslation", "Translations", b1 =>
@@ -902,6 +1088,11 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                                 .IsRequired()
                                 .HasMaxLength(500)
                                 .HasColumnType("nvarchar(500)");
+
+                            b1.PrimitiveCollection<string>("TagIds")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)")
+                                .HasColumnName("TagIds");
 
                             b1.Property<string>("Title")
                                 .IsRequired()

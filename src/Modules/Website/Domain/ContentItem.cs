@@ -13,7 +13,12 @@ namespace GenclikMerkezi.Modules.Website.Domain;
 // path math), the same separation ContentType already uses for its own cross-aggregate invariants.
 public sealed class ContentItem : AggregateRoot
 {
+    // ADR-024 §4.1 (Faz 1b Görev 3): categories are language-independent (assigned to the item
+    // itself), unlike tags (assigned per-translation, see ContentItemTranslation.TagIds).
+    public const int MaxCategories = 10;
+
     private readonly List<ContentItemTranslation> _translations = [];
+    private readonly List<Guid> _categoryIds = [];
 
     public Guid ContentTypeId { get; private set; }
 
@@ -34,6 +39,8 @@ public sealed class ContentItem : AggregateRoot
     public Guid? DetailImageMediaId { get; private set; }
 
     public IReadOnlyList<ContentItemTranslation> Translations => _translations.AsReadOnly();
+
+    public IReadOnlyList<Guid> CategoryIds => _categoryIds.AsReadOnly();
 
     public byte[] RowVersion { get; private set; } = Guid.NewGuid().ToByteArray();
 
@@ -131,6 +138,47 @@ public sealed class ContentItem : AggregateRoot
         IsFeatured = isFeatured;
         CoverImageMediaId = coverImageMediaId;
         DetailImageMediaId = detailImageMediaId;
+        Touch(updatedByUserId, updatedAtUtc);
+
+        return Result.Success();
+    }
+
+    // Whole-list replace (ADR-024 Faz 1b "Koleksiyon güncelleme şekli"), not add/remove - the caller
+    // (Application layer) has already verified every id belongs to a category of this item's own
+    // ContentType (ContentCategory has no such check itself - see ContentCategory's own remarks).
+    public Result SetCategories(IReadOnlyList<Guid> categoryIds, Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        var distinct = categoryIds.Distinct().ToList();
+        if (distinct.Count > MaxCategories)
+        {
+            return Result.Failure(Error.Validation(
+                "ContentItem.TooManyCategories", $"At most {MaxCategories} categories can be assigned."));
+        }
+
+        _categoryIds.Clear();
+        _categoryIds.AddRange(distinct);
+        Touch(updatedByUserId, updatedAtUtc);
+
+        return Result.Success();
+    }
+
+    // Tags are per-translation (ADR-024 §4.1) - the caller has already resolved each tag name to an
+    // existing or newly created ContentTag id (find-or-create is an Application-layer concern; this
+    // aggregate only ever deals in already-resolved ids).
+    public Result SetTranslationTags(LanguageCode languageCode, IReadOnlyList<Guid> tagIds, Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        var translation = _translations.FirstOrDefault(t => t.LanguageCode == languageCode);
+        if (translation is null)
+        {
+            return Result.Failure(Error.NotFound("ContentItem.TranslationNotFound", $"No translation exists for language '{languageCode}'."));
+        }
+
+        var result = translation.SetTags(tagIds);
+        if (result.IsFailure)
+        {
+            return result;
+        }
+
         Touch(updatedByUserId, updatedAtUtc);
 
         return Result.Success();

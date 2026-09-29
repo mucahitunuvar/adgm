@@ -300,6 +300,90 @@ public class ContentItemTests
         Assert.NotEqual(originalRowVersion, item.RowVersion);
     }
 
+    [Fact]
+    public void SetCategories_WithValidIds_ReplacesWholeList()
+    {
+        var item = CreateItem().Value;
+        var categoryId1 = Guid.NewGuid();
+        var categoryId2 = Guid.NewGuid();
+
+        var result = item.SetCategories([categoryId1, categoryId2], UserId, Now);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal([categoryId1, categoryId2], item.CategoryIds);
+    }
+
+    [Fact]
+    public void SetCategories_DeduplicatesIds()
+    {
+        var item = CreateItem().Value;
+        var categoryId = Guid.NewGuid();
+
+        var result = item.SetCategories([categoryId, categoryId], UserId, Now);
+
+        Assert.True(result.IsSuccess);
+        Assert.Single(item.CategoryIds);
+    }
+
+    [Fact]
+    public void SetCategories_ExceedingMax_Fails()
+    {
+        var item = CreateItem().Value;
+        var tooMany = Enumerable.Range(0, ContentItem.MaxCategories + 1).Select(_ => Guid.NewGuid()).ToList();
+
+        var result = item.SetCategories(tooMany, UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItem.TooManyCategories", result.Error.Code);
+    }
+
+    [Fact]
+    public void SetCategories_CalledAgain_ReplacesRatherThanAppends()
+    {
+        var item = CreateItem().Value;
+        item.SetCategories([Guid.NewGuid()], UserId, Now);
+        var newCategoryId = Guid.NewGuid();
+
+        item.SetCategories([newCategoryId], UserId, Now);
+
+        Assert.Equal([newCategoryId], item.CategoryIds);
+    }
+
+    [Fact]
+    public void SetTranslationTags_WithValidIds_ReplacesWholeList()
+    {
+        var item = CreateItem().Value;
+        var tagId = Guid.NewGuid();
+
+        var result = item.SetTranslationTags(Tr, [tagId], UserId, Now);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal([tagId], item.Translations[0].TagIds);
+    }
+
+    [Fact]
+    public void SetTranslationTags_ExceedingMax_Fails()
+    {
+        var item = CreateItem().Value;
+        var tooMany = Enumerable.Range(0, ContentItemTranslation.MaxTags + 1).Select(_ => Guid.NewGuid()).ToList();
+
+        var result = item.SetTranslationTags(Tr, tooMany, UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItemTranslation.TooManyTags", result.Error.Code);
+    }
+
+    [Fact]
+    public void SetTranslationTags_ForMissingLanguage_Fails()
+    {
+        var item = CreateItem().Value;
+
+        var result = item.SetTranslationTags(En, [Guid.NewGuid()], UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItem.TranslationNotFound", result.Error.Code);
+    }
+
     private static void MoveTo(ContentItem item, ContentItemStatus status)
     {
         switch (status)

@@ -50,12 +50,15 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IRedirectRepository, RedirectRepository>();
         services.AddScoped<INotFoundLogRepository, NotFoundLogRepository>();
         services.AddScoped<IVideoRepository, VideoRepository>();
+        services.AddScoped<IContentCategoryRepository, ContentCategoryRepository>();
+        services.AddScoped<IContentTagRepository, ContentTagRepository>();
         services.AddScoped<ContentPathCascadeService>();
         services.AddScoped<RouteResolutionService>();
         // CleanupStaleNotFoundLogsJob only takes singleton-safe dependencies (IServiceScopeFactory), so
         // it is registered Transient here and resolved by Program.cs's RecurringJob.AddOrUpdate<T>() -
         // the same pattern Support's CloseOverdueSupportTicketsJob already uses.
         services.AddTransient<CleanupStaleNotFoundLogsJob>();
+        services.AddTransient<CleanupUnusedContentTagsJob>();
         services.AddSingleton<IImageProcessor, SkiaSharpImageProcessor>();
         services.AddScoped<IMediaUsageChecker, CompositeMediaUsageChecker>();
         services.AddScoped<IMediaUsageProvider, SiteSettingsMediaUsageProvider>();

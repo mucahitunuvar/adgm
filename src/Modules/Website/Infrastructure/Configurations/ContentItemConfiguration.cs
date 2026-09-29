@@ -24,6 +24,12 @@ public sealed class ContentItemConfiguration : IEntityTypeConfiguration<ContentI
         builder.Property(ci => ci.CoverImageMediaId);
         builder.Property(ci => ci.DetailImageMediaId);
 
+        // ADR-024 §4.1 (Faz 1b Görev 3): a primitive collection (EF Core 8+), stored as a JSON array
+        // column - categories are assigned as a small (<= 10), language-independent set, not a
+        // relation queried on its own, so a dedicated join table would be more machinery than the
+        // access pattern needs.
+        builder.PrimitiveCollection(ci => ci.CategoryIds).HasColumnName("CategoryIds");
+
         builder.Property(ci => ci.RowVersion).IsConcurrencyToken();
 
         builder.Property(ci => ci.CreatedByUserId).IsRequired();
@@ -56,6 +62,10 @@ public sealed class ContentItemConfiguration : IEntityTypeConfiguration<ContentI
 
             translation.Property(t => t.Summary).HasMaxLength(ContentItemTranslation.MaxSummaryLength).IsRequired();
             translation.Property(t => t.Body).IsRequired();
+
+            // Same primitive-collection choice as ContentItem.CategoryIds, per-translation here since
+            // tags are per-language (ADR-024 §4.1).
+            translation.PrimitiveCollection(t => t.TagIds).HasColumnName("TagIds");
 
             translation.OwnsOne(t => t.Seo, seo =>
             {

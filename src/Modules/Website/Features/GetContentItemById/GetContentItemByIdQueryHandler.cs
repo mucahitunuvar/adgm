@@ -26,14 +26,15 @@ public sealed class GetContentItemByIdQueryHandler(
                 t.LanguageCode.Value, t.Title, t.Slug, t.FullPath, t.Summary, t.Body,
                 new ContentItemSeoResponse(
                     t.Seo.MetaTitle, t.Seo.MetaDescription, t.Seo.MetaKeywords, t.Seo.OgTitle, t.Seo.OgDescription,
-                    t.Seo.OgImageMediaId, t.Seo.CanonicalUrl, t.Seo.NoIndex)))
+                    t.Seo.OgImageMediaId, t.Seo.CanonicalUrl, t.Seo.NoIndex),
+                t.TagIds))
             .ToList();
 
         var response = new ContentItemDetailResponse(
             contentItem.Id, contentItem.ContentTypeId, contentItem.ParentId, contentItem.Status.ToString(),
             contentItem.PublishAtUtc, contentItem.UnpublishAtUtc, contentItem.SortOrder, contentItem.IsFeatured,
             contentItem.CoverImageMediaId, coverImageUrl, contentItem.DetailImageMediaId, detailImageUrl,
-            contentItem.IsVisible(DateTime.UtcNow), contentItem.RowVersion, translations);
+            contentItem.IsVisible(DateTime.UtcNow), contentItem.RowVersion, contentItem.CategoryIds, translations);
 
         return Result.Success(response);
     }

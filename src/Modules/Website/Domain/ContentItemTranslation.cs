@@ -17,6 +17,12 @@ public sealed class ContentItemTranslation : Entity
     public const int MaxTitleLength = 200;
     public const int MaxSummaryLength = 500;
 
+    // ADR-024 §4.1 (Faz 1b Görev 3): tags are per-language (assigned here, not on ContentItem itself -
+    // unlike categories, see ContentItem.CategoryIds).
+    public const int MaxTags = 20;
+
+    private readonly List<Guid> _tagIds = [];
+
     public LanguageCode LanguageCode { get; private set; } = null!;
 
     public string Title { get; private set; } = string.Empty;
@@ -30,6 +36,8 @@ public sealed class ContentItemTranslation : Entity
     public string Body { get; private set; } = string.Empty;
 
     public SeoMetadata Seo { get; private set; } = SeoMetadata.CreateEmpty();
+
+    public IReadOnlyList<Guid> TagIds => _tagIds.AsReadOnly();
 
     private ContentItemTranslation(
         Guid id, LanguageCode languageCode, string title, string slug, string fullPath, string summary, string body, SeoMetadata seo)
@@ -105,6 +113,23 @@ public sealed class ContentItemTranslation : Entity
         Summary = summaryResult.Value;
         Body = (body ?? string.Empty).Trim();
         Seo = seo;
+
+        return Result.Success();
+    }
+
+    // Whole-list replace (ADR-024 Faz 1b "Koleksiyon güncelleme şekli") - the caller has already
+    // resolved each tag name to an id (find-or-create, an Application-layer concern).
+    internal Result SetTags(IReadOnlyList<Guid> tagIds)
+    {
+        var distinct = tagIds.Distinct().ToList();
+        if (distinct.Count > MaxTags)
+        {
+            return Result.Failure(Error.Validation(
+                "ContentItemTranslation.TooManyTags", $"At most {MaxTags} tags can be assigned."));
+        }
+
+        _tagIds.Clear();
+        _tagIds.AddRange(distinct);
 
         return Result.Success();
     }

@@ -108,5 +108,13 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
             .Where(ci => ci.ContentTypeId == contentTypeId && ci.ParentId == null)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<ContentItem>> GetByTagIdAsync(Guid tagId, CancellationToken cancellationToken = default) =>
+        await dbContext.ContentItems
+            .Where(ci => ci.Translations.Any(t => t.TagIds.Contains(tagId)))
+            .ToListAsync(cancellationToken);
+
+    public Task<int> CountByCategoryIdAsync(Guid categoryId, CancellationToken cancellationToken = default) =>
+        dbContext.ContentItems.CountAsync(ci => ci.CategoryIds.Contains(categoryId), cancellationToken);
+
     public void Add(ContentItem contentItem) => dbContext.ContentItems.Add(contentItem);
 }

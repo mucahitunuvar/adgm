@@ -15,4 +15,5 @@ public sealed record ContentItemDetailResponse(
     string? DetailImageUrl,
     bool IsVisible,
     byte[] RowVersion,
+    IReadOnlyList<Guid> CategoryIds,
     IReadOnlyList<ContentItemTranslationResponse> Translations);
