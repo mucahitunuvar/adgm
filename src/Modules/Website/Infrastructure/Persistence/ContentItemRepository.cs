@@ -94,7 +94,9 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
             .Where(ci =>
                 ci.CoverImageMediaId == mediaAssetId
                 || ci.DetailImageMediaId == mediaAssetId
-                || ci.Translations.Any(t => t.Seo.OgImageMediaId == mediaAssetId))
+                || ci.Translations.Any(t => t.Seo.OgImageMediaId == mediaAssetId)
+                || ci.GalleryItems.Any(g => g.MediaAssetId == mediaAssetId)
+                || ci.Attachments.Any(a => a.MediaAssetId == mediaAssetId))
             .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<ContentItem>> GetChildrenAsync(Guid parentId, CancellationToken cancellationToken = default) =>
@@ -115,6 +117,9 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
 
     public Task<int> CountByCategoryIdAsync(Guid categoryId, CancellationToken cancellationToken = default) =>
         dbContext.ContentItems.CountAsync(ci => ci.CategoryIds.Contains(categoryId), cancellationToken);
+
+    public async Task<IReadOnlyList<ContentItem>> GetByVideoIdAsync(Guid videoId, CancellationToken cancellationToken = default) =>
+        await dbContext.ContentItems.Where(ci => ci.VideoIds.Contains(videoId)).ToListAsync(cancellationToken);
 
     public void Add(ContentItem contentItem) => dbContext.ContentItems.Add(contentItem);
 }

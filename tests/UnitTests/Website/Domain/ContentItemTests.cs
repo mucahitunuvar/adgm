@@ -384,6 +384,140 @@ public class ContentItemTests
         Assert.Equal("ContentItem.TranslationNotFound", result.Error.Code);
     }
 
+    [Fact]
+    public void SetGallery_WithValidItems_ReplacesWholeList()
+    {
+        var item = CreateItem().Value;
+        var galleryItem = ContentItemGalleryItem.Create(Guid.NewGuid(), 0, []);
+
+        var result = item.SetGallery([galleryItem], UserId, Now);
+
+        Assert.True(result.IsSuccess);
+        Assert.Single(item.GalleryItems);
+    }
+
+    [Fact]
+    public void SetGallery_ExceedingMax_Fails()
+    {
+        var item = CreateItem().Value;
+        var tooMany = Enumerable.Range(0, ContentItem.MaxGalleryItems + 1)
+            .Select(i => ContentItemGalleryItem.Create(Guid.NewGuid(), i, []))
+            .ToList();
+
+        var result = item.SetGallery(tooMany, UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItem.TooManyGalleryItems", result.Error.Code);
+    }
+
+    [Fact]
+    public void SetGallery_WithDuplicateMediaAsset_Fails()
+    {
+        var item = CreateItem().Value;
+        var mediaAssetId = Guid.NewGuid();
+        var items = new List<ContentItemGalleryItem>
+        {
+            ContentItemGalleryItem.Create(mediaAssetId, 0, []),
+            ContentItemGalleryItem.Create(mediaAssetId, 1, []),
+        };
+
+        var result = item.SetGallery(items, UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItem.DuplicateGalleryMediaAsset", result.Error.Code);
+    }
+
+    [Fact]
+    public void SetGallery_CalledAgain_ReplacesRatherThanAppends()
+    {
+        var item = CreateItem().Value;
+        item.SetGallery([ContentItemGalleryItem.Create(Guid.NewGuid(), 0, [])], UserId, Now);
+        var newItem = ContentItemGalleryItem.Create(Guid.NewGuid(), 0, []);
+
+        item.SetGallery([newItem], UserId, Now);
+
+        Assert.Equal([newItem.MediaAssetId], item.GalleryItems.Select(g => g.MediaAssetId));
+    }
+
+    [Fact]
+    public void SetVideos_WithValidIds_ReplacesWholeList()
+    {
+        var item = CreateItem().Value;
+        var videoId = Guid.NewGuid();
+
+        var result = item.SetVideos([videoId], UserId, Now);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal([videoId], item.VideoIds);
+    }
+
+    [Fact]
+    public void SetVideos_ExceedingMax_Fails()
+    {
+        var item = CreateItem().Value;
+        var tooMany = Enumerable.Range(0, ContentItem.MaxVideos + 1).Select(_ => Guid.NewGuid()).ToList();
+
+        var result = item.SetVideos(tooMany, UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItem.TooManyVideos", result.Error.Code);
+    }
+
+    [Fact]
+    public void SetVideos_WithDuplicateId_Fails()
+    {
+        var item = CreateItem().Value;
+        var videoId = Guid.NewGuid();
+
+        var result = item.SetVideos([videoId, videoId], UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItem.DuplicateVideo", result.Error.Code);
+    }
+
+    [Fact]
+    public void SetAttachments_WithValidItems_ReplacesWholeList()
+    {
+        var item = CreateItem().Value;
+        var attachment = ContentItemAttachment.Create(Guid.NewGuid(), 0, []);
+
+        var result = item.SetAttachments([attachment], UserId, Now);
+
+        Assert.True(result.IsSuccess);
+        Assert.Single(item.Attachments);
+    }
+
+    [Fact]
+    public void SetAttachments_ExceedingMax_Fails()
+    {
+        var item = CreateItem().Value;
+        var tooMany = Enumerable.Range(0, ContentItem.MaxAttachments + 1)
+            .Select(i => ContentItemAttachment.Create(Guid.NewGuid(), i, []))
+            .ToList();
+
+        var result = item.SetAttachments(tooMany, UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItem.TooManyAttachments", result.Error.Code);
+    }
+
+    [Fact]
+    public void SetAttachments_WithDuplicateMediaAsset_Fails()
+    {
+        var item = CreateItem().Value;
+        var mediaAssetId = Guid.NewGuid();
+        var items = new List<ContentItemAttachment>
+        {
+            ContentItemAttachment.Create(mediaAssetId, 0, []),
+            ContentItemAttachment.Create(mediaAssetId, 1, []),
+        };
+
+        var result = item.SetAttachments(items, UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItem.DuplicateAttachmentMediaAsset", result.Error.Code);
+    }
+
     private static void MoveTo(ContentItem item, ContentItemStatus status)
     {
         switch (status)

@@ -16,4 +16,7 @@ public sealed record ContentItemDetailResponse(
     bool IsVisible,
     byte[] RowVersion,
     IReadOnlyList<Guid> CategoryIds,
+    IReadOnlyList<ContentItemGalleryItemResponse> GalleryItems,
+    IReadOnlyList<Guid> VideoIds,
+    IReadOnlyList<ContentItemAttachmentResponse> Attachments,
     IReadOnlyList<ContentItemTranslationResponse> Translations);

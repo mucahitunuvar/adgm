@@ -17,8 +17,18 @@ public sealed class ContentItem : AggregateRoot
     // itself), unlike tags (assigned per-translation, see ContentItemTranslation.TagIds).
     public const int MaxCategories = 10;
 
+    // ADR-024 §4.1 (Faz 1b Görev 4): gallery/videos/attachments are all language-independent
+    // relations (assigned to the item itself, like categories) - only their per-language display
+    // overrides (gallery alt text/caption, attachment display name) are per-translation.
+    public const int MaxGalleryItems = 100;
+    public const int MaxVideos = 20;
+    public const int MaxAttachments = 30;
+
     private readonly List<ContentItemTranslation> _translations = [];
     private readonly List<Guid> _categoryIds = [];
+    private readonly List<ContentItemGalleryItem> _galleryItems = [];
+    private readonly List<Guid> _videoIds = [];
+    private readonly List<ContentItemAttachment> _attachments = [];
 
     public Guid ContentTypeId { get; private set; }
 
@@ -41,6 +51,12 @@ public sealed class ContentItem : AggregateRoot
     public IReadOnlyList<ContentItemTranslation> Translations => _translations.AsReadOnly();
 
     public IReadOnlyList<Guid> CategoryIds => _categoryIds.AsReadOnly();
+
+    public IReadOnlyList<ContentItemGalleryItem> GalleryItems => _galleryItems.AsReadOnly();
+
+    public IReadOnlyList<Guid> VideoIds => _videoIds.AsReadOnly();
+
+    public IReadOnlyList<ContentItemAttachment> Attachments => _attachments.AsReadOnly();
 
     public byte[] RowVersion { get; private set; } = Guid.NewGuid().ToByteArray();
 
@@ -157,6 +173,77 @@ public sealed class ContentItem : AggregateRoot
 
         _categoryIds.Clear();
         _categoryIds.AddRange(distinct);
+        Touch(updatedByUserId, updatedAtUtc);
+
+        return Result.Success();
+    }
+
+    // Whole-list replace (ADR-024 Faz 1b "Koleksiyon güncelleme şekli") - the caller (Application
+    // layer) has already verified every item's MediaAssetId exists and is Kind == Image
+    // (MediaImageReferenceGuard) and that this item's ContentType has SupportsGallery enabled.
+    public Result SetGallery(IReadOnlyList<ContentItemGalleryItem> items, Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        if (items.Count > MaxGalleryItems)
+        {
+            return Result.Failure(Error.Validation(
+                "ContentItem.TooManyGalleryItems", $"At most {MaxGalleryItems} gallery items can be assigned."));
+        }
+
+        if (items.GroupBy(i => i.MediaAssetId).Any(g => g.Count() > 1))
+        {
+            return Result.Failure(Error.Validation(
+                "ContentItem.DuplicateGalleryMediaAsset", "The same media asset cannot be added to the gallery twice."));
+        }
+
+        _galleryItems.Clear();
+        _galleryItems.AddRange(items);
+        Touch(updatedByUserId, updatedAtUtc);
+
+        return Result.Success();
+    }
+
+    // Whole-list replace, same shape as SetCategories - the caller has already verified every id is
+    // an existing Video and that this item's ContentType has SupportsVideos enabled.
+    public Result SetVideos(IReadOnlyList<Guid> videoIds, Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        if (videoIds.Count > MaxVideos)
+        {
+            return Result.Failure(Error.Validation(
+                "ContentItem.TooManyVideos", $"At most {MaxVideos} videos can be assigned."));
+        }
+
+        if (videoIds.Distinct().Count() != videoIds.Count)
+        {
+            return Result.Failure(Error.Validation(
+                "ContentItem.DuplicateVideo", "The same video cannot be added twice."));
+        }
+
+        _videoIds.Clear();
+        _videoIds.AddRange(videoIds);
+        Touch(updatedByUserId, updatedAtUtc);
+
+        return Result.Success();
+    }
+
+    // Whole-list replace, same shape as SetGallery - the caller has already verified every item's
+    // MediaAssetId exists and is Kind == Document (MediaDocumentReferenceGuard) and that this item's
+    // ContentType has SupportsAttachments enabled.
+    public Result SetAttachments(IReadOnlyList<ContentItemAttachment> items, Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        if (items.Count > MaxAttachments)
+        {
+            return Result.Failure(Error.Validation(
+                "ContentItem.TooManyAttachments", $"At most {MaxAttachments} attachments can be assigned."));
+        }
+
+        if (items.GroupBy(i => i.MediaAssetId).Any(g => g.Count() > 1))
+        {
+            return Result.Failure(Error.Validation(
+                "ContentItem.DuplicateAttachmentMediaAsset", "The same media asset cannot be attached twice."));
+        }
+
+        _attachments.Clear();
+        _attachments.AddRange(items);
         Touch(updatedByUserId, updatedAtUtc);
 
         return Result.Success();

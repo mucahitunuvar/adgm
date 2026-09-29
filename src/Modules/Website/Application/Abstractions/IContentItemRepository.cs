@@ -54,5 +54,9 @@ public interface IContentItemRepository
     // ADR-024 §4.1 (Faz 1b Görev 3): DeleteContentCategoryCommandHandler's "içerik atanmışsa 409" guard.
     Task<int> CountByCategoryIdAsync(Guid categoryId, CancellationToken cancellationToken = default);
 
+    // ADR-024 §5 (Faz 1b Görev 4): VideoUsageChecker's real implementation - every ContentItem whose
+    // VideoIds references videoId, used by DeleteVideoCommandHandler's "kullanımdaysa 409" guard.
+    Task<IReadOnlyList<ContentItem>> GetByVideoIdAsync(Guid videoId, CancellationToken cancellationToken = default);
+
     void Add(ContentItem contentItem);
 }

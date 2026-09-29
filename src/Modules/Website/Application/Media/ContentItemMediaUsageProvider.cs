@@ -38,6 +38,16 @@ public sealed class ContentItemMediaUsageProvider(IContentItemRepository content
             {
                 usages.Add(new MediaUsage("content-item", item.Id, $"İçerik - OG görseli: {title}", url));
             }
+
+            if (item.GalleryItems.Any(g => g.MediaAssetId == mediaAssetId))
+            {
+                usages.Add(new MediaUsage("content-item", item.Id, $"İçerik - Galeri: {title}", url));
+            }
+
+            if (item.Attachments.Any(a => a.MediaAssetId == mediaAssetId))
+            {
+                usages.Add(new MediaUsage("content-item", item.Id, $"İçerik - Ek: {title}", url));
+            }
         }
 
         return usages;

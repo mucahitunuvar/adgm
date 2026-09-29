@@ -30,11 +30,29 @@ public sealed class GetContentItemByIdQueryHandler(
                 t.TagIds))
             .ToList();
 
+        // OwnsMany child collections carry no guaranteed read-back order (unlike VideoIds' JSON
+        // array) - sorted here by the same SortOrder the whole-list PUT stored, so a round trip
+        // reflects the order the editor set (ADR-024 Faz 1b "Liste, istekteki sırayla saklanır").
+        var galleryItems = contentItem.GalleryItems
+            .OrderBy(g => g.SortOrder)
+            .Select(g => new ContentItemGalleryItemResponse(
+                g.MediaAssetId, g.SortOrder,
+                g.Translations.Select(t => new ContentItemGalleryItemTranslationResponse(t.LanguageCode.Value, t.AltTextOverride, t.CaptionOverride)).ToList()))
+            .ToList();
+
+        var attachments = contentItem.Attachments
+            .OrderBy(a => a.SortOrder)
+            .Select(a => new ContentItemAttachmentResponse(
+                a.MediaAssetId, a.SortOrder,
+                a.Translations.Select(t => new ContentItemAttachmentTranslationResponse(t.LanguageCode.Value, t.DisplayNameOverride)).ToList()))
+            .ToList();
+
         var response = new ContentItemDetailResponse(
             contentItem.Id, contentItem.ContentTypeId, contentItem.ParentId, contentItem.Status.ToString(),
             contentItem.PublishAtUtc, contentItem.UnpublishAtUtc, contentItem.SortOrder, contentItem.IsFeatured,
             contentItem.CoverImageMediaId, coverImageUrl, contentItem.DetailImageMediaId, detailImageUrl,
-            contentItem.IsVisible(DateTime.UtcNow), contentItem.RowVersion, contentItem.CategoryIds, translations);
+            contentItem.IsVisible(DateTime.UtcNow), contentItem.RowVersion, contentItem.CategoryIds, galleryItems,
+            contentItem.VideoIds, attachments, translations);
 
         return Result.Success(response);
     }

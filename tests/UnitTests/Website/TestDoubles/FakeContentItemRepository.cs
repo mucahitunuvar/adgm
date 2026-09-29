@@ -45,5 +45,8 @@ public sealed class FakeContentItemRepository : IContentItemRepository
     public Task<int> CountByCategoryIdAsync(Guid categoryId, CancellationToken cancellationToken = default) =>
         Task.FromResult(_contentItems.Count(c => c.CategoryIds.Contains(categoryId)));
 
+    public Task<IReadOnlyList<ContentItem>> GetByVideoIdAsync(Guid videoId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<ContentItem>>(_contentItems.Where(c => c.VideoIds.Contains(videoId)).ToList());
+
     public void Add(ContentItem contentItem) => _contentItems.Add(contentItem);
 }

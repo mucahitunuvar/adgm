@@ -30,6 +30,10 @@ public sealed class ContentItemConfiguration : IEntityTypeConfiguration<ContentI
         // access pattern needs.
         builder.PrimitiveCollection(ci => ci.CategoryIds).HasColumnName("CategoryIds");
 
+        // ADR-024 §4.1 (Faz 1b Görev 4): same primitive-collection choice as CategoryIds - order
+        // matters here (declared assignment order), which a JSON array naturally preserves.
+        builder.PrimitiveCollection(ci => ci.VideoIds).HasColumnName("VideoIds");
+
         builder.Property(ci => ci.RowVersion).IsConcurrencyToken();
 
         builder.Property(ci => ci.CreatedByUserId).IsRequired();
@@ -81,5 +85,70 @@ public sealed class ContentItemConfiguration : IEntityTypeConfiguration<ContentI
             });
         });
         builder.Navigation(ci => ci.Translations).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        // ADR-024 §4.1 (Faz 1b Görev 4): gallery items are a whole-list-replaced child collection,
+        // same "own table, FK to owner" shape as Translations - each item's per-language overrides
+        // are a further nested owned collection (EF Core supports owned collections nested at any
+        // depth, each level configured the same way as the level above it).
+        builder.OwnsMany(ci => ci.GalleryItems, item =>
+        {
+            item.ToTable("ContentItemGalleryItems");
+            item.WithOwner().HasForeignKey("ContentItemId");
+            item.HasKey(i => i.Id);
+            item.Property(i => i.Id).ValueGeneratedNever();
+            item.Property(i => i.MediaAssetId).IsRequired();
+            item.Property(i => i.SortOrder).IsRequired();
+
+            item.OwnsMany(i => i.Translations, translation =>
+            {
+                translation.ToTable("ContentItemGalleryItemTranslations");
+                translation.WithOwner().HasForeignKey("ContentItemGalleryItemId");
+                translation.HasKey(t => t.Id);
+                translation.Property(t => t.Id).ValueGeneratedNever();
+
+                translation.Property(t => t.LanguageCode)
+                    .HasConversion(code => code.Value, value => LanguageCode.Create(value).Value)
+                    .HasColumnName("LanguageCode")
+                    .HasMaxLength(35)
+                    .IsRequired();
+                translation.HasIndex("ContentItemGalleryItemId", nameof(ContentItemGalleryItemTranslation.LanguageCode)).IsUnique();
+
+                translation.Property(t => t.AltTextOverride).HasMaxLength(ContentItemGalleryItemTranslation.MaxAltTextLength);
+                translation.Property(t => t.CaptionOverride).HasMaxLength(ContentItemGalleryItemTranslation.MaxCaptionLength);
+            });
+            item.Navigation(i => i.Translations).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+        builder.Navigation(ci => ci.GalleryItems).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        // ADR-024 §4.1 (Faz 1b Görev 4): attachments mirror GalleryItems' shape exactly, with a
+        // single DisplayNameOverride instead of AltText/Caption.
+        builder.OwnsMany(ci => ci.Attachments, attachment =>
+        {
+            attachment.ToTable("ContentItemAttachments");
+            attachment.WithOwner().HasForeignKey("ContentItemId");
+            attachment.HasKey(a => a.Id);
+            attachment.Property(a => a.Id).ValueGeneratedNever();
+            attachment.Property(a => a.MediaAssetId).IsRequired();
+            attachment.Property(a => a.SortOrder).IsRequired();
+
+            attachment.OwnsMany(a => a.Translations, translation =>
+            {
+                translation.ToTable("ContentItemAttachmentTranslations");
+                translation.WithOwner().HasForeignKey("ContentItemAttachmentId");
+                translation.HasKey(t => t.Id);
+                translation.Property(t => t.Id).ValueGeneratedNever();
+
+                translation.Property(t => t.LanguageCode)
+                    .HasConversion(code => code.Value, value => LanguageCode.Create(value).Value)
+                    .HasColumnName("LanguageCode")
+                    .HasMaxLength(35)
+                    .IsRequired();
+                translation.HasIndex("ContentItemAttachmentId", nameof(ContentItemAttachmentTranslation.LanguageCode)).IsUnique();
+
+                translation.Property(t => t.DisplayNameOverride).HasMaxLength(ContentItemAttachmentTranslation.MaxDisplayNameLength);
+            });
+            attachment.Navigation(a => a.Translations).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+        builder.Navigation(ci => ci.Attachments).UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }
