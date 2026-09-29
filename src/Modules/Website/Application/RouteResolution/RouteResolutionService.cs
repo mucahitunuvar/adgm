@@ -33,7 +33,7 @@ public sealed class RouteResolutionService(
             // default language, since the request never actually reaches that (inactive) language.
             if (!matchedLanguage.IsActive)
             {
-                return RouteResolutionOutcome.NotFound(defaultLanguage.Code.Value);
+                return RouteResolutionOutcome.NotFound(defaultLanguage.Code.Value, normalizedPath);
             }
 
             if (matchedLanguage.IsDefault)
@@ -91,7 +91,7 @@ public sealed class RouteResolutionService(
             return redirectOutcome;
         }
 
-        return RouteResolutionOutcome.NotFound(languageCode);
+        return RouteResolutionOutcome.NotFound(languageCode, pathAfterLanguage);
     }
 
     private async Task<RouteResolutionOutcome?> TryResolveDetailAsync(

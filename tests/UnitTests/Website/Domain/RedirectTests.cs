@@ -38,6 +38,16 @@ public class RedirectTests
     }
 
     [Fact]
+    public void Create_WithMixedCaseAndSlashesInFromPath_NormalizesLikeRoutePathFormat()
+    {
+        var result = Redirect.Create(
+            Tr, "/Eski-Yol//Alt//", RedirectTargetKind.Path, null, "hedef-yol", RedirectStatusCode.MovedPermanently, UserId, Now);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("eski-yol/alt", result.Value.FromPath);
+    }
+
+    [Fact]
     public void Create_WithContentItemTargetAndNoId_Fails()
     {
         var result = Redirect.Create(

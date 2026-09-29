@@ -177,9 +177,12 @@ public sealed class Redirect : AggregateRoot
         return Result.Success(trimmed.Trim('/'));
     }
 
+    // Shares RoutePathFormat.Normalize with NotFoundLog.NormalizePath (fix: a single path
+    // normalization rule module-wide) - this also means FromPath is now lowercase/single-slash
+    // like every path the route resolver itself produces, not just slash-trimmed.
     private static Result<string> NormalizeFromPath(string? fromPath)
     {
-        var normalized = (fromPath ?? string.Empty).Trim('/');
+        var normalized = RoutePathFormat.Normalize(fromPath);
         return normalized.Length == 0
             ? Result.Failure<string>(Error.Validation("Redirect.FromPathRequired", "FromPath is required."))
             : Result.Success(normalized);

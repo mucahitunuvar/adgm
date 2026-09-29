@@ -29,11 +29,18 @@ public sealed record RouteResolutionOutcome
 
     public int? StatusCode { get; init; }
 
+    // Fix (post-Faz-1a review): the normalized, language-prefix-stripped path the resolver actually
+    // looked up (RoutePathFormat's internal shape - lowercase, no leading/trailing slash). Only
+    // NotFound sets it; ResolveRouteQueryHandler carries it into RouteResolutionResponse so the
+    // endpoint can log exactly this value instead of the raw request path, without it ever reaching
+    // the public JSON body.
+    public string? NotFoundLogPath { get; init; }
+
     public static RouteResolutionOutcome Home(string languageCode) =>
         new() { Kind = RouteResolutionKind.Home, LanguageCode = languageCode };
 
-    public static RouteResolutionOutcome NotFound(string languageCode) =>
-        new() { Kind = RouteResolutionKind.NotFound, LanguageCode = languageCode };
+    public static RouteResolutionOutcome NotFound(string languageCode, string notFoundLogPath) =>
+        new() { Kind = RouteResolutionKind.NotFound, LanguageCode = languageCode, NotFoundLogPath = notFoundLogPath };
 
     public static RouteResolutionOutcome Redirect(string location, int statusCode) =>
         new() { Kind = RouteResolutionKind.Redirect, Location = location, StatusCode = statusCode };

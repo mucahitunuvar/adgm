@@ -19,6 +19,15 @@ public class NotFoundLogTests
         Assert.Equal(Now, result.Value.LastSeenAtUtc);
     }
 
+    [Fact]
+    public void Create_WithMixedCaseAndSlashesInPath_NormalizesLikeRoutePathFormat()
+    {
+        var result = NotFoundLog.Create(Tr, "/Eski-Sayfa//Alt//", Now);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("eski-sayfa/alt", result.Value.Path);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]

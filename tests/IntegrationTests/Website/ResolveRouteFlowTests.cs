@@ -3,9 +3,11 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using GenclikMerkezi.IntegrationTests.Identity;
 using GenclikMerkezi.Modules.Identity.Features.Login;
+using GenclikMerkezi.Modules.Website.Features.ConvertNotFoundPathToRedirect;
 using GenclikMerkezi.Modules.Website.Features.CreateContentItem;
 using GenclikMerkezi.Modules.Website.Features.CreateContentType;
 using GenclikMerkezi.Modules.Website.Features.CreateRedirect;
+using GenclikMerkezi.Modules.Website.Features.CreateSiteLanguage;
 using GenclikMerkezi.Modules.Website.Features.DeactivateContentType;
 using GenclikMerkezi.Modules.Website.Features.GetContentItemById;
 using GenclikMerkezi.Modules.Website.Features.GetContentTypeById;
@@ -158,12 +160,12 @@ public class ResolveRouteFlowTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal("NotFound", result.Kind);
         Assert.Equal("tr", result.LanguageCode);
 
-        // RecordNotFoundPathCommand is sent with the raw "path" query value verbatim (leading slash
-        // and all) - it is not re-normalized before being logged (ADR-024 §15 only requires the
-        // resolution result itself to be canonical, not the NotFoundLog row).
+        // RecordNotFoundPathCommand is sent with the resolver's own normalized, language-stripped path
+        // (post-Faz-1a fix), not the raw "path" query value - no leading slash, and (for a non-default
+        // language) no language prefix either, matching Redirect.FromPath's shape exactly.
         var notFoundPathsResponse = await _client.SendAsync(Authorized(HttpMethod.Get, "/api/v1/admin/website/not-found-paths", accessToken));
         var notFoundPaths = await notFoundPathsResponse.Content.ReadFromJsonAsync<PagedResult<NotFoundLogResponse>>();
-        var logged = Assert.Single(notFoundPaths!.Items, i => i.Path == "/" + unknownPath);
+        var logged = Assert.Single(notFoundPaths!.Items, i => i.Path == unknownPath);
         Assert.Equal(1, logged.HitCount);
     }
 
@@ -178,8 +180,41 @@ public class ResolveRouteFlowTests : IClassFixture<CustomWebApplicationFactory>
 
         var notFoundPathsResponse = await _client.SendAsync(Authorized(HttpMethod.Get, "/api/v1/admin/website/not-found-paths", accessToken));
         var notFoundPaths = await notFoundPathsResponse.Content.ReadFromJsonAsync<PagedResult<NotFoundLogResponse>>();
-        var logged = Assert.Single(notFoundPaths!.Items, i => i.Path == "/" + unknownPath);
+        var logged = Assert.Single(notFoundPaths!.Items, i => i.Path == unknownPath);
         Assert.Equal(2, logged.HitCount);
+    }
+
+    [Fact]
+    public async Task Resolve_NotFoundUnderNonDefaultLanguage_LogsStrippedPath_AndConvertedRedirectResolvesSamePath()
+    {
+        var accessToken = await LoginAsAdminAsync();
+
+        var createLanguageResponse = await _client.SendAsync(Authorized(
+            HttpMethod.Post, "/api/v1/admin/website/languages", accessToken,
+            new CreateSiteLanguageRequest("xx", "Test Dili", 50)));
+        Assert.Equal(HttpStatusCode.Created, createLanguageResponse.StatusCode);
+
+        var unknownPath = $"bilinmeyen-{Guid.NewGuid():N}";
+        var initialResult = await ResolveAsync($"/xx/{unknownPath}");
+        Assert.Equal("NotFound", initialResult.Kind);
+        Assert.Equal("xx", initialResult.LanguageCode);
+
+        var notFoundPathsResponse = await _client.SendAsync(Authorized(HttpMethod.Get, "/api/v1/admin/website/not-found-paths", accessToken));
+        var notFoundPaths = await notFoundPathsResponse.Content.ReadFromJsonAsync<PagedResult<NotFoundLogResponse>>();
+        // The logged path is language-stripped ("bilinmeyen-...", not "xx/bilinmeyen-..."), exactly
+        // what TryResolveRedirectAsync looks up under language "xx" - otherwise the redirect created
+        // from it below would never match the next request for the same address.
+        var logged = Assert.Single(notFoundPaths!.Items, i => i.LanguageCode == "xx" && i.Path == unknownPath);
+
+        var convertResponse = await _client.SendAsync(Authorized(
+            HttpMethod.Post, $"/api/v1/admin/website/not-found-paths/{logged.Id}/convert-to-redirect", accessToken,
+            new ConvertNotFoundPathToRedirectRequest("Path", null, "haberler", "MovedPermanently")));
+        Assert.Equal(HttpStatusCode.OK, convertResponse.StatusCode);
+
+        var redirectedResult = await ResolveAsync($"/xx/{unknownPath}");
+
+        Assert.Equal("Redirect", redirectedResult.Kind);
+        Assert.Equal("/xx/haberler", redirectedResult.Location);
     }
 
     [Fact]

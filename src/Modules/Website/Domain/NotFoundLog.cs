@@ -48,9 +48,13 @@ public sealed class NotFoundLog : AggregateRoot
         LastSeenAtUtc = seenAtUtc;
     }
 
+    // Shares RoutePathFormat.Normalize with Redirect.NormalizeFromPath (fix: a single path
+    // normalization rule module-wide, instead of two diverging ones) - a NotFoundLog's Path is stored
+    // in exactly the shape Redirect.FromPath expects, so converting a log to a redirect (see
+    // ConvertNotFoundPathToRedirectCommandHandler) never needs its own re-normalization.
     private static Result<string> NormalizePath(string? path)
     {
-        var normalized = (path ?? string.Empty).Trim();
+        var normalized = RoutePathFormat.Normalize(path);
         if (normalized.Length == 0 || normalized.Length > MaxPathLength)
         {
             return Result.Failure<string>(Error.Validation(

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace GenclikMerkezi.Modules.Website.Features.ResolveRoute;
 
 // ADR-024 §15 (Faz 1a Görev 6): one flat shape for all five kinds - only the fields relevant to Kind
@@ -15,4 +17,7 @@ public sealed record RouteResolutionResponse(
     RouteResolutionSeoResponse? Seo,
     IReadOnlyList<RouteAlternateResponse>? Alternates,
     string? Location,
-    int? StatusCode);
+    int? StatusCode,
+    // [JsonIgnore]: endpoint-internal only - ResolveRouteEndpoint reads this to log the not-found path
+    // (post-Faz-1a fix) without it ever appearing in the public JSON response body.
+    [property: JsonIgnore] string? NotFoundLogPath = null);
