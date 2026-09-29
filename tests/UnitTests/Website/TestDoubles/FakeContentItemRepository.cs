@@ -48,5 +48,43 @@ public sealed class FakeContentItemRepository : IContentItemRepository
     public Task<IReadOnlyList<ContentItem>> GetByVideoIdAsync(Guid videoId, CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<ContentItem>>(_contentItems.Where(c => c.VideoIds.Contains(videoId)).ToList());
 
+    public Task<IReadOnlyList<RelatedContentCandidate>> GetVisibleRelatedCandidatesByIdsAsync(
+        IReadOnlyList<Guid> ids, LanguageCode languageCode, DateTime now, CancellationToken cancellationToken = default)
+    {
+        var results = _contentItems
+            .Where(c => ids.Contains(c.Id) && c.IsVisible(now))
+            .Select(c => (Item: c, Translation: c.Translations.FirstOrDefault(t => t.LanguageCode == languageCode)))
+            .Where(x => x.Translation is not null)
+            .Select(x => ToCandidate(x.Item, x.Translation!))
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<RelatedContentCandidate>>(results);
+    }
+
+    public Task<IReadOnlyList<RelatedContentCandidate>> SearchRelatedCandidatesAsync(
+        Guid contentTypeId, Guid excludeId, IReadOnlyList<Guid>? categoryIds, LanguageCode languageCode, DateTime now, int take,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _contentItems.Where(c => c.ContentTypeId == contentTypeId && c.Id != excludeId && c.IsVisible(now));
+        if (categoryIds is { Count: > 0 })
+        {
+            query = query.Where(c => c.CategoryIds.Any(categoryIds.Contains));
+        }
+
+        var results = query
+            .Select(c => (Item: c, Translation: c.Translations.FirstOrDefault(t => t.LanguageCode == languageCode)))
+            .Where(x => x.Translation is not null)
+            .OrderByDescending(x => x.Item.PublishAtUtc ?? x.Item.PublishedAtUtc)
+            .Take(take)
+            .Select(x => ToCandidate(x.Item, x.Translation!))
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<RelatedContentCandidate>>(results);
+    }
+
+    private static RelatedContentCandidate ToCandidate(ContentItem item, ContentItemTranslation translation) =>
+        new(item.Id, translation.Title, translation.Summary, translation.FullPath, item.CoverImageMediaId,
+            item.PublishAtUtc ?? item.PublishedAtUtc ?? DateTime.MinValue);
+
     public void Add(ContentItem contentItem) => _contentItems.Add(contentItem);
 }

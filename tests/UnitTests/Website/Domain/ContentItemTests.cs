@@ -518,6 +518,53 @@ public class ContentItemTests
         Assert.Equal("ContentItem.DuplicateAttachmentMediaAsset", result.Error.Code);
     }
 
+    [Fact]
+    public void SetRelatedContent_WithValidIds_ReplacesWholeList()
+    {
+        var item = CreateItem().Value;
+        var relatedId = Guid.NewGuid();
+
+        var result = item.SetRelatedContent([relatedId], UserId, Now);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal([relatedId], item.RelatedContentItemIds);
+    }
+
+    [Fact]
+    public void SetRelatedContent_ExceedingMax_Fails()
+    {
+        var item = CreateItem().Value;
+        var tooMany = Enumerable.Range(0, ContentItem.MaxRelatedContent + 1).Select(_ => Guid.NewGuid()).ToList();
+
+        var result = item.SetRelatedContent(tooMany, UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItem.TooManyRelatedContentItems", result.Error.Code);
+    }
+
+    [Fact]
+    public void SetRelatedContent_WithSelfReference_Fails()
+    {
+        var item = CreateItem().Value;
+
+        var result = item.SetRelatedContent([item.Id], UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItem.CannotRelateToItself", result.Error.Code);
+    }
+
+    [Fact]
+    public void SetRelatedContent_WithDuplicateId_Fails()
+    {
+        var item = CreateItem().Value;
+        var relatedId = Guid.NewGuid();
+
+        var result = item.SetRelatedContent([relatedId, relatedId], UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItem.DuplicateRelatedContentItem", result.Error.Code);
+    }
+
     private static void MoveTo(ContentItem item, ContentItemStatus status)
     {
         switch (status)

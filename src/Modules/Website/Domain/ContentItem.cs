@@ -24,11 +24,17 @@ public sealed class ContentItem : AggregateRoot
     public const int MaxVideos = 20;
     public const int MaxAttachments = 30;
 
+    // ADR-024 §4.1 (Faz 1b Görev 5): manually curated related content - the target may be of any
+    // ContentType ("hedef herhangi bir türden olabilir"), unlike categories/videos/attachments which
+    // are scoped to this item's own type's feature flags.
+    public const int MaxRelatedContent = 12;
+
     private readonly List<ContentItemTranslation> _translations = [];
     private readonly List<Guid> _categoryIds = [];
     private readonly List<ContentItemGalleryItem> _galleryItems = [];
     private readonly List<Guid> _videoIds = [];
     private readonly List<ContentItemAttachment> _attachments = [];
+    private readonly List<Guid> _relatedContentItemIds = [];
 
     public Guid ContentTypeId { get; private set; }
 
@@ -57,6 +63,8 @@ public sealed class ContentItem : AggregateRoot
     public IReadOnlyList<Guid> VideoIds => _videoIds.AsReadOnly();
 
     public IReadOnlyList<ContentItemAttachment> Attachments => _attachments.AsReadOnly();
+
+    public IReadOnlyList<Guid> RelatedContentItemIds => _relatedContentItemIds.AsReadOnly();
 
     public byte[] RowVersion { get; private set; } = Guid.NewGuid().ToByteArray();
 
@@ -244,6 +252,36 @@ public sealed class ContentItem : AggregateRoot
 
         _attachments.Clear();
         _attachments.AddRange(items);
+        Touch(updatedByUserId, updatedAtUtc);
+
+        return Result.Success();
+    }
+
+    // Whole-list replace - the caller has already verified every id exists as a ContentItem (any
+    // ContentType - "hedef herhangi bir türden olabilir") and that this item's ContentType has
+    // SupportsRelatedContent enabled.
+    public Result SetRelatedContent(IReadOnlyList<Guid> relatedContentItemIds, Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        if (relatedContentItemIds.Count > MaxRelatedContent)
+        {
+            return Result.Failure(Error.Validation(
+                "ContentItem.TooManyRelatedContentItems", $"At most {MaxRelatedContent} related content items can be assigned."));
+        }
+
+        if (relatedContentItemIds.Contains(Id))
+        {
+            return Result.Failure(Error.Validation(
+                "ContentItem.CannotRelateToItself", "A content item cannot be related to itself."));
+        }
+
+        if (relatedContentItemIds.Distinct().Count() != relatedContentItemIds.Count)
+        {
+            return Result.Failure(Error.Validation(
+                "ContentItem.DuplicateRelatedContentItem", "The same content item cannot be related twice."));
+        }
+
+        _relatedContentItemIds.Clear();
+        _relatedContentItemIds.AddRange(relatedContentItemIds);
         Touch(updatedByUserId, updatedAtUtc);
 
         return Result.Success();

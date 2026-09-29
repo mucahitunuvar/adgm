@@ -58,5 +58,20 @@ public interface IContentItemRepository
     // VideoIds references videoId, used by DeleteVideoCommandHandler's "kullanımdaysa 409" guard.
     Task<IReadOnlyList<ContentItem>> GetByVideoIdAsync(Guid videoId, CancellationToken cancellationToken = default);
 
+    // ADR-024 §4.1 (Faz 1b Görev 5): RelatedContentResolutionService's manual step - projects the
+    // requested language's display fields for visible, translated items among `ids`, in no
+    // particular order (the caller re-sorts to `ids`' own order, since RelatedContentItemIds' order
+    // is the manually curated display order).
+    Task<IReadOnlyList<RelatedContentCandidate>> GetVisibleRelatedCandidatesByIdsAsync(
+        IReadOnlyList<Guid> ids, LanguageCode languageCode, DateTime now, CancellationToken cancellationToken = default);
+
+    // ADR-024 §4.1 (Faz 1b Görev 5): RelatedContentResolutionService's automatic fallback steps -
+    // same ContentType, visible, translated, excludes contentItemId itself; when categoryIds is
+    // non-empty, further restricted to items sharing at least one category (step 2); null/empty
+    // applies no category filter (step 3). Newest effective publish date first, capped at `take`.
+    Task<IReadOnlyList<RelatedContentCandidate>> SearchRelatedCandidatesAsync(
+        Guid contentTypeId, Guid excludeId, IReadOnlyList<Guid>? categoryIds, LanguageCode languageCode, DateTime now, int take,
+        CancellationToken cancellationToken = default);
+
     void Add(ContentItem contentItem);
 }

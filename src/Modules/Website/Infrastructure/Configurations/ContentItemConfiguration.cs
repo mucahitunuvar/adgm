@@ -34,6 +34,10 @@ public sealed class ContentItemConfiguration : IEntityTypeConfiguration<ContentI
         // matters here (declared assignment order), which a JSON array naturally preserves.
         builder.PrimitiveCollection(ci => ci.VideoIds).HasColumnName("VideoIds");
 
+        // ADR-024 §4.1 (Faz 1b Görev 5): same primitive-collection choice as VideoIds - order matters
+        // (declared assignment order = manual display order), which a JSON array naturally preserves.
+        builder.PrimitiveCollection(ci => ci.RelatedContentItemIds).HasColumnName("RelatedContentItemIds");
+
         builder.Property(ci => ci.RowVersion).IsConcurrencyToken();
 
         builder.Property(ci => ci.CreatedByUserId).IsRequired();

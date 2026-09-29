@@ -53,6 +53,7 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IContentCategoryRepository, ContentCategoryRepository>();
         services.AddScoped<IContentTagRepository, ContentTagRepository>();
         services.AddScoped<ContentPathCascadeService>();
+        services.AddScoped<RelatedContentResolutionService>();
         services.AddScoped<RouteResolutionService>();
         // CleanupStaleNotFoundLogsJob only takes singleton-safe dependencies (IServiceScopeFactory), so
         // it is registered Transient here and resolved by Program.cs's RecurringJob.AddOrUpdate<T>() -

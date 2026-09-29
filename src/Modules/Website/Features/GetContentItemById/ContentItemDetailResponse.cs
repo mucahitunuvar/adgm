@@ -19,4 +19,5 @@ public sealed record ContentItemDetailResponse(
     IReadOnlyList<ContentItemGalleryItemResponse> GalleryItems,
     IReadOnlyList<Guid> VideoIds,
     IReadOnlyList<ContentItemAttachmentResponse> Attachments,
+    IReadOnlyList<Guid> RelatedContentItemIds,
     IReadOnlyList<ContentItemTranslationResponse> Translations);

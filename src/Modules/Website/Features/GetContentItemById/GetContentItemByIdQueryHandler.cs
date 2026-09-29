@@ -52,7 +52,7 @@ public sealed class GetContentItemByIdQueryHandler(
             contentItem.PublishAtUtc, contentItem.UnpublishAtUtc, contentItem.SortOrder, contentItem.IsFeatured,
             contentItem.CoverImageMediaId, coverImageUrl, contentItem.DetailImageMediaId, detailImageUrl,
             contentItem.IsVisible(DateTime.UtcNow), contentItem.RowVersion, contentItem.CategoryIds, galleryItems,
-            contentItem.VideoIds, attachments, translations);
+            contentItem.VideoIds, attachments, contentItem.RelatedContentItemIds, translations);
 
         return Result.Success(response);
     }

@@ -49,6 +49,7 @@ using GenclikMerkezi.Modules.Website.Features.SetContentItemAttachments;
 using GenclikMerkezi.Modules.Website.Features.SetContentItemCategories;
 using GenclikMerkezi.Modules.Website.Features.SetContentItemGallery;
 using GenclikMerkezi.Modules.Website.Features.SetContentItemParent;
+using GenclikMerkezi.Modules.Website.Features.SetContentItemRelatedContent;
 using GenclikMerkezi.Modules.Website.Features.SetContentItemTranslationTags;
 using GenclikMerkezi.Modules.Website.Features.SetContentItemVideos;
 using GenclikMerkezi.Modules.Website.Features.SetDefaultSiteLanguage;
@@ -169,6 +170,7 @@ public static class WebsiteModuleEndpointExtensions
         SetContentItemGalleryEndpoint.Map(app);
         SetContentItemVideosEndpoint.Map(app);
         SetContentItemAttachmentsEndpoint.Map(app);
+        SetContentItemRelatedContentEndpoint.Map(app);
 
         return app;
     }
