@@ -63,16 +63,32 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     private readonly string _careerDevelopmentDatabaseName = $"GenclikMerkezi.CareerDevelopment.Test.{Guid.NewGuid():N}";
 
     // ADR-012: Website has no CAP/outbox constraint, so (unlike every connection string above) it
-    // uses a real Sqlite in-memory database instead of LocalDB. A Sqlite ":memory:" database is
-    // destroyed the moment its connection closes, so one already-open connection is kept alive for
-    // the factory's lifetime and handed to every WebsiteDbContext instance (see ConfigureWebHost).
-    private readonly SqliteConnection _websiteSqliteConnection = CreateOpenWebsiteSqliteConnection();
-
-    private static SqliteConnection CreateOpenWebsiteSqliteConnection()
+    // uses a real Sqlite in-memory database instead of LocalDB. A named, Cache=Shared in-memory
+    // database is destroyed once every connection to it closes, so one already-open "keep-alive"
+    // connection is held for the factory's lifetime.
+    //
+    // Fix (post-Faz-1a review): every WebsiteDbContext instance opens its OWN connection against
+    // this connection string (see ConfigureWebHost's UseSqlite call) instead of literally reusing
+    // this one connection object. EF Core's Sqlite provider re-registers custom SQL functions on
+    // whichever connection a new SqliteRelationalConnection wraps, and doing that concurrently on
+    // the SAME connection object - as every request's DbContext did under the old "hand this one
+    // open SqliteConnection to every DbContext" design - threw "SQLite Error 5: database is locked"
+    // as soon as a test (the not-found-log race test) first issued genuinely-concurrent requests.
+    // Cache=Shared keeps independent connections seeing the same in-memory data, coordinated by
+    // SQLite's normal cross-connection locking instead of one shared native handle.
+    private readonly string _websiteSqliteConnectionString = new SqliteConnectionStringBuilder
     {
-        var connection = new SqliteConnection("DataSource=:memory:");
-        connection.Open();
-        return connection;
+        DataSource = $"WebsiteTest{Guid.NewGuid():N}",
+        Mode = SqliteOpenMode.Memory,
+        Cache = SqliteCacheMode.Shared,
+    }.ToString();
+
+    private readonly SqliteConnection _websiteSqliteConnection;
+
+    public CustomWebApplicationFactory()
+    {
+        _websiteSqliteConnection = new SqliteConnection(_websiteSqliteConnectionString);
+        _websiteSqliteConnection.Open();
     }
 
     private string IdentityConnectionString =>
@@ -164,7 +180,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 .BuildServiceProvider();
 
             services.AddDbContext<WebsiteDbContext>(options => options
-                .UseSqlite(_websiteSqliteConnection)
+                .UseSqlite(_websiteSqliteConnectionString)
                 .UseInternalServiceProvider(websiteSqliteServiceProvider));
 
             using var scope = services.BuildServiceProvider().CreateScope();

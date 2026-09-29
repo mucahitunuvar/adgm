@@ -28,4 +28,6 @@ public sealed class NotFoundLogRepository(WebsiteDbContext dbContext) : INotFoun
     public void Add(NotFoundLog notFoundLog) => dbContext.NotFoundLogs.Add(notFoundLog);
 
     public void Remove(NotFoundLog notFoundLog) => dbContext.NotFoundLogs.Remove(notFoundLog);
+
+    public void DetachFailedAdd(NotFoundLog notFoundLog) => dbContext.Entry(notFoundLog).State = EntityState.Detached;
 }

@@ -21,7 +21,7 @@ public class CleanupStaleNotFoundLogsJobTests
         services.AddSingleton<INotFoundLogRepository>(_notFoundLogRepository);
         var serviceProvider = services.BuildServiceProvider();
 
-        return new CleanupStaleNotFoundLogsJob(serviceProvider.GetRequiredService<IServiceScopeFactory>());
+        return new CleanupStaleNotFoundLogsJob(serviceProvider.GetRequiredService<IServiceScopeFactory>(), TimeProvider.System);
     }
 
     private NotFoundLog Seed(string path, DateTime lastSeenAtUtc, int hitCount)

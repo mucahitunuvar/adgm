@@ -22,4 +22,9 @@ public interface INotFoundLogRepository
     void Add(NotFoundLog notFoundLog);
 
     void Remove(NotFoundLog notFoundLog);
+
+    // Detaches a NotFoundLog whose insert failed a unique-index race (a concurrent request logged the
+    // same (LanguageCode, Path) first) from the change tracker, so a later SaveChangesAsync on the same
+    // UnitOfWork does not try to insert it again (fix: race-safe not-found logging).
+    void DetachFailedAdd(NotFoundLog notFoundLog);
 }

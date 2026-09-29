@@ -169,6 +169,26 @@ public class ResolveRouteFlowTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(1, logged.HitCount);
     }
 
+    // Fix (post-Faz-1a review): RecordNotFoundPathCommandHandler must never let a (LanguageCode, Path)
+    // unique-index race turn into a failed visitor response - ResolveAsync itself already asserts 200
+    // OK, so any request that hit an unhandled failure here would fail this test on that assertion
+    // alone. A single logged row (not ten) confirms the race was resolved as hit-bumps, not duplicate
+    // inserts or lost writes that fell through to a second distinct row.
+    [Fact]
+    public async Task Resolve_TenParallelRequestsForSameUnknownPath_AllSucceed_AndOnlyOneLogRowIsCreated()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var unknownPath = $"yaris-{Guid.NewGuid():N}";
+
+        var results = await Task.WhenAll(Enumerable.Range(0, 10).Select(_ => ResolveAsync("/" + unknownPath)));
+
+        Assert.All(results, r => Assert.Equal("NotFound", r.Kind));
+
+        var notFoundPathsResponse = await _client.SendAsync(Authorized(HttpMethod.Get, "/api/v1/admin/website/not-found-paths", accessToken));
+        var notFoundPaths = await notFoundPathsResponse.Content.ReadFromJsonAsync<PagedResult<NotFoundLogResponse>>();
+        Assert.Single(notFoundPaths!.Items, i => i.Path == unknownPath);
+    }
+
     [Fact]
     public async Task Resolve_SameUnknownPathTwice_BumpsHitCountInsteadOfDuplicating()
     {

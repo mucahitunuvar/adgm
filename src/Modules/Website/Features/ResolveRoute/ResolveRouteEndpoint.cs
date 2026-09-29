@@ -29,15 +29,31 @@ internal static class ResolveRouteEndpoint
                     // 404 under a non-default language (e.g. "/en/xyz") is stored with the language
                     // prefix still attached, and a Redirect later created from it never matches what
                     // the resolver looks up ("xyz" under language "en") on the next request.
+                    //
+                    // Fix (post-Faz-1a review): the whole send is wrapped in try/catch (everything but
+                    // cancellation) - a recording failure, however it happens, must never turn into a
+                    // 500 for the visitor. RecordNotFoundPathCommandHandler already retries its own
+                    // (LanguageCode, Path) race once and swallows the rest, so reaching this catch means
+                    // something outside that handler's control went wrong (e.g. the database itself
+                    // being unreachable) - still just logged, never surfaced.
                     if (result.IsSuccess && result.Value.Kind == nameof(RouteResolutionKind.NotFound))
                     {
-                        var recordResult = await sender.Send(
-                            new RecordNotFoundPathCommand(result.Value.LanguageCode, result.Value.NotFoundLogPath), cancellationToken);
-                        if (recordResult.IsFailure)
+                        try
+                        {
+                            var recordResult = await sender.Send(
+                                new RecordNotFoundPathCommand(result.Value.LanguageCode, result.Value.NotFoundLogPath), cancellationToken);
+                            if (recordResult.IsFailure)
+                            {
+                                logger.LogWarning(
+                                    "Failed to record not-found path '{Path}' for language '{LanguageCode}': {ErrorCode}",
+                                    path, result.Value.LanguageCode, recordResult.Error.Code);
+                            }
+                        }
+                        catch (Exception ex) when (ex is not OperationCanceledException)
                         {
                             logger.LogWarning(
-                                "Failed to record not-found path '{Path}' for language '{LanguageCode}': {ErrorCode}",
-                                path, result.Value.LanguageCode, recordResult.Error.Code);
+                                ex, "Unexpected error while recording not-found path '{Path}' for language '{LanguageCode}'.",
+                                path, result.Value.LanguageCode);
                         }
                     }
 

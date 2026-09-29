@@ -40,4 +40,6 @@ public sealed class FakeNotFoundLogRepository : INotFoundLogRepository
     public void Add(NotFoundLog notFoundLog) => _notFoundLogs.Add(notFoundLog);
 
     public void Remove(NotFoundLog notFoundLog) => _notFoundLogs.Remove(notFoundLog);
+
+    public void DetachFailedAdd(NotFoundLog notFoundLog) => _notFoundLogs.Remove(notFoundLog);
 }
