@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 using GenclikMerkezi.Admin;
+using GenclikMerkezi.Api;
 using GenclikMerkezi.Api.Hangfire;
 using GenclikMerkezi.Api.Website;
 using GenclikMerkezi.BuildingBlocks.Infrastructure.DependencyInjection;
@@ -87,6 +88,18 @@ builder.Services.AddWebsiteModule(builder.Configuration);
 // §50.1).
 builder.Services.AddScoped<IWebsiteEmailSender, NotificationWebsiteEmailSender>();
 
+// ADR-024 Faz 1b Görev 1: canlı ortam (Turhost/IIS) reverse proxy'siz çalıştığı için varsayılan
+// olarak kapalı - Enabled=true iken KnownProxies/KnownNetworks'ten en az biri dolu olmalı, aksi halde
+// herkes kendi IP'sini X-Forwarded-For ile sahteleyip rate limiting'i atlatabilir. .ValidateOnStart()
+// bu kontrolü uygulama başlarken (ilk isteği beklemeden) çalıştırır.
+builder.Services.AddOptions<ReverseProxySettings>()
+    .Bind(builder.Configuration.GetSection(ReverseProxySettings.SectionName))
+    .Validate(
+        settings => !settings.Enabled || settings.KnownProxies.Count > 0 || settings.KnownNetworks.Count > 0,
+        "ReverseProxy:Enabled is true but both KnownProxies and KnownNetworks are empty - configure at " +
+        "least one trusted proxy address or network, or X-Forwarded-For could be spoofed by any client.")
+    .ValidateOnStart();
+
 var isTestingEnvironment = builder.Environment.IsEnvironment("Testing");
 
 // Part 0 (Hangfire altyapısı): tüm modüllerin yeniden kullanabileceği genel bir background-job
@@ -126,8 +139,14 @@ builder.Services.AddMessaging<IdentityDbContext>(builder.Configuration, builder.
 
 // The "Testing" environment (integration tests) shares a single in-process host across many
 // requests from multiple test cases; the production limits would cause unrelated test failures.
+// PublicReadPermitLimit is additionally configuration-driven (rather than a plain ternary like the
+// other two) so a dedicated test can override just this one policy's limit to something small and
+// deterministic (e.g. to prove X-Forwarded-For partitioning) without touching the shared "Testing"
+// default every other integration test relies on.
 var credentialEndpointPermitLimit = isTestingEnvironment ? 1000 : 5;
 var authenticatedEndpointPermitLimit = isTestingEnvironment ? 1000 : 60;
+var publicReadEndpointPermitLimit = builder.Configuration.GetValue(
+    "RateLimiting:PublicReadPermitLimit", isTestingEnvironment ? 1000 : 300);
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -160,6 +179,19 @@ builder.Services.AddRateLimiter(options =>
             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
             QueueLimit = 0,
         }));
+
+    // Anonymous public GET reads (public site, route resolution, and Faz 1b's new public listing/
+    // detail/video endpoints): partitioned per client IP, a higher limit than "authenticated" since a
+    // single page view fans out into several of these calls (ADR-024 Faz 1b Görev 1).
+    options.AddPolicy("public-read", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: GetClientIpAddress(httpContext),
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = publicReadEndpointPermitLimit,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0,
+        }));
 });
 
 static string GetClientIpAddress(HttpContext httpContext) =>
@@ -171,6 +203,17 @@ static string GetAuthenticatedPartitionKey(HttpContext httpContext) =>
 var app = builder.Build();
 
 app.UseExceptionHandler();
+
+// ADR-024 Faz 1b Görev 1: kapalıyken (varsayılan) hiç uygulanmaz - RemoteIpAddress zaten gerçek
+// ziyaretçi IP'sidir. Açıksa yalnızca burada listelenen adreslerden/ağlardan (canlıda: proxy'nin
+// kendisi) gelen X-Forwarded-For kabul edilir; middleware zaten bunun dışındaki bağlantılardan gelen
+// header'ı yok sayar. En erken middleware olarak çalışması gerekir - rate limiting dahil, IP'ye bakan
+// her şeyden önce.
+var reverseProxySettings = app.Services.GetRequiredService<IOptions<ReverseProxySettings>>().Value;
+if (reverseProxySettings.Enabled)
+{
+    app.UseForwardedHeaders(ReverseProxyForwardedHeadersOptionsFactory.Create(reverseProxySettings));
+}
 
 if (app.Environment.IsDevelopment())
 {

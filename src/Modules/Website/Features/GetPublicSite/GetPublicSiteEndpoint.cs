@@ -18,6 +18,7 @@ internal static class GetPublicSiteEndpoint
                     return result.ToOkOrProblem();
                 })
             .AllowAnonymous()
+            .RequireRateLimiting("public-read")
             .WithName("GetPublicSite")
             .WithTags("Website");
     }
