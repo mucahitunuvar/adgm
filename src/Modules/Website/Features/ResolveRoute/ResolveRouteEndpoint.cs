@@ -1,6 +1,7 @@
 using GenclikMerkezi.BuildingBlocks.Infrastructure.Http;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.Modules.Website.Features.RecordNotFoundPath;
+using GenclikMerkezi.Modules.Website.Features.RecordRedirectHit;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -54,6 +55,29 @@ internal static class ResolveRouteEndpoint
                             logger.LogWarning(
                                 ex, "Unexpected error while recording not-found path '{Path}' for language '{LanguageCode}'.",
                                 path, result.Value.LanguageCode);
+                        }
+                    }
+
+                    // Fix (post-Faz-1a review): Redirect.RecordHit existed but nothing ever called it,
+                    // so HitCount stayed 0 forever. Mirrors the NotFound logging above exactly - a
+                    // separate follow-up command (never the read-only resolution query itself), sent
+                    // only when RedirectId is set (a real Redirect row, not a canonical-URL redirect
+                    // synthesized from language-prefix-stripping or case/slash normalization), and
+                    // wrapped the same way so a failure here can never affect the visitor's response.
+                    if (result.IsSuccess && result.Value.Kind == nameof(RouteResolutionKind.Redirect) && result.Value.RedirectId is { } redirectId)
+                    {
+                        try
+                        {
+                            var recordResult = await sender.Send(new RecordRedirectHitCommand(redirectId), cancellationToken);
+                            if (recordResult.IsFailure)
+                            {
+                                logger.LogWarning(
+                                    "Failed to record a hit for redirect '{RedirectId}': {ErrorCode}", redirectId, recordResult.Error.Code);
+                            }
+                        }
+                        catch (Exception ex) when (ex is not OperationCanceledException)
+                        {
+                            logger.LogWarning(ex, "Unexpected error while recording a hit for redirect '{RedirectId}'.", redirectId);
                         }
                     }
 

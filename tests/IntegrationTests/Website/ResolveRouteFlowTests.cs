@@ -13,6 +13,7 @@ using GenclikMerkezi.Modules.Website.Features.GetContentItemById;
 using GenclikMerkezi.Modules.Website.Features.GetContentTypeById;
 using GenclikMerkezi.Modules.Website.Features.GetContentTypes;
 using GenclikMerkezi.Modules.Website.Features.GetNotFoundPaths;
+using GenclikMerkezi.Modules.Website.Features.GetRedirects;
 using GenclikMerkezi.Modules.Website.Features.PublishContentItem;
 using GenclikMerkezi.Modules.Website.Features.ResolveRoute;
 using GenclikMerkezi.Modules.Website.Features.UpdateContentItemTranslation;
@@ -354,6 +355,30 @@ public class ResolveRouteFlowTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal("Redirect", result.Kind);
         Assert.Equal("/" + newFullPath, result.Location);
         Assert.Equal(301, result.StatusCode);
+    }
+
+    // Fix (post-Faz-1a review): Redirect.RecordHit existed but was never called from anywhere -
+    // HitCount stayed 0 forever. ResolveRouteEndpoint now sends a separate RecordRedirectHitCommand
+    // (mirroring the not-found-log pattern) whenever resolution lands on a real Redirect row.
+    [Fact]
+    public async Task Resolve_RedirectHitTwice_AccumulatesHitCountAndSetsLastHitAtUtc()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var fromPath = $"sayac-{Guid.NewGuid():N}";
+        await _client.SendAsync(Authorized(
+            HttpMethod.Post, "/api/v1/admin/website/redirects", accessToken,
+            new CreateRedirectRequest("tr", fromPath, "Path", null, "haberler", "MovedPermanently")));
+
+        await ResolveAsync("/" + fromPath);
+        await ResolveAsync("/" + fromPath);
+
+        var redirectsResponse = await _client.SendAsync(
+            Authorized(HttpMethod.Get, $"/api/v1/admin/website/redirects?search={fromPath}", accessToken));
+        var redirects = await redirectsResponse.Content.ReadFromJsonAsync<PagedResult<RedirectResponse>>();
+        var redirect = Assert.Single(redirects!.Items, r => r.FromPath == fromPath);
+
+        Assert.Equal(2, redirect.HitCount);
+        Assert.NotNull(redirect.LastHitAtUtc);
     }
 
     [Fact]

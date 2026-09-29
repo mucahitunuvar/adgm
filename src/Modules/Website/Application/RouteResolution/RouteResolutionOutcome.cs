@@ -36,14 +36,21 @@ public sealed record RouteResolutionOutcome
     // the public JSON body.
     public string? NotFoundLogPath { get; init; }
 
+    // Fix (post-Faz-1a review): the Redirect row this outcome came from, when there is one - only the
+    // two TryResolveRedirectAsync branches (an actual Redirect match) set it; the canonical-URL
+    // redirects (default-language-prefix stripping, case/slash normalization) have no backing row and
+    // leave it null. ResolveRouteEndpoint uses it to send RecordRedirectHitCommand only when there is
+    // a real Redirect.HitCount to bump.
+    public Guid? RedirectId { get; init; }
+
     public static RouteResolutionOutcome Home(string languageCode) =>
         new() { Kind = RouteResolutionKind.Home, LanguageCode = languageCode };
 
     public static RouteResolutionOutcome NotFound(string languageCode, string notFoundLogPath) =>
         new() { Kind = RouteResolutionKind.NotFound, LanguageCode = languageCode, NotFoundLogPath = notFoundLogPath };
 
-    public static RouteResolutionOutcome Redirect(string location, int statusCode) =>
-        new() { Kind = RouteResolutionKind.Redirect, Location = location, StatusCode = statusCode };
+    public static RouteResolutionOutcome Redirect(string location, int statusCode, Guid? redirectId = null) =>
+        new() { Kind = RouteResolutionKind.Redirect, Location = location, StatusCode = statusCode, RedirectId = redirectId };
 
     public static RouteResolutionOutcome Detail(
         string languageCode, Guid contentItemId, string contentTypeKey, string detailTemplate, IReadOnlyList<RouteAlternate> alternates) =>

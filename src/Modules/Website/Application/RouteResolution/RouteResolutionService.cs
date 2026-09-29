@@ -161,7 +161,7 @@ public sealed class RouteResolutionService(
             var location = Uri.TryCreate(targetPath, UriKind.Absolute, out _)
                 ? targetPath
                 : RoutePathFormat.BuildPublicPath(languageCode, defaultLanguageCode, targetPath);
-            return RouteResolutionOutcome.Redirect(location, (int)redirect.StatusCode);
+            return RouteResolutionOutcome.Redirect(location, (int)redirect.StatusCode, redirect.Id);
         }
 
         var targetItem = await contentItemRepository.GetByIdAsync(redirect.TargetContentItemId!.Value, cancellationToken);
@@ -174,7 +174,7 @@ public sealed class RouteResolutionService(
         }
 
         var targetLocation = RoutePathFormat.BuildPublicPath(languageCode, defaultLanguageCode, targetTranslation.FullPath);
-        return RouteResolutionOutcome.Redirect(targetLocation, (int)redirect.StatusCode);
+        return RouteResolutionOutcome.Redirect(targetLocation, (int)redirect.StatusCode, redirect.Id);
     }
 
     // item plus every ancestor, closest-parent-first order (item itself is not included) - fetched

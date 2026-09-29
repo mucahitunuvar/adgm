@@ -20,7 +20,8 @@ public sealed class ResolveRouteQueryHandler(RouteResolutionService routeResolut
 
         var response = new RouteResolutionResponse(
             outcome.Kind.ToString(), outcome.LanguageCode, outcome.ContentItemId, outcome.ContentTypeKey, outcome.ListTemplate,
-            outcome.DetailTemplate, outcome.Name, seo, alternates, outcome.Location, outcome.StatusCode, outcome.NotFoundLogPath);
+            outcome.DetailTemplate, outcome.Name, seo, alternates, outcome.Location, outcome.StatusCode, outcome.NotFoundLogPath,
+            outcome.RedirectId);
 
         return Result.Success(response);
     }
