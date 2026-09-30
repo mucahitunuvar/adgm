@@ -797,6 +797,80 @@ Brute-force saldırılarını azaltmak için login ve password reset işlemlerin
 
 Rate limit değerleri configuration üzerinden yönetilebilir olmalıdır.
 
+## 23.1 Public-Read Rate Limiting ve Reverse Proxy Güveni
+
+Website modülünün anonim public okuma endpoint'leri (`GET /api/v1/public/contents`,
+`/api/v1/public/contents/{id}`, `/api/v1/public/routes/resolve`, `/api/v1/public/videos`,
+`/api/v1/public/preview/{token}` vb.) `public-read` rate limiting policy'sine tabidir: istemci
+IP'sine göre partitioned, sabit pencereli (1 dakika) bir limiter (`Program.cs`). Limit
+(`RateLimiting:PublicReadPermitLimit`) configuration üzerinden yönetilir; bir sayfa görüntülemesinin
+birden çok public endpoint'e fan-out olabileceği göz önünde bulundurularak `authenticated`
+policy'sinden daha yüksek tutulur.
+
+Bu partitioning'in doğru çalışması, `HttpContext.Connection.RemoteIpAddress`'in **gerçek** ziyaretçi
+IP'si olmasına bağlıdır. `ReverseProxySettings` (`ReverseProxy:Enabled`, `SectionName = "ReverseProxy"`)
+bu varsayımı korur:
+
+* **Varsayılan: `Enabled = false`.** Bu projenin canlı ortamı (Turhost/IIS) reverse proxy olmadan
+  doğrudan çalışır — `RemoteIpAddress` zaten gerçek ziyaretçi IP'sidir, `X-Forwarded-For` header'ı
+  hiç işlenmez/güvenilmez.
+* **Yalnızca bir proxy/CDN katmanı (ör. Cloudflare) eklenirse `Enabled = true` yapılır** ve
+  `KnownProxies`/`KnownNetworks` **yalnızca o sağlayıcının kendi IP adresi/ağ aralıklarıyla**
+  doldurulur (`ReverseProxyForwardedHeadersOptionsFactory`). `Enabled = true` iken bu liste boş
+  bırakılamaz — Program.cs başlangıçta bunu doğrular.
+* Bu iki alan birlikte açık olmadan `X-Forwarded-For` güvenilmemelidir: aksi halde herhangi bir
+  istemci bu header'ı göndererek kendi IP'sini sahteleyip hem `public-read` rate limitini hem de
+  IP bazlı diğer kontrolleri (ör. audit kayıtlarındaki IP alanı) atlatabilir.
+* `UseForwardedHeaders` middleware'i, açıkken, rate limiting dahil IP'ye bakan her şeyden **önce**
+  çalışacak şekilde en erken middleware olarak eklenir.
+
+## 23.2 Önizleme Linkleri
+
+Website modülünün içerik önizleme linkleri (`POST .../preview-links` ile üretilir, `GET
+/api/v1/public/preview/{token}` ile açılır — ADR-024 §4.5) yayınlanmamış (Draft/Unpublished/Archived)
+içeriği anonim bir bağlantıyla gösterdiği için şu üç kural birlikte uygulanır:
+
+* **İmzalı ve süreli:** Token, ASP.NET Core Data Protection ile (`ITimeLimitedDataProtector`)
+  imzalanır ve süresi dolar; süresi dolmuş veya üzerinde oynanmış (tampered) bir token, hangi
+  sebeple geçersiz olduğu ayırt edilmeden aynı `NotFound` yanıtını döner — anonim çağırana hangi
+  başarısızlık türü olduğunu sızdırmamak için.
+* **`noindex`:** Yanıt `X-Robots-Tag: noindex, nofollow` header'ıyla döner; arama motorları
+  taslak içeriği indekslemez.
+* **`no-store`:** Yanıt `Cache-Control: no-store` header'ıyla döner; ne tarayıcı ne de aradaki
+  bir proxy önbelleğe almaz — link süresi dolduktan sonra bile eski bir önbellek kopyasından
+  içerik sızmaz.
+
+Data Protection anahtarları `App_Data/dataprotection-keys` altında dosya sistemine kalıcı olarak
+yazılır (varsayılan bellek-içi/registry saklama, bir IIS application pool recycle'ında tüm açık
+önizleme linklerini geçersiz kılardı). Bu klasör:
+
+* **web sitesi genel köküne (`webuploads`/public static-file root'una) açılmamalıdır** — yalnızca
+  bu klasörün kendisi, arka planda dosya sisteminde durur; hiçbir HTTP yolu bu dizine işaret etmez.
+* **yedeklenmelidir** — kaybolması, o ana kadar üretilmiş tüm önizleme linklerini (süreleri
+  dolmadan) geçersiz kılar; bu veri kaybı bir güvenlik olayı değildir ama operasyonel bir
+  sürekliliği bozar.
+* Anahtarların kendisi `Secrets Management` (§19) kapsamında değerlendirilmelidir: bu klasöre
+  yetkisiz dosya sistemi erişimi, geçmişte üretilmiş tüm önizleme token'larının taklit
+  edilebilmesi anlamına gelir.
+
+## 23.3 YouTube Küçük Resmi ve Ziyaretçi IP'si
+
+Website video kütüphanesi, kapak görseli tanımlanmamış bir video için YouTube'un kendi küçük resim
+adresini (`https://i.ytimg.com/vi/{videoId}/hqdefault.jpg`) döner (bkz. ADR-024 §5 — oynatma zaten
+`youtube-nocookie.com` üzerinden yapılır, ancak küçük resim ayrı, doğrudan `i.ytimg.com`'a giden bir
+istektir). Bu istek tarayıcıdan doğrudan Google'ın altyapısına gider ve ziyaretçinin IP adresini
+(ve User-Agent'ını) Google'a iletir — `youtube-nocookie` embed'in kendisinin azalttığı türden bir
+veri paylaşımı, küçük resim için geçerli değildir.
+
+* Bu bilgi, KVKK madde 9 (yurt dışına veri aktarımı) kapsamında **aydınlatma metnine eklenmelidir**
+  (bkz. §12.2 — Turnstile için uygulanan yaklaşımla aynı ilke).
+* Frontend, bu küçük resmi **çerez/üçüncü taraf içerik tercihine bağlı olarak** yüklemelidir —
+  `SiteSettings` script yönetimindeki `Marketing`/`Analytics` onay mekanizmasına benzer şekilde,
+  ziyaretçi onayı olmadan otomatik yüklenmemelidir.
+* **Kapak görseli (cover image) tanımlı olan videolarda küçük resim hiçbir zaman kullanılmamalıdır**
+  — bu durumda zaten kendi medya kütüphanesinden servis edilen bir görsel vardır, YouTube'a hiç
+  istek atılmasına gerek yoktur.
+
 ---
 
 # 24. CORS
