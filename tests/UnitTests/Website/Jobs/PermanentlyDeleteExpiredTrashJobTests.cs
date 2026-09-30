@@ -27,6 +27,7 @@ public class PermanentlyDeleteExpiredTrashJobTests
 
     private readonly FakeContentItemRepository _contentItemRepository = new();
     private readonly FakeRedirectRepository _redirectRepository = new();
+    private readonly FakeMenuRepository _menuRepository = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
 
     private PermanentlyDeleteExpiredTrashJob CreateJob(DateTime now)
@@ -34,6 +35,7 @@ public class PermanentlyDeleteExpiredTrashJobTests
         var services = new ServiceCollection();
         services.AddSingleton<IContentItemRepository>(_contentItemRepository);
         services.AddSingleton<IRedirectRepository>(_redirectRepository);
+        services.AddSingleton<IMenuRepository>(_menuRepository);
         services.AddSingleton<ContentItemPermanentDeletionService>();
         services.AddSingleton<ILogger<ContentItemPermanentDeletionService>>(NullLogger<ContentItemPermanentDeletionService>.Instance);
         services.AddSingleton<ICacheService>(

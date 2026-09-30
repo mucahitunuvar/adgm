@@ -64,7 +64,7 @@ public sealed class PublishContentItemCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
+        WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 
         return Result.Success();
     }

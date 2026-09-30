@@ -713,6 +713,67 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                     b.ToTable("MediaAssets", (string)null);
                 });
 
+            modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.Menu", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Location")
+                        .IsUnique();
+
+                    b.ToTable("Menus", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("5c91bc6e-f0c8-9cf7-7fd1-54bbdba4411f"),
+                            CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedByUserId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            Location = "Header",
+                            RowVersion = new byte[] { 232, 0, 72, 230, 28, 215, 49, 106, 14, 9, 190, 126, 165, 84, 3, 161 }
+                        },
+                        new
+                        {
+                            Id = new Guid("923791e2-28cd-b330-f215-a83d3e87621f"),
+                            CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedByUserId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            Location = "Utility",
+                            RowVersion = new byte[] { 217, 33, 176, 168, 225, 235, 219, 127, 223, 228, 240, 52, 13, 230, 87, 92 }
+                        },
+                        new
+                        {
+                            Id = new Guid("c404fec9-1c2e-1259-d822-a1cad7dbca3a"),
+                            CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedByUserId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            Location = "Footer",
+                            RowVersion = new byte[] { 5, 172, 104, 38, 29, 23, 83, 111, 50, 68, 126, 151, 19, 104, 25, 45 }
+                        });
+                });
+
             modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.NotFoundLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2058,6 +2119,117 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                     b.Navigation("Translations");
 
                     b.Navigation("Variants");
+                });
+
+            modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.Menu", b =>
+                {
+                    b.OwnsMany("GenclikMerkezi.Modules.Website.Domain.MenuItem", "Items", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("IconKey")
+                                .HasMaxLength(50)
+                                .HasColumnType("nvarchar(50)");
+
+                            b1.Property<bool>("IsActive")
+                                .HasColumnType("bit");
+
+                            b1.Property<Guid>("MenuId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<bool>("OpenInNewTab")
+                                .HasColumnType("bit");
+
+                            b1.Property<Guid?>("ParentId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<int>("SortOrder")
+                                .HasColumnType("int");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("MenuId", "ParentId");
+
+                            b1.ToTable("MenuItems", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("MenuId");
+
+                            b1.OwnsOne("GenclikMerkezi.Modules.Website.Domain.LinkTarget", "LinkTarget", b2 =>
+                                {
+                                    b2.Property<Guid>("MenuItemId")
+                                        .HasColumnType("uniqueidentifier");
+
+                                    b2.Property<Guid?>("ContentItemId")
+                                        .HasColumnType("uniqueidentifier")
+                                        .HasColumnName("LinkContentItemId");
+
+                                    b2.Property<Guid?>("ContentTypeId")
+                                        .HasColumnType("uniqueidentifier")
+                                        .HasColumnName("LinkContentTypeId");
+
+                                    b2.Property<string>("ExternalUrl")
+                                        .HasMaxLength(1000)
+                                        .HasColumnType("nvarchar(1000)")
+                                        .HasColumnName("LinkExternalUrl");
+
+                                    b2.Property<string>("InternalPath")
+                                        .HasMaxLength(500)
+                                        .HasColumnType("nvarchar(500)")
+                                        .HasColumnName("LinkInternalPath");
+
+                                    b2.Property<string>("Kind")
+                                        .IsRequired()
+                                        .HasMaxLength(30)
+                                        .HasColumnType("nvarchar(30)")
+                                        .HasColumnName("LinkKind");
+
+                                    b2.HasKey("MenuItemId");
+
+                                    b2.ToTable("MenuItems", (string)null);
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("MenuItemId");
+                                });
+
+                            b1.OwnsMany("GenclikMerkezi.Modules.Website.Domain.MenuItemTranslation", "Translations", b2 =>
+                                {
+                                    b2.Property<Guid>("Id")
+                                        .HasColumnType("uniqueidentifier");
+
+                                    b2.Property<string>("Label")
+                                        .IsRequired()
+                                        .HasMaxLength(100)
+                                        .HasColumnType("nvarchar(100)");
+
+                                    b2.Property<string>("LanguageCode")
+                                        .IsRequired()
+                                        .HasMaxLength(35)
+                                        .HasColumnType("nvarchar(35)")
+                                        .HasColumnName("LanguageCode");
+
+                                    b2.Property<Guid>("MenuItemId")
+                                        .HasColumnType("uniqueidentifier");
+
+                                    b2.HasKey("Id");
+
+                                    b2.HasIndex("MenuItemId", "LanguageCode")
+                                        .IsUnique();
+
+                                    b2.ToTable("MenuItemTranslations", (string)null);
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("MenuItemId");
+                                });
+
+                            b1.Navigation("LinkTarget")
+                                .IsRequired();
+
+                            b1.Navigation("Translations");
+                        });
+
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.SiteSettings", b =>

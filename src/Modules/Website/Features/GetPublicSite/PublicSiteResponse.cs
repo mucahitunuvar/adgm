@@ -25,4 +25,5 @@ public sealed record PublicSiteResponse(
     bool DonationPageEnabled,
     bool MaintenanceModeEnabled,
     string MaintenanceMessage,
-    string TurnstileSiteKey);
+    string TurnstileSiteKey,
+    PublicMenusResponse Menus);

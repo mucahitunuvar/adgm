@@ -39,6 +39,8 @@ using GenclikMerkezi.Modules.Website.Features.GetContentTypes;
 using GenclikMerkezi.Modules.Website.Features.GetMediaAssetById;
 using GenclikMerkezi.Modules.Website.Features.GetMediaAssetFolders;
 using GenclikMerkezi.Modules.Website.Features.GetMediaAssets;
+using GenclikMerkezi.Modules.Website.Features.GetMenuByLocation;
+using GenclikMerkezi.Modules.Website.Features.GetMenus;
 using GenclikMerkezi.Modules.Website.Features.GetNotFoundPaths;
 using GenclikMerkezi.Modules.Website.Features.GetPublicSite;
 using GenclikMerkezi.Modules.Website.Features.GetPublicVideos;
@@ -51,6 +53,7 @@ using GenclikMerkezi.Modules.Website.Features.GetVideos;
 using GenclikMerkezi.Modules.Website.Features.MergeTag;
 using GenclikMerkezi.Modules.Website.Features.PermanentlyDeleteContentItem;
 using GenclikMerkezi.Modules.Website.Features.PublishContentItem;
+using GenclikMerkezi.Modules.Website.Features.ReplaceMenuItems;
 using GenclikMerkezi.Modules.Website.Features.ResolveRoute;
 using GenclikMerkezi.Modules.Website.Features.RestoreContentItem;
 using GenclikMerkezi.Modules.Website.Features.ScheduleContentItem;
@@ -189,6 +192,10 @@ public static class WebsiteModuleEndpointExtensions
         SetContentItemVideosEndpoint.Map(app);
         SetContentItemAttachmentsEndpoint.Map(app);
         SetContentItemRelatedContentEndpoint.Map(app);
+
+        GetMenusEndpoint.Map(app);
+        GetMenuByLocationEndpoint.Map(app);
+        ReplaceMenuItemsEndpoint.Map(app);
 
         return app;
     }

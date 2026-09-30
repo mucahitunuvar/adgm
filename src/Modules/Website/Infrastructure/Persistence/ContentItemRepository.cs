@@ -11,6 +11,16 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
     public Task<ContentItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         dbContext.ContentItems.FirstOrDefaultAsync(ci => ci.Id == id, cancellationToken);
 
+    public async Task<IReadOnlyList<ContentItem>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        return await dbContext.ContentItems.AsNoTracking().Where(ci => ids.Contains(ci.Id)).ToListAsync(cancellationToken);
+    }
+
     // ADR-024 §17: projects only the requested language's title (a correlated scalar subquery, not a
     // navigation load) so the list query never materializes every language's full translation - unlike
     // GetByIdAsync, which returns the whole aggregate for the single-item detail view.
@@ -321,6 +331,16 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
 
         var upcomingTransitions = visibleOfType.Where(ci => ci.PublishAtUtc > now).Select(ci => ci.PublishAtUtc!.Value)
             .Union(visibleOfType.Where(ci => ci.UnpublishAtUtc > now).Select(ci => ci.UnpublishAtUtc!.Value));
+
+        return upcomingTransitions.OrderBy(t => t).Select(t => (DateTime?)t).FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<DateTime?> GetEarliestUpcomingTransitionAsync(DateTime now, CancellationToken cancellationToken = default)
+    {
+        var visible = dbContext.ContentItems.AsNoTracking().Where(ci => ci.DeletedAtUtc == null && ci.Status == ContentItemStatus.Published);
+
+        var upcomingTransitions = visible.Where(ci => ci.PublishAtUtc > now).Select(ci => ci.PublishAtUtc!.Value)
+            .Union(visible.Where(ci => ci.UnpublishAtUtc > now).Select(ci => ci.UnpublishAtUtc!.Value));
 
         return upcomingTransitions.OrderBy(t => t).Select(t => (DateTime?)t).FirstOrDefaultAsync(cancellationToken);
     }

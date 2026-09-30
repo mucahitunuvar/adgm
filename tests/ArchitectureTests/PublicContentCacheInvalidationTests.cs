@@ -1,9 +1,10 @@
 namespace GenclikMerkezi.ArchitectureTests;
 
-// ADR-024 §17 (Faz 1b Görev 7): every Website CommandHandler that mutates a ContentItem, ContentType,
-// ContentCategory, ContentTag, Video, MediaAsset, Redirect, SiteLanguage or the SiteSettings fields the
-// public content/SEO responses read must call WebsiteCacheInvalidator.InvalidatePublicContent after
-// commit, or the public list/detail/route-resolution cache goes stale.
+// ADR-024 §17 (Faz 1b Görev 7, extended Faz 2 Görev 1): every Website CommandHandler that mutates a
+// ContentItem, ContentType, ContentCategory, ContentTag, Video, MediaAsset, Redirect, SiteLanguage or
+// the SiteSettings fields the public content/SEO responses read must call
+// WebsiteCacheInvalidator.InvalidatePublicContent (directly, or via its InvalidateAllPublic wrapper)
+// after commit, or the public list/detail/route-resolution cache goes stale.
 //
 // NetArchTest's HaveDependencyOn only resolves at type level: several SiteSettings handlers already
 // reference the WebsiteCacheInvalidator class for its sibling InvalidatePublicSite call, which would
@@ -18,6 +19,10 @@ namespace GenclikMerkezi.ArchitectureTests;
 public class PublicContentCacheInvalidationTests
 {
     private const string InvalidationCallExpression = "WebsiteCacheInvalidator.InvalidatePublicContent(";
+
+    private const string AllPublicInvalidationCallExpression = "WebsiteCacheInvalidator.InvalidateAllPublic(";
+
+    private const string SiteInvalidationCallExpression = "WebsiteCacheInvalidator.InvalidatePublicSite(";
 
     private static readonly HashSet<string> ExcludedHandlers = new(StringComparer.Ordinal)
     {
@@ -38,6 +43,11 @@ public class PublicContentCacheInvalidationTests
         "UpdateSiteSettingsMaintenanceCommandHandler",
         "UpdateSiteSettingsBotProtectionCommandHandler",
         "UpdateSiteSettingsBankAccountsCommandHandler",
+
+        // Faz 2 Görev 1: Menu only feeds the public-site bootstrap response (GetPublicSite) - it never
+        // touches the public-content list/detail/route-resolution cache, unlike ContentItem/ContentType/
+        // ContentCategory mutations (see the InvalidateAllPublic wrapper those call instead).
+        "ReplaceMenuItemsCommandHandler",
     };
 
     [Fact]
@@ -61,7 +71,9 @@ public class PublicContentCacheInvalidationTests
             var sourceFiles = Directory.GetFiles(websiteSourceRoot, handlerTypeName + ".cs", SearchOption.AllDirectories);
             Assert.True(sourceFiles.Length == 1, $"Expected exactly one source file for '{handlerTypeName}', found {sourceFiles.Length}.");
 
-            var callsInvalidator = File.ReadAllText(sourceFiles[0]).Contains(InvalidationCallExpression, StringComparison.Ordinal);
+            var source = File.ReadAllText(sourceFiles[0]);
+            var callsInvalidator = source.Contains(InvalidationCallExpression, StringComparison.Ordinal)
+                || source.Contains(AllPublicInvalidationCallExpression, StringComparison.Ordinal);
             var isExcluded = ExcludedHandlers.Contains(handlerTypeName);
 
             switch (callsInvalidator, isExcluded)
@@ -92,6 +104,52 @@ public class PublicContentCacheInvalidationTests
             staleExclusions.Count == 0,
             "These excluded handler names no longer exist in the Website module - remove them from the exclusion list: "
                 + string.Join(", ", staleExclusions));
+    }
+
+    // ADR-024 §17 (Faz 2 Görev 1): the public site bootstrap response now embeds menus (Menu ->
+    // MenuItem -> LinkTarget resolves against ContentItem/ContentType), so every ContentItem,
+    // ContentType and ContentCategory mutation must ALSO clear the public-site prefix - not just
+    // public-content's - or a menu link to newly-hidden/renamed content stays stale. No exclusion list:
+    // every handler for these three aggregates changes something a menu link could depend on (directly,
+    // or coarse-grained per ADR-024's own "kaba taneli temizlik kabul edilebilir").
+    [Fact]
+    public void ContentItemContentTypeAndContentCategoryCommandHandlers_Should_AlsoInvalidatePublicSiteCache()
+    {
+        var websiteAssembly = ModuleAssemblies.All.Single(a => a.GetName().Name == "GenclikMerkezi.Modules.Website");
+        var websiteSourceRoot = Path.Combine(FindRepositoryRoot(), "src", "Modules", "Website");
+
+        var handlerTypeNames = websiteAssembly.SafeGetTypes()
+            .Where(t => t.IsClass && !t.IsAbstract && t.Name.EndsWith("CommandHandler", StringComparison.Ordinal))
+            .Select(t => t.Name)
+            .Where(name => name.Contains("ContentItem", StringComparison.Ordinal)
+                || name.Contains("ContentType", StringComparison.Ordinal)
+                || name.Contains("ContentCategory", StringComparison.Ordinal))
+            .ToList();
+
+        Assert.NotEmpty(handlerTypeNames);
+
+        var unexplainedFailures = new List<string>();
+
+        foreach (var handlerTypeName in handlerTypeNames)
+        {
+            var sourceFiles = Directory.GetFiles(websiteSourceRoot, handlerTypeName + ".cs", SearchOption.AllDirectories);
+            Assert.True(sourceFiles.Length == 1, $"Expected exactly one source file for '{handlerTypeName}', found {sourceFiles.Length}.");
+
+            var source = File.ReadAllText(sourceFiles[0]);
+            var callsSiteInvalidator = source.Contains(SiteInvalidationCallExpression, StringComparison.Ordinal)
+                || source.Contains(AllPublicInvalidationCallExpression, StringComparison.Ordinal);
+
+            if (!callsSiteInvalidator)
+            {
+                unexplainedFailures.Add(handlerTypeName);
+            }
+        }
+
+        Assert.True(
+            unexplainedFailures.Count == 0,
+            "The following ContentItem/ContentType/ContentCategory CommandHandlers never call "
+                + "WebsiteCacheInvalidator.InvalidatePublicSite (directly or via InvalidateAllPublic): "
+                + string.Join(", ", unexplainedFailures));
     }
 
     private static string FindRepositoryRoot()

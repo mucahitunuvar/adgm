@@ -37,7 +37,7 @@ public sealed class DeleteContentCategoryCommandHandler(
 
         contentCategoryRepository.Remove(category);
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
+        WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 
         return Result.Success();
     }

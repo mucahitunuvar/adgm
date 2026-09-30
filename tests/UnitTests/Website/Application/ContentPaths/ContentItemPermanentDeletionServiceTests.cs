@@ -15,9 +15,10 @@ public class ContentItemPermanentDeletionServiceTests
 
     private readonly FakeContentItemRepository _contentItemRepository = new();
     private readonly FakeRedirectRepository _redirectRepository = new();
+    private readonly FakeMenuRepository _menuRepository = new();
 
     private ContentItemPermanentDeletionService CreateService() =>
-        new(_contentItemRepository, _redirectRepository, NullLogger<ContentItemPermanentDeletionService>.Instance);
+        new(_contentItemRepository, _redirectRepository, _menuRepository, NullLogger<ContentItemPermanentDeletionService>.Instance);
 
     private static ContentItem CreateItem(Guid? parentId = null, string slug = "haber") =>
         ContentItem.Create(
@@ -74,5 +75,25 @@ public class ContentItemPermanentDeletionServiceTests
         await CreateService().DeleteAsync(item, UserId, Now, CancellationToken.None);
 
         Assert.DoesNotContain(item.Id, relatingItem.RelatedContentItemIds);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ClearsAndDeactivatesMenuItemsLinkingToTheItem()
+    {
+        var item = CreateItem(slug: "silinecek");
+        _contentItemRepository.Seed(item);
+
+        var menu = Menu.CreateEmpty(MenuLocation.Header, UserId, Now);
+        var translation = MenuItemTranslation.Create(Tr, "Etiket").Value;
+        var linkTarget = LinkTarget.ForContent(item.Id).Value;
+        var menuItem = MenuItem.Create(Guid.NewGuid(), null, 1, true, linkTarget, false, null, [translation]).Value;
+        menu.ReplaceItems([menuItem], UserId, Now);
+        _menuRepository.Seed(menu);
+
+        await CreateService().DeleteAsync(item, UserId, Now, CancellationToken.None);
+
+        var updatedItem = Assert.Single(menu.Items);
+        Assert.False(updatedItem.IsActive);
+        Assert.True(updatedItem.LinkTarget.IsEmpty);
     }
 }

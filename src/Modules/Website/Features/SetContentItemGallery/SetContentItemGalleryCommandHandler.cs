@@ -83,7 +83,7 @@ public sealed class SetContentItemGalleryCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
+        WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 
         return Result.Success();
     }

@@ -83,7 +83,7 @@ public sealed class CreateContentCategoryCommandHandler(
 
         contentCategoryRepository.Add(categoryResult.Value);
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
+        WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 
         return Result.Success(new CreateContentCategoryResponse(categoryResult.Value.Id, defaultLanguage.Code.Value));
     }

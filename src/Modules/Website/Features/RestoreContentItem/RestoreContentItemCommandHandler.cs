@@ -42,7 +42,7 @@ public sealed class RestoreContentItemCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
+        WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 
         return Result.Success();
     }

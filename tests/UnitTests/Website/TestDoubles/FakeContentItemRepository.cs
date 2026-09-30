@@ -15,6 +15,9 @@ public sealed class FakeContentItemRepository : IContentItemRepository
     public Task<ContentItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         Task.FromResult(_contentItems.FirstOrDefault(c => c.Id == id));
 
+    public Task<IReadOnlyList<ContentItem>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<ContentItem>>(_contentItems.Where(c => ids.Contains(c.Id)).ToList());
+
     public Task<PagedResult<ContentItemListItem>> SearchAsync(
         Guid? contentTypeId, ContentItemStatus? status, LanguageCode languageCode, bool requireLanguage, string? search,
         bool? isFeatured, Guid? parentId, PagedRequest pagedRequest, CancellationToken cancellationToken = default) =>
@@ -155,6 +158,19 @@ public sealed class FakeContentItemRepository : IContentItemRepository
             c.ContentTypeId == contentTypeId && c.DeletedAtUtc is null && c.Status == ContentItemStatus.Published);
 
         var upcoming = visibleOfType
+            .SelectMany(c => new DateTime?[] { c.PublishAtUtc, c.UnpublishAtUtc })
+            .Where(t => t > now)
+            .OrderBy(t => t)
+            .FirstOrDefault();
+
+        return Task.FromResult(upcoming);
+    }
+
+    public Task<DateTime?> GetEarliestUpcomingTransitionAsync(DateTime now, CancellationToken cancellationToken = default)
+    {
+        var visible = _contentItems.Where(c => c.DeletedAtUtc is null && c.Status == ContentItemStatus.Published);
+
+        var upcoming = visible
             .SelectMany(c => new DateTime?[] { c.PublishAtUtc, c.UnpublishAtUtc })
             .Where(t => t > now)
             .OrderBy(t => t)

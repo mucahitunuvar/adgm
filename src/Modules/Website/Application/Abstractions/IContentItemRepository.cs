@@ -7,6 +7,11 @@ public interface IContentItemRepository
 {
     Task<ContentItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+    // Faz 2 Görev 1: LinkTargetResolver's bulk lookup - every requested id (and, across further calls,
+    // every ancestor id still missing) fetched in one query, so resolving every Content link target in
+    // a whole menu costs O(hierarchy depth) round trips, not O(menu item count) (§1.1 "N+1 yok").
+    Task<IReadOnlyList<ContentItem>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default);
+
     // languageCode both filters (when requireLanguage is true, only items that have a translation in
     // that language are returned) and picks which language's title is projected. When requireLanguage
     // is false, languageCode is the resolved default site language - every item structurally has a
@@ -116,6 +121,11 @@ public interface IContentItemRepository
     // its own, so those are excluded the same way ContentItemVisibility does). Null when no such
     // transition exists, in which case the caller falls back to ContentCacheTtlCalculator.DefaultTtl.
     Task<DateTime?> GetEarliestUpcomingTransitionAsync(Guid contentTypeId, DateTime now, CancellationToken cancellationToken = default);
+
+    // Faz 2 Görev 1 master prompt §1.3: the public site cache's own TTL-shortening query - the same
+    // rule as the type-scoped overload above, across every content type at once (a menu link can point
+    // at any type, so the site-wide bootstrap response's TTL cannot be scoped to just one).
+    Task<DateTime?> GetEarliestUpcomingTransitionAsync(DateTime now, CancellationToken cancellationToken = default);
 
     void Add(ContentItem contentItem);
 

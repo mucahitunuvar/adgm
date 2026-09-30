@@ -100,7 +100,7 @@ public sealed class CreateContentItemCommandHandler(
 
         contentItemRepository.Add(contentItemResult.Value);
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
+        WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 
         return Result.Success(new CreateContentItemResponse(contentItemResult.Value.Id, defaultLanguage.Code.Value, translation.FullPath));
     }

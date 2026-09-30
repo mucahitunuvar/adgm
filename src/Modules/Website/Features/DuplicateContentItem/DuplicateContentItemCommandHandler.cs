@@ -171,7 +171,7 @@ public sealed class DuplicateContentItemCommandHandler(
 
         contentItemRepository.Add(newItem);
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
+        WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 
         return Result.Success(new DuplicateContentItemResponse(newItem.Id));
     }

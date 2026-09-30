@@ -1,5 +1,6 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Application.ContentPaths;
+using GenclikMerkezi.Modules.Website.Application.LinkTargets;
 using GenclikMerkezi.Modules.Website.Application.Media;
 using GenclikMerkezi.Modules.Website.Application.RouteResolution;
 using GenclikMerkezi.Modules.Website.Infrastructure;
@@ -53,6 +54,8 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IVideoRepository, VideoRepository>();
         services.AddScoped<IContentCategoryRepository, ContentCategoryRepository>();
         services.AddScoped<IContentTagRepository, ContentTagRepository>();
+        services.AddScoped<IMenuRepository, MenuRepository>();
+        services.AddScoped<LinkTargetResolver>();
         services.AddScoped<ContentPathCascadeService>();
         services.AddScoped<RelatedContentResolutionService>();
         services.AddScoped<ContentItemPermanentDeletionService>();

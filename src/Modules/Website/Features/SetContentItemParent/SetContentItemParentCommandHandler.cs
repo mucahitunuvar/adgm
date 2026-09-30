@@ -114,7 +114,7 @@ public sealed class SetContentItemParentCommandHandler(
         contentItem.SetParent(request.ParentId, userId, now);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
+        WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 
         return Result.Success();
     }

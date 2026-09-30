@@ -17,6 +17,7 @@ namespace GenclikMerkezi.Modules.Website.Application.ContentPaths;
 public sealed class ContentItemPermanentDeletionService(
     IContentItemRepository contentItemRepository,
     IRedirectRepository redirectRepository,
+    IMenuRepository menuRepository,
     ILogger<ContentItemPermanentDeletionService> logger)
 {
     public async Task<Result> DeleteAsync(ContentItem contentItem, Guid actingUserId, DateTime now, CancellationToken cancellationToken)
@@ -43,6 +44,15 @@ public sealed class ContentItemPermanentDeletionService(
         {
             var remaining = relatingItem.RelatedContentItemIds.Where(id => id != contentItem.Id).ToList();
             relatingItem.SetRelatedContent(remaining, actingUserId, now);
+        }
+
+        var linkingMenus = await menuRepository.GetByLinkedContentItemIdAsync(contentItem.Id, cancellationToken);
+        foreach (var menu in linkingMenus)
+        {
+            menu.DeactivateItemsLinkingToContent(contentItem.Id, actingUserId, now);
+            logger.LogInformation(
+                "Cleared and deactivated menu item(s) in menu '{MenuLocation}' linking to permanently deleted content item {ContentItemId}.",
+                menu.Location, contentItem.Id);
         }
 
         contentItemRepository.Remove(contentItem);

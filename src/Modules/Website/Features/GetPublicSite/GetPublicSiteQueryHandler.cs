@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
+using GenclikMerkezi.Modules.Website.Application.LinkTargets;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Results;
@@ -7,37 +8,52 @@ using MediatR;
 namespace GenclikMerkezi.Modules.Website.Features.GetPublicSite;
 
 // ADR-024 §13/§15: unauthenticated - the frontend calls this once at bootstrap, before any
-// page-specific content, to render the site chrome (theme, contact, footer) in the visitor's
-// language. Cached per resolved language (ADR-017); invalidated by every SiteSettings- and
-// SiteLanguage-mutating command (WebsiteCacheInvalidator).
+// page-specific content, to render the site chrome (theme, contact, footer, menus) in the visitor's
+// language. Cached per resolved language (ADR-017); invalidated by every SiteSettings-, SiteLanguage-,
+// Menu-, ContentItem-, ContentType- and ContentCategory-mutating command (WebsiteCacheInvalidator).
 public sealed class GetPublicSiteQueryHandler(
     ISiteSettingsRepository siteSettingsRepository,
     ISiteLanguageRepository siteLanguageRepository,
     IMediaAssetRepository mediaAssetRepository,
     IFileStorageService fileStorageService,
-    ICacheService cacheService)
+    IMenuRepository menuRepository,
+    IContentItemRepository contentItemRepository,
+    LinkTargetResolver linkTargetResolver,
+    ICacheService cacheService,
+    TimeProvider timeProvider)
     : IRequestHandler<GetPublicSiteQuery, Result<PublicSiteResponse>>
 {
     public async Task<Result<PublicSiteResponse>> Handle(GetPublicSiteQuery request, CancellationToken cancellationToken)
     {
         var activeLanguages = await siteLanguageRepository.GetActiveAsync(cancellationToken);
+        var defaultLanguage = activeLanguages.First(l => l.IsDefault);
 
         // Invariant guaranteed by SiteLanguage's own domain rules (Görev 2): the default language
         // can never be deactivated, so there is always exactly one active default to fall back to.
         var resolvedLanguage = (!string.IsNullOrWhiteSpace(request.Lang)
             ? activeLanguages.FirstOrDefault(l => string.Equals(l.Code.Value, request.Lang, StringComparison.OrdinalIgnoreCase))
-            : null) ?? activeLanguages.First(l => l.IsDefault);
+            : null) ?? defaultLanguage;
+
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+
+        // ADR-024 §17 (Faz 2 Görev 1 §1.3): shortened to the site-wide nearest future
+        // PublishAtUtc/UnpublishAtUtc among ALL content types (a menu link can point at any of them) -
+        // designed to be extended by Görev 2/6 with slide/pop-up scheduling.
+        var earliestUpcomingTransition = await contentItemRepository.GetEarliestUpcomingTransitionAsync(now, cancellationToken);
+        var ttl = ContentCacheTtlCalculator.Calculate(now, [earliestUpcomingTransition]);
 
         var response = await cacheService.GetOrCreateAsync(
             WebsiteCacheKeys.PublicSite(resolvedLanguage.Code.Value),
-            async ct => await BuildResponseAsync(activeLanguages, resolvedLanguage, ct),
-            cancellationToken: cancellationToken);
+            async ct => await BuildResponseAsync(activeLanguages, resolvedLanguage, defaultLanguage, now, ct),
+            ttl,
+            cancellationToken);
 
         return Result.Success(response);
     }
 
     private async Task<PublicSiteResponse> BuildResponseAsync(
-        IReadOnlyList<SiteLanguage> activeLanguages, SiteLanguage resolvedLanguage, CancellationToken cancellationToken)
+        IReadOnlyList<SiteLanguage> activeLanguages, SiteLanguage resolvedLanguage, SiteLanguage defaultLanguage, DateTime now,
+        CancellationToken cancellationToken)
     {
         var settings = await siteSettingsRepository.GetAsync(cancellationToken) ?? SiteSettings.CreateDefault();
 
@@ -69,6 +85,8 @@ public sealed class GetPublicSiteQueryHandler(
 
         var translation = settings.Translations.FirstOrDefault(t => t.LanguageCode == resolvedLanguage.Code);
 
+        var menus = await BuildMenusAsync(resolvedLanguage.Code, defaultLanguage.Code, now, cancellationToken);
+
         return new PublicSiteResponse(
             languageResponses, resolvedLanguage.Code.Value,
             await ResolveMediaUrlAsync(settings.LogoLightMediaAssetId, cancellationToken),
@@ -81,7 +99,8 @@ public sealed class GetPublicSiteQueryHandler(
             translation?.FooterText ?? string.Empty,
             settings.GlobalSearchEnabled, settings.NewsletterEnabled, settings.PublicJobListingsEnabled, settings.DonationPageEnabled,
             settings.MaintenanceModeEnabled, translation?.MaintenanceMessage ?? string.Empty,
-            settings.TurnstileSiteKey);
+            settings.TurnstileSiteKey,
+            menus);
     }
 
     private async Task<string?> ResolveMediaUrlAsync(Guid? mediaAssetId, CancellationToken cancellationToken)
@@ -93,5 +112,66 @@ public sealed class GetPublicSiteQueryHandler(
 
         var mediaAsset = await mediaAssetRepository.GetByIdAsync(mediaAssetId.Value, cancellationToken);
         return mediaAsset is null ? null : await fileStorageService.GetUrlAsync(mediaAsset.Original.FileKey, cancellationToken);
+    }
+
+    private async Task<PublicMenusResponse> BuildMenusAsync(
+        LanguageCode languageCode, LanguageCode defaultLanguageCode, DateTime now, CancellationToken cancellationToken)
+    {
+        var menus = await menuRepository.GetAllAsync(cancellationToken);
+
+        var allTargets = menus.SelectMany(m => m.Items).Select(i => i.LinkTarget).Where(t => !t.IsEmpty).ToList();
+        var resolutions = await linkTargetResolver.ResolveManyAsync(allTargets, languageCode, defaultLanguageCode, now, cancellationToken);
+
+        var header = BuildVisibleTree(menus.FirstOrDefault(m => m.Location == MenuLocation.Header), null, languageCode, resolutions);
+        var utility = BuildVisibleTree(menus.FirstOrDefault(m => m.Location == MenuLocation.Utility), null, languageCode, resolutions);
+        var footer = BuildVisibleTree(menus.FirstOrDefault(m => m.Location == MenuLocation.Footer), null, languageCode, resolutions);
+
+        return new PublicMenusResponse(header, utility, footer);
+    }
+
+    // ADR-024 §7 / Faz 2 Görev 1 master prompt §1.3: recursively builds the visible subtree under
+    // parentId. An inactive item, one with no translation in languageCode, or one whose link did not
+    // resolve is dropped together with its whole subtree (its children are never even visited, since
+    // recursion only continues for nodes that passed every check); an empty-of-link group heading with
+    // no visible children left is dropped too.
+    private static IReadOnlyList<PublicMenuItemResponse> BuildVisibleTree(
+        Menu? menu, Guid? parentId, LanguageCode languageCode, IReadOnlyDictionary<LinkTarget, LinkTargetResolution> resolutions)
+    {
+        if (menu is null)
+        {
+            return [];
+        }
+
+        var results = new List<PublicMenuItemResponse>();
+
+        foreach (var item in menu.Items.Where(i => i.ParentId == parentId && i.IsActive).OrderBy(i => i.SortOrder))
+        {
+            var translation = item.Translations.FirstOrDefault(t => t.LanguageCode == languageCode);
+            if (translation is null)
+            {
+                continue;
+            }
+
+            string? href = null;
+            if (!item.LinkTarget.IsEmpty)
+            {
+                if (!resolutions.TryGetValue(item.LinkTarget, out var resolution) || !resolution.IsResolved)
+                {
+                    continue;
+                }
+
+                href = resolution.Href;
+            }
+
+            var children = BuildVisibleTree(menu, item.Id, languageCode, resolutions);
+            if (item.LinkTarget.IsEmpty && children.Count == 0)
+            {
+                continue;
+            }
+
+            results.Add(new PublicMenuItemResponse(translation.Label, href, item.OpenInNewTab, item.IconKey, children));
+        }
+
+        return results;
     }
 }
