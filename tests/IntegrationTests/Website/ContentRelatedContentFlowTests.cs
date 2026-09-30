@@ -226,4 +226,50 @@ public class ContentRelatedContentFlowTests : IClassFixture<CustomWebApplication
 
         Assert.Equal([manualTargetId], resolved.Select(r => r.Id));
     }
+
+    // Regression test: GetVisibleRelatedCandidatesByIdsAsync/SearchRelatedCandidatesAsync already
+    // enforced ContentItem.IsVisible before this bugfix - unlike SearchPublicListAsync, which did not -
+    // this proves a manually-linked target that is currently scheduled (future PublishAtUtc) or already
+    // expired (past UnpublishAtUtc) is excluded from related content exactly like an unpublished one.
+    [Fact]
+    public async Task RelatedContentResolutionService_WithScheduledOrExpiredManualLink_ExcludesInvisibleTargets()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var newsTypeId = await GetContentTypeIdByKeyAsync(accessToken, "news");
+
+        var scheduledTargetId = await CreateContentItemAsync(accessToken, newsTypeId, "Zamanlanmis Hedef");
+        var scheduledTarget = await GetContentItemAsync(accessToken, scheduledTargetId);
+        var scheduleResponse = await _client.SendAsync(Authorized(
+            HttpMethod.Post, $"/api/v1/admin/website/contents/{scheduledTargetId}/publish", accessToken,
+            new PublishContentItemRequest(scheduledTarget.RowVersion, DateTime.UtcNow.AddDays(1), null)));
+        Assert.Equal(HttpStatusCode.NoContent, scheduleResponse.StatusCode);
+
+        var expiredTargetId = await CreateContentItemAsync(accessToken, newsTypeId, "Suresi Dolmus Hedef");
+        var expiredTarget = await GetContentItemAsync(accessToken, expiredTargetId);
+        var expireResponse = await _client.SendAsync(Authorized(
+            HttpMethod.Post, $"/api/v1/admin/website/contents/{expiredTargetId}/publish", accessToken,
+            new PublishContentItemRequest(expiredTarget.RowVersion, DateTime.UtcNow.AddDays(-2), DateTime.UtcNow.AddDays(-1))));
+        Assert.Equal(HttpStatusCode.NoContent, expireResponse.StatusCode);
+
+        var sourceId = await CreateContentItemAsync(accessToken, newsTypeId, "Kaynak");
+        var source = await GetContentItemAsync(accessToken, sourceId);
+        var setRelatedResponse = await _client.SendAsync(Authorized(
+            HttpMethod.Put, $"/api/v1/admin/website/contents/{sourceId}/related", accessToken,
+            new SetContentItemRelatedContentRequest(source.RowVersion, [scheduledTargetId, expiredTargetId])));
+        Assert.Equal(HttpStatusCode.NoContent, setRelatedResponse.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var resolutionService = scope.ServiceProvider.GetRequiredService<RelatedContentResolutionService>();
+        var trLanguage = LanguageCode.Create("tr").Value;
+
+        // No category filter and the manual link resolves to nothing visible, so the service falls
+        // through to RelatedContentResolutionService's step 3 (automatic same-ContentType suggestions,
+        // which may be non-empty depending on what other tests in this shared-database test class have
+        // published) - the assertion only cares that the two invisible targets themselves never appear.
+        var resolved = await resolutionService.ResolveAsync(
+            sourceId, newsTypeId, [scheduledTargetId, expiredTargetId], [], trLanguage, DateTime.UtcNow);
+
+        Assert.DoesNotContain(resolved, r => r.Id == scheduledTargetId);
+        Assert.DoesNotContain(resolved, r => r.Id == expiredTargetId);
+    }
 }

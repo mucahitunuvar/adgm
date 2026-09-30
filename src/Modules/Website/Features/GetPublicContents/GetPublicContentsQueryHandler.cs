@@ -22,7 +22,8 @@ public sealed class GetPublicContentsQueryHandler(
     IContentItemRepository contentItemRepository,
     IMediaAssetRepository mediaAssetRepository,
     IFileStorageService fileStorageService,
-    ICacheService cacheService)
+    ICacheService cacheService,
+    TimeProvider timeProvider)
     : IRequestHandler<GetPublicContentsQuery, Result<PublicContentListResponse>>
 {
     private const int MinSearchLength = 2;
@@ -97,13 +98,14 @@ public sealed class GetPublicContentsQueryHandler(
 
         var pagedRequest = new PagedRequest { Page = request.Page, PageSize = Math.Min(request.PageSize, 50) };
         var isSearch = !string.IsNullOrWhiteSpace(request.Search);
+        var now = timeProvider.GetUtcNow().UtcDateTime;
 
         PagedResult<PublicContentListItemCandidate> paged;
         if (isSearch)
         {
             paged = await contentItemRepository.SearchPublicListAsync(
                 contentType.Id, resolvedLanguage.Code, categoryIdFilter, tagIdFilter, request.Search, request.From, request.To,
-                request.Featured, contentType.SortMode, pagedRequest, cancellationToken);
+                request.Featured, contentType.SortMode, now, pagedRequest, cancellationToken);
         }
         else
         {
@@ -114,7 +116,7 @@ public sealed class GetPublicContentsQueryHandler(
                 cacheKey,
                 ct => contentItemRepository.SearchPublicListAsync(
                     contentType.Id, resolvedLanguage.Code, categoryIdFilter, tagIdFilter, null, request.From, request.To, request.Featured,
-                    contentType.SortMode, pagedRequest, ct),
+                    contentType.SortMode, now, pagedRequest, ct),
                 cancellationToken: cancellationToken);
         }
 

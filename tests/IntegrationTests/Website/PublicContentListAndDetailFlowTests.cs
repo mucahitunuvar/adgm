@@ -281,6 +281,38 @@ public class PublicContentListAndDetailFlowTests : IClassFixture<CustomWebApplic
         Assert.Equal(50, body!.Items.PageSize);
     }
 
+    // --- List: visibility rule ---
+
+    // Regression test: SearchPublicListAsync used to check only Status == Published, never
+    // PublishAtUtc/UnpublishAtUtc, so a scheduled (future) or already-expired item still appeared in
+    // the public list even though the same rule (ContentItem.IsVisible) already hid it from the detail
+    // endpoint and from related content.
+    [Fact]
+    public async Task GetPublicContents_ScheduledOrExpiredItems_AreExcludedFromList()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var newsTypeId = await GetContentTypeIdByKeyAsync(accessToken, "news");
+
+        var scheduledTitle = $"Zamanlanmis-{Guid.NewGuid():N}";
+        var scheduled = await CreateContentItemAsync(accessToken, newsTypeId, null, scheduledTitle);
+        await PublishAsync(accessToken, scheduled.Id, DateTime.UtcNow.AddDays(1));
+
+        var expiredTitle = $"SuresiDolmus-{Guid.NewGuid():N}";
+        var expired = await CreateContentItemAsync(accessToken, newsTypeId, null, expiredTitle);
+        var expiredItem = await GetContentItemAsync(accessToken, expired.Id);
+        var publishResponse = await _client.SendAsync(Authorized(
+            HttpMethod.Post, $"/api/v1/admin/website/contents/{expired.Id}/publish", accessToken,
+            new PublishContentItemRequest(expiredItem.RowVersion, DateTime.UtcNow.AddDays(-2), DateTime.UtcNow.AddDays(-1))));
+        Assert.Equal(HttpStatusCode.NoContent, publishResponse.StatusCode);
+
+        var response = await GetListAsync("?type=news&pageSize=100");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<PublicContentListResponse>();
+        Assert.DoesNotContain(body!.Items.Items, i => i.Id == scheduled.Id);
+        Assert.DoesNotContain(body.Items.Items, i => i.Id == expired.Id);
+    }
+
     // --- List: cache invalidation ---
 
     [Fact]

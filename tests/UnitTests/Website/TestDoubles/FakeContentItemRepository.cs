@@ -106,12 +106,12 @@ public sealed class FakeContentItemRepository : IContentItemRepository
         DateTime? to,
         bool? featured,
         ContentTypeSortMode sortMode,
+        DateTime now,
         PagedRequest pagedRequest,
         CancellationToken cancellationToken = default)
     {
         var query = _contentItems.Where(c =>
-            c.ContentTypeId == contentTypeId && c.DeletedAtUtc is null && c.Status == ContentItemStatus.Published
-            && c.Translations.Any(t => t.LanguageCode == languageCode));
+            c.ContentTypeId == contentTypeId && c.IsVisible(now) && c.Translations.Any(t => t.LanguageCode == languageCode));
 
         if (categoryIds is { Count: > 0 })
         {

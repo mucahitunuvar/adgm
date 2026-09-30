@@ -90,11 +90,12 @@ public interface IContentItemRepository
     // remove the reference through its own ContentItem.SetRelatedContent, not a raw JSON-column rewrite.
     Task<IReadOnlyList<ContentItem>> GetByRelatedContentItemIdAsync(Guid relatedContentItemId, CancellationToken cancellationToken = default);
 
-    // ADR-024 §17 (Faz 1b Görev 7): the public list endpoint's query - same ContentType, visible,
-    // translated in languageCode; categoryIds (already expanded to include a selected parent
-    // category's children) and tagId narrow further when given. Sort mirrors ContentType.SortMode:
-    // Manual -> SortOrder then Title; PublishDateDesc/EventDateAsc (until Faz 4) -> effective publish
-    // date descending.
+    // ADR-024 §17 (Faz 1b Görev 7): the public list endpoint's query - same ContentType, visible
+    // (own status/schedule, ContentItemVisibility.IsVisibleAt(now) - a scheduled or expired item is
+    // excluded exactly like the detail endpoint and related-content resolution already do), translated
+    // in languageCode; categoryIds (already expanded to include a selected parent category's children)
+    // and tagId narrow further when given. Sort mirrors ContentType.SortMode: Manual -> SortOrder then
+    // Title; PublishDateDesc/EventDateAsc (until Faz 4) -> effective publish date descending.
     Task<PagedResult<PublicContentListItemCandidate>> SearchPublicListAsync(
         Guid contentTypeId,
         LanguageCode languageCode,
@@ -105,6 +106,7 @@ public interface IContentItemRepository
         DateTime? to,
         bool? featured,
         ContentTypeSortMode sortMode,
+        DateTime now,
         PagedRequest pagedRequest,
         CancellationToken cancellationToken = default);
 

@@ -122,10 +122,10 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
     public async Task<IReadOnlyList<ContentItem>> GetByVideoIdAsync(Guid videoId, CancellationToken cancellationToken = default) =>
         await dbContext.ContentItems.Where(ci => ci.VideoIds.Contains(videoId)).ToListAsync(cancellationToken);
 
-    // IsVisible/ProjectCandidate are inlined directly into each query below, not extracted into
-    // shared helper methods: EF Core's LINQ-to-Entities provider translates the expression tree it is
-    // given, not an invoked C# method's body, so a call to a private static helper from inside
-    // Where/Select would throw "could not be translated" instead of becoming SQL.
+    // ContentItemVisibility.IsVisibleAt(now) is a single Expression<Func<ContentItem, bool>> shared by
+    // every query below (and by ContentItem.IsVisible itself) - EF Core's LINQ-to-Entities provider
+    // translates the expression tree it is given, which is why the rule lives there instead of a
+    // private helper method (a call to one would throw "could not be translated" instead of becoming SQL).
     public async Task<IReadOnlyList<RelatedContentCandidate>> GetVisibleRelatedCandidatesByIdsAsync(
         IReadOnlyList<Guid> ids, LanguageCode languageCode, DateTime now, CancellationToken cancellationToken = default)
     {
@@ -136,11 +136,7 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
 
         return await dbContext.ContentItems.AsNoTracking()
             .Where(ci => ids.Contains(ci.Id))
-            .Where(ci =>
-                ci.DeletedAtUtc == null
-                && ci.Status == ContentItemStatus.Published
-                && (ci.PublishAtUtc == null || ci.PublishAtUtc <= now)
-                && (ci.UnpublishAtUtc == null || ci.UnpublishAtUtc > now))
+            .Where(ContentItemVisibility.IsVisibleAt(now))
             .Where(ci => ci.Translations.Any(t => t.LanguageCode == languageCode))
             .Select(ci => new RelatedContentCandidate(
                 ci.Id,
@@ -158,11 +154,7 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
     {
         var query = dbContext.ContentItems.AsNoTracking()
             .Where(ci => ci.ContentTypeId == contentTypeId && ci.Id != excludeId)
-            .Where(ci =>
-                ci.DeletedAtUtc == null
-                && ci.Status == ContentItemStatus.Published
-                && (ci.PublishAtUtc == null || ci.PublishAtUtc <= now)
-                && (ci.UnpublishAtUtc == null || ci.UnpublishAtUtc > now))
+            .Where(ContentItemVisibility.IsVisibleAt(now))
             .Where(ci => ci.Translations.Any(t => t.LanguageCode == languageCode));
 
         if (categoryIds is { Count: > 0 })
@@ -227,11 +219,13 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
         DateTime? to,
         bool? featured,
         ContentTypeSortMode sortMode,
+        DateTime now,
         PagedRequest pagedRequest,
         CancellationToken cancellationToken = default)
     {
         var query = dbContext.ContentItems.AsNoTracking()
-            .Where(ci => ci.ContentTypeId == contentTypeId && ci.DeletedAtUtc == null && ci.Status == ContentItemStatus.Published)
+            .Where(ci => ci.ContentTypeId == contentTypeId)
+            .Where(ContentItemVisibility.IsVisibleAt(now))
             .Where(ci => ci.Translations.Any(t => t.LanguageCode == languageCode));
 
         if (categoryIds is { Count: > 0 })

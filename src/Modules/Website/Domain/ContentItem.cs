@@ -544,12 +544,9 @@ public sealed class ContentItem : AggregateRoot
     // not consider ancestors (Görev 4: "içerik ancak kendisi ve tüm ataları görünürse görünür"), which
     // is a separate, Application-layer check across multiple aggregates (IsVisible has no ancestor
     // access to do it itself). now is a parameter, not DateTime.UtcNow read internally, so callers
-    // (and their tests) can fix it.
-    public bool IsVisible(DateTime now) =>
-        DeletedAtUtc is null
-        && Status == ContentItemStatus.Published
-        && (PublishAtUtc is null || PublishAtUtc <= now)
-        && (UnpublishAtUtc is null || UnpublishAtUtc > now);
+    // (and their tests) can fix it. The rule itself lives in ContentItemVisibility - the single source
+    // ContentItemRepository's EF Core queries also compose into their own Where(...) clauses.
+    public bool IsVisible(DateTime now) => ContentItemVisibility.Evaluate(this, now);
 
     // ADR-024 §4.5 (Faz 1b Görev 6): moves the item to the trash. Published content must be
     // unpublished first (the Application-layer command handler surfaces this as a distinct, actionable
