@@ -85,6 +85,12 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DeletedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid?>("DetailImageMediaId")
                         .HasColumnType("uniqueidentifier");
 
@@ -118,6 +124,10 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("StatusBeforeDeletion")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 

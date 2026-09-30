@@ -29,6 +29,11 @@ public sealed class ContentItem : AggregateRoot
     // are scoped to this item's own type's feature flags.
     public const int MaxRelatedContent = 12;
 
+    // ADR-024 §4.5 (Faz 1b Görev 6): a trashed item's address lock and permanent-deletion eligibility
+    // both count from DeletedAtUtc using this single retention window - the daily cleanup job and the
+    // admin trash listing's "eligible on" date both read this same constant.
+    public const int TrashRetentionDays = 30;
+
     private readonly List<ContentItemTranslation> _translations = [];
     private readonly List<Guid> _categoryIds = [];
     private readonly List<ContentItemGalleryItem> _galleryItems = [];
@@ -79,6 +84,14 @@ public sealed class ContentItem : AggregateRoot
     public Guid? PublishedByUserId { get; private set; }
 
     public DateTime? PublishedAtUtc { get; private set; }
+
+    // ADR-024 §4.5 (Faz 1b Görev 6). StatusBeforeDeletion is what Restore returns to; it is only ever
+    // set by MoveToTrash and cleared by Restore - never meaningful while DeletedAtUtc is null.
+    public DateTime? DeletedAtUtc { get; private set; }
+
+    public Guid? DeletedByUserId { get; private set; }
+
+    public ContentItemStatus? StatusBeforeDeletion { get; private set; }
 
     private ContentItem(
         Guid id, Guid contentTypeId, Guid? parentId, int sortOrder, bool isFeatured, Guid? coverImageMediaId,
@@ -533,9 +546,53 @@ public sealed class ContentItem : AggregateRoot
     // access to do it itself). now is a parameter, not DateTime.UtcNow read internally, so callers
     // (and their tests) can fix it.
     public bool IsVisible(DateTime now) =>
-        Status == ContentItemStatus.Published
+        DeletedAtUtc is null
+        && Status == ContentItemStatus.Published
         && (PublishAtUtc is null || PublishAtUtc <= now)
         && (UnpublishAtUtc is null || UnpublishAtUtc > now);
+
+    // ADR-024 §4.5 (Faz 1b Görev 6): moves the item to the trash. Published content must be
+    // unpublished first (the Application-layer command handler surfaces this as a distinct, actionable
+    // error rather than silently unpublishing on the caller's behalf); whether any non-trashed child
+    // still exists is a cross-aggregate check the Application layer performs before calling this.
+    public Result MoveToTrash(Guid deletedByUserId, DateTime deletedAtUtc)
+    {
+        if (DeletedAtUtc is not null)
+        {
+            return Result.Failure(Error.Conflict("ContentItem.AlreadyInTrash", "This content item is already in the trash."));
+        }
+
+        if (Status == ContentItemStatus.Published)
+        {
+            return Result.Failure(Error.Conflict(
+                "ContentItem.CannotTrashPublishedContent", "Published content must be unpublished before it can be moved to the trash."));
+        }
+
+        StatusBeforeDeletion = Status;
+        DeletedAtUtc = deletedAtUtc;
+        DeletedByUserId = deletedByUserId;
+        Touch(deletedByUserId, deletedAtUtc);
+
+        return Result.Success();
+    }
+
+    // Whether the parent (if any) is itself still in the trash is a cross-aggregate check the
+    // Application layer performs before calling this - ContentItem has no parent access of its own.
+    public Result Restore(Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        if (DeletedAtUtc is null)
+        {
+            return Result.Failure(Error.Conflict("ContentItem.NotInTrash", "This content item is not in the trash."));
+        }
+
+        Status = StatusBeforeDeletion!.Value;
+        StatusBeforeDeletion = null;
+        DeletedAtUtc = null;
+        DeletedByUserId = null;
+        Touch(updatedByUserId, updatedAtUtc);
+
+        return Result.Success();
+    }
 
     private static Result ValidateSchedule(DateTime? publishAtUtc, DateTime? unpublishAtUtc, DateTime now)
     {

@@ -29,6 +29,12 @@ public sealed class PublishContentItemCommandHandler(
                 "ContentItem.ConcurrencyConflict", "The content item was changed by someone else. Reload and try again."));
         }
 
+        var trashCheck = ContentItemTrashGuard.EnsureEditable(contentItem);
+        if (trashCheck.IsFailure)
+        {
+            return trashCheck;
+        }
+
         var contentType = await contentTypeRepository.GetByIdAsync(contentItem.ContentTypeId, cancellationToken);
         if (contentType is null)
         {

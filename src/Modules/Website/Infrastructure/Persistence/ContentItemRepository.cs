@@ -25,7 +25,8 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
         PagedRequest pagedRequest,
         CancellationToken cancellationToken = default)
     {
-        var query = dbContext.ContentItems.AsNoTracking().Where(ci => ci.ParentId == parentId);
+        // ADR-024 §4.5 (Faz 1b Görev 6): the admin content list never returns trashed items - GetContentTrash is the dedicated view for those.
+        var query = dbContext.ContentItems.AsNoTracking().Where(ci => ci.ParentId == parentId && ci.DeletedAtUtc == null);
 
         if (contentTypeId is not null)
         {
@@ -136,7 +137,8 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
         return await dbContext.ContentItems.AsNoTracking()
             .Where(ci => ids.Contains(ci.Id))
             .Where(ci =>
-                ci.Status == ContentItemStatus.Published
+                ci.DeletedAtUtc == null
+                && ci.Status == ContentItemStatus.Published
                 && (ci.PublishAtUtc == null || ci.PublishAtUtc <= now)
                 && (ci.UnpublishAtUtc == null || ci.UnpublishAtUtc > now))
             .Where(ci => ci.Translations.Any(t => t.LanguageCode == languageCode))
@@ -157,7 +159,8 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
         var query = dbContext.ContentItems.AsNoTracking()
             .Where(ci => ci.ContentTypeId == contentTypeId && ci.Id != excludeId)
             .Where(ci =>
-                ci.Status == ContentItemStatus.Published
+                ci.DeletedAtUtc == null
+                && ci.Status == ContentItemStatus.Published
                 && (ci.PublishAtUtc == null || ci.PublishAtUtc <= now)
                 && (ci.UnpublishAtUtc == null || ci.UnpublishAtUtc > now))
             .Where(ci => ci.Translations.Any(t => t.LanguageCode == languageCode));
@@ -180,5 +183,41 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<PagedResult<ContentItemTrashListItem>> SearchTrashedAsync(
+        LanguageCode languageCode, PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+    {
+        var projected = dbContext.ContentItems.AsNoTracking()
+            .Where(ci => ci.DeletedAtUtc != null)
+            .Select(ci => new
+            {
+                ci.Id,
+                ci.ContentTypeId,
+                ci.RowVersion,
+                DeletedAtUtc = ci.DeletedAtUtc!.Value,
+                Title = ci.Translations.Where(t => t.LanguageCode == languageCode).Select(t => t.Title).FirstOrDefault()
+                    ?? ci.Translations.Select(t => t.Title).FirstOrDefault(),
+            });
+
+        var paged = await projected
+            .OrderByDescending(x => x.DeletedAtUtc)
+            .ToPagedResultAsync(pagedRequest, cancellationToken);
+
+        var items = paged.Items
+            .Select(x => new ContentItemTrashListItem(
+                x.Id, x.ContentTypeId, x.Title ?? string.Empty, x.DeletedAtUtc,
+                x.DeletedAtUtc.AddDays(ContentItem.TrashRetentionDays), x.RowVersion))
+            .ToList();
+
+        return new PagedResult<ContentItemTrashListItem>(items, paged.TotalCount, paged.Page, paged.PageSize);
+    }
+
+    public async Task<IReadOnlyList<ContentItem>> GetTrashedOlderThanAsync(DateTime threshold, CancellationToken cancellationToken = default) =>
+        await dbContext.ContentItems.Where(ci => ci.DeletedAtUtc != null && ci.DeletedAtUtc < threshold).ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<ContentItem>> GetByRelatedContentItemIdAsync(Guid relatedContentItemId, CancellationToken cancellationToken = default) =>
+        await dbContext.ContentItems.Where(ci => ci.RelatedContentItemIds.Contains(relatedContentItemId)).ToListAsync(cancellationToken);
+
     public void Add(ContentItem contentItem) => dbContext.ContentItems.Add(contentItem);
+
+    public void Remove(ContentItem contentItem) => dbContext.ContentItems.Remove(contentItem);
 }

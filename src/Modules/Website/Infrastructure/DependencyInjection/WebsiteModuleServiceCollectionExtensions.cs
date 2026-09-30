@@ -7,6 +7,7 @@ using GenclikMerkezi.Modules.Website.Infrastructure.BotProtection;
 using GenclikMerkezi.Modules.Website.Infrastructure.Jobs;
 using GenclikMerkezi.Modules.Website.Infrastructure.Media;
 using GenclikMerkezi.Modules.Website.Infrastructure.Persistence;
+using GenclikMerkezi.Modules.Website.Infrastructure.Preview;
 using GenclikMerkezi.Modules.Website.Infrastructure.Sanitization;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using Microsoft.EntityFrameworkCore;
@@ -54,12 +55,14 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IContentTagRepository, ContentTagRepository>();
         services.AddScoped<ContentPathCascadeService>();
         services.AddScoped<RelatedContentResolutionService>();
+        services.AddScoped<ContentItemPermanentDeletionService>();
         services.AddScoped<RouteResolutionService>();
         // CleanupStaleNotFoundLogsJob only takes singleton-safe dependencies (IServiceScopeFactory), so
         // it is registered Transient here and resolved by Program.cs's RecurringJob.AddOrUpdate<T>() -
         // the same pattern Support's CloseOverdueSupportTicketsJob already uses.
         services.AddTransient<CleanupStaleNotFoundLogsJob>();
         services.AddTransient<CleanupUnusedContentTagsJob>();
+        services.AddTransient<PermanentlyDeleteExpiredTrashJob>();
         services.AddSingleton<IImageProcessor, SkiaSharpImageProcessor>();
         services.AddScoped<IMediaUsageChecker, CompositeMediaUsageChecker>();
         services.AddScoped<IMediaUsageProvider, SiteSettingsMediaUsageProvider>();
@@ -67,6 +70,7 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IMediaUsageProvider, VideoMediaUsageProvider>();
         services.AddScoped<IVideoUsageChecker, VideoUsageChecker>();
         services.AddSingleton<IHtmlContentSanitizer, HtmlSanitizerContentSanitizer>();
+        services.AddSingleton<IContentPreviewLinkGenerator, DataProtectionContentPreviewLinkGenerator>();
 
         // ADR-024 §1/§12.3 Görev 8: IBotProtectionVerifier's Cloudflare Turnstile implementation
         // lives here (not a Host adapter) since it never touches another business module -

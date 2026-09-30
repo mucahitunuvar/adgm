@@ -26,6 +26,12 @@ public sealed class ScheduleContentItemCommandHandler(
                 "ContentItem.ConcurrencyConflict", "The content item was changed by someone else. Reload and try again."));
         }
 
+        var trashCheck = ContentItemTrashGuard.EnsureEditable(contentItem);
+        if (trashCheck.IsFailure)
+        {
+            return trashCheck;
+        }
+
         var scheduleResult = contentItem.Schedule(request.PublishAtUtc, request.UnpublishAtUtc, currentUserContext.UserId!.Value, DateTime.UtcNow);
         if (scheduleResult.IsFailure)
         {

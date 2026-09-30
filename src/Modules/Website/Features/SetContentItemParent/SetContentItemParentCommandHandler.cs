@@ -30,6 +30,12 @@ public sealed class SetContentItemParentCommandHandler(
                 "ContentItem.ConcurrencyConflict", "The content item was changed by someone else. Reload and try again."));
         }
 
+        var trashCheck = ContentItemTrashGuard.EnsureEditable(contentItem);
+        if (trashCheck.IsFailure)
+        {
+            return trashCheck;
+        }
+
         if (contentItem.ParentId == request.ParentId)
         {
             return Result.Success();

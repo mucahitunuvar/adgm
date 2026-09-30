@@ -565,6 +565,82 @@ public class ContentItemTests
         Assert.Equal("ContentItem.DuplicateRelatedContentItem", result.Error.Code);
     }
 
+    [Fact]
+    public void MoveToTrash_FromDraft_SucceedsAndRecordsStatusBeforeDeletion()
+    {
+        var item = CreateItem().Value;
+
+        var result = item.MoveToTrash(UserId, Now);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(item.DeletedAtUtc);
+        Assert.Equal(UserId, item.DeletedByUserId);
+        Assert.Equal(ContentItemStatus.Draft, item.StatusBeforeDeletion);
+    }
+
+    [Fact]
+    public void MoveToTrash_WhenPublished_Fails()
+    {
+        var item = CreateItem().Value;
+        item.Publish(null, null, true, true, Tr, UserId, Now);
+
+        var result = item.MoveToTrash(UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItem.CannotTrashPublishedContent", result.Error.Code);
+    }
+
+    [Fact]
+    public void MoveToTrash_WhenAlreadyInTrash_Fails()
+    {
+        var item = CreateItem().Value;
+        item.MoveToTrash(UserId, Now);
+
+        var result = item.MoveToTrash(UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItem.AlreadyInTrash", result.Error.Code);
+    }
+
+    [Fact]
+    public void IsVisible_WhenInTrash_ReturnsFalseEvenIfPreviouslyPublished()
+    {
+        var item = CreateItem().Value;
+        item.Publish(null, null, true, true, Tr, UserId, Now);
+        item.Unpublish(0, UserId, Now);
+        item.MoveToTrash(UserId, Now);
+
+        Assert.False(item.IsVisible(Now));
+    }
+
+    [Fact]
+    public void Restore_AfterMoveToTrash_ReturnsToPreviousStatus()
+    {
+        var item = CreateItem().Value;
+        item.Publish(null, null, true, true, Tr, UserId, Now);
+        item.Unpublish(0, UserId, Now);
+        item.MoveToTrash(UserId, Now);
+
+        var result = item.Restore(UserId, Now);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(ContentItemStatus.Unpublished, item.Status);
+        Assert.Null(item.DeletedAtUtc);
+        Assert.Null(item.DeletedByUserId);
+        Assert.Null(item.StatusBeforeDeletion);
+    }
+
+    [Fact]
+    public void Restore_WhenNotInTrash_Fails()
+    {
+        var item = CreateItem().Value;
+
+        var result = item.Restore(UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("ContentItem.NotInTrash", result.Error.Code);
+    }
+
     private static void MoveTo(ContentItem item, ContentItemStatus status)
     {
         switch (status)

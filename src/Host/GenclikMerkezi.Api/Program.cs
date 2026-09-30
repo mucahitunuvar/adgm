@@ -36,6 +36,7 @@ using GenclikMerkezi.Modules.Website;
 using GenclikMerkezi.Modules.Website.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.Website.Infrastructure.Jobs;
 using Hangfire;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
@@ -87,6 +88,14 @@ builder.Services.AddWebsiteModule(builder.Configuration);
 // directly by AddWebsiteModule, since it never touches another business module (ARCHITECTURE.md
 // §50.1).
 builder.Services.AddScoped<IWebsiteEmailSender, NotificationWebsiteEmailSender>();
+
+// ADR-024 §4.5 (Faz 1b Görev 6): signed, time-limited content preview link tokens use ASP.NET Core
+// Data Protection. Keys are persisted under App_Data (never under webuploads' public static-file
+// root) so an IIS application pool recycle does not invalidate every outstanding preview link - the
+// default (in-memory/registry) key storage would not survive a recycle.
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "App_Data", "dataprotection-keys")))
+    .SetApplicationName("GenclikMerkezi");
 
 // ADR-024 Faz 1b Görev 1: canlı ortam (Turhost/IIS) reverse proxy'siz çalıştığı için varsayılan
 // olarak kapalı - Enabled=true iken KnownProxies/KnownNetworks'ten en az biri dolu olmalı, aksi halde
@@ -284,6 +293,8 @@ if (!isTestingEnvironment)
         "website-cleanup-stale-not-found-logs", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
     RecurringJob.AddOrUpdate<CleanupUnusedContentTagsJob>(
         "website-cleanup-unused-content-tags", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
+    RecurringJob.AddOrUpdate<PermanentlyDeleteExpiredTrashJob>(
+        "website-permanently-delete-expired-trash", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
 }
 
 app.Run();

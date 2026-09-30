@@ -21,7 +21,10 @@ public sealed class ContentItemMediaUsageProvider(IContentItemRepository content
         var usages = new List<MediaUsage>();
         foreach (var item in items)
         {
-            var title = ResolveDisplayTitle(item, defaultLanguage);
+            // ADR-024 §4.5 (Faz 1b Görev 6): a trashed item can still be restored, so its media
+            // references still count as in use - the suffix just tells the admin why deleting the
+            // media seems blocked by content they cannot currently see in the normal content list.
+            var title = ResolveDisplayTitle(item, defaultLanguage) + (item.DeletedAtUtc is not null ? " (çöp kutusunda)" : string.Empty);
             var url = $"/admin/website/content/{item.Id}";
 
             if (item.CoverImageMediaId == mediaAssetId)

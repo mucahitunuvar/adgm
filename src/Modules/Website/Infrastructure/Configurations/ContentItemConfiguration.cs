@@ -47,6 +47,14 @@ public sealed class ContentItemConfiguration : IEntityTypeConfiguration<ContentI
         builder.Property(ci => ci.PublishedByUserId);
         builder.Property(ci => ci.PublishedAtUtc);
 
+        // ADR-024 §4.5 (Faz 1b Görev 6): soft delete - the translation rows and their FullPath/Slug
+        // are never touched by MoveToTrash, so the existing (LanguageCode, FullPath) unique index keeps
+        // blocking a new item from taking a trashed item's address ("adres kilidi") with no change of
+        // its own.
+        builder.Property(ci => ci.DeletedAtUtc);
+        builder.Property(ci => ci.DeletedByUserId);
+        builder.Property(ci => ci.StatusBeforeDeletion).HasConversion<string>().HasMaxLength(20);
+
         builder.OwnsMany(ci => ci.Translations, translation =>
         {
             translation.ToTable("ContentItemTranslations");

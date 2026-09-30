@@ -26,6 +26,12 @@ public sealed class UnarchiveContentItemCommandHandler(
                 "ContentItem.ConcurrencyConflict", "The content item was changed by someone else. Reload and try again."));
         }
 
+        var trashCheck = ContentItemTrashGuard.EnsureEditable(contentItem);
+        if (trashCheck.IsFailure)
+        {
+            return trashCheck;
+        }
+
         var unarchiveResult = contentItem.Unarchive(currentUserContext.UserId!.Value, DateTime.UtcNow);
         if (unarchiveResult.IsFailure)
         {

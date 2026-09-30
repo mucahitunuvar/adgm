@@ -31,7 +31,7 @@ public sealed class FakeContentItemRepository : IContentItemRepository
         Task.FromResult<IReadOnlyList<ContentItem>>([]);
 
     public Task<IReadOnlyList<ContentItem>> GetChildrenAsync(Guid parentId, CancellationToken cancellationToken = default) =>
-        Task.FromResult<IReadOnlyList<ContentItem>>([]);
+        Task.FromResult<IReadOnlyList<ContentItem>>(_contentItems.Where(c => c.ParentId == parentId).ToList());
 
     public Task<int> CountPublishedChildrenAsync(Guid parentId, CancellationToken cancellationToken = default) =>
         Task.FromResult(0);
@@ -86,5 +86,17 @@ public sealed class FakeContentItemRepository : IContentItemRepository
         new(item.Id, translation.Title, translation.Summary, translation.FullPath, item.CoverImageMediaId,
             item.PublishAtUtc ?? item.PublishedAtUtc ?? DateTime.MinValue);
 
+    public Task<PagedResult<ContentItemTrashListItem>> SearchTrashedAsync(
+        LanguageCode languageCode, PagedRequest pagedRequest, CancellationToken cancellationToken = default) =>
+        Task.FromResult(new PagedResult<ContentItemTrashListItem>([], 0, pagedRequest.Page, pagedRequest.PageSize));
+
+    public Task<IReadOnlyList<ContentItem>> GetTrashedOlderThanAsync(DateTime threshold, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<ContentItem>>(_contentItems.Where(c => c.DeletedAtUtc is not null && c.DeletedAtUtc < threshold).ToList());
+
+    public Task<IReadOnlyList<ContentItem>> GetByRelatedContentItemIdAsync(Guid relatedContentItemId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<ContentItem>>(_contentItems.Where(c => c.RelatedContentItemIds.Contains(relatedContentItemId)).ToList());
+
     public void Add(ContentItem contentItem) => _contentItems.Add(contentItem);
+
+    public void Remove(ContentItem contentItem) => _contentItems.Remove(contentItem);
 }

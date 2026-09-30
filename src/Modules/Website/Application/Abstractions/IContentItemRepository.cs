@@ -73,5 +73,24 @@ public interface IContentItemRepository
         Guid contentTypeId, Guid excludeId, IReadOnlyList<Guid>? categoryIds, LanguageCode languageCode, DateTime now, int take,
         CancellationToken cancellationToken = default);
 
+    // ADR-024 §4.5 (Faz 1b Görev 6): admin trash listing - trashed items only, newest DeletedAtUtc
+    // first.
+    Task<PagedResult<ContentItemTrashListItem>> SearchTrashedAsync(
+        LanguageCode languageCode, PagedRequest pagedRequest, CancellationToken cancellationToken = default);
+
+    // ADR-024 §4.5 (Faz 1b Görev 6): PermanentlyDeleteExpiredTrashJob's daily candidate set - trashed
+    // items whose DeletedAtUtc is older than the retention threshold. Whether each one currently has
+    // any child (in any status) still decides eligibility, checked per-candidate via GetChildrenAsync
+    // by the job itself (this is a low-volume nightly batch, not a hot path).
+    Task<IReadOnlyList<ContentItem>> GetTrashedOlderThanAsync(DateTime threshold, CancellationToken cancellationToken = default);
+
+    // ADR-024 §4.5 (Faz 1b Görev 6): PermanentlyDeleteContentItemCommandHandler's cleanup of every
+    // ContentItem whose RelatedContentItemIds references the item being hard-deleted ("bu içeriği
+    // hedefleyen ContentItemRelation satırları silinir") - loaded as full aggregates so each one can
+    // remove the reference through its own ContentItem.SetRelatedContent, not a raw JSON-column rewrite.
+    Task<IReadOnlyList<ContentItem>> GetByRelatedContentItemIdAsync(Guid relatedContentItemId, CancellationToken cancellationToken = default);
+
     void Add(ContentItem contentItem);
+
+    void Remove(ContentItem contentItem);
 }

@@ -37,6 +37,9 @@ public sealed class RedirectRepository(WebsiteDbContext dbContext) : IRedirectRe
         return query.OrderByDescending(r => r.CreatedAtUtc).ToPagedResultAsync(pagedRequest, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Redirect>> GetByTargetContentItemIdAsync(Guid contentItemId, CancellationToken cancellationToken = default) =>
+        await dbContext.Redirects.Where(r => r.TargetContentItemId == contentItemId).ToListAsync(cancellationToken);
+
     public void Add(Redirect redirect) => dbContext.Redirects.Add(redirect);
 
     public void Remove(Redirect redirect) => dbContext.Redirects.Remove(redirect);

@@ -28,6 +28,12 @@ public sealed class DeleteContentItemTranslationCommandHandler(
                 "ContentItem.ConcurrencyConflict", "The content item was changed by someone else. Reload and try again."));
         }
 
+        var trashCheck = ContentItemTrashGuard.EnsureEditable(contentItem);
+        if (trashCheck.IsFailure)
+        {
+            return trashCheck;
+        }
+
         var languageCodeResult = LanguageCode.Create(request.LanguageCode);
         if (languageCodeResult.IsFailure)
         {

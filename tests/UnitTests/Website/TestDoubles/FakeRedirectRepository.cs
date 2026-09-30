@@ -41,6 +41,9 @@ public sealed class FakeRedirectRepository : IRedirectRepository
         return Task.FromResult(new PagedResult<Redirect>(items, items.Count, pagedRequest.Page, pagedRequest.PageSize));
     }
 
+    public Task<IReadOnlyList<Redirect>> GetByTargetContentItemIdAsync(Guid contentItemId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<Redirect>>(_redirects.Where(r => r.TargetContentItemId == contentItemId).ToList());
+
     public void Add(Redirect redirect) => _redirects.Add(redirect);
 
     public void Remove(Redirect redirect) => _redirects.Remove(redirect);

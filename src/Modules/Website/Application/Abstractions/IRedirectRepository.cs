@@ -12,6 +12,10 @@ public interface IRedirectRepository
     Task<PagedResult<Redirect>> SearchAsync(
         LanguageCode? languageCode, bool? isAutomatic, string? search, PagedRequest pagedRequest, CancellationToken cancellationToken = default);
 
+    // ADR-024 §4.5 (Faz 1b Görev 6): PermanentlyDeleteContentItemCommandHandler's cleanup of every
+    // redirect (automatic or manual) pointing at the content item being hard-deleted.
+    Task<IReadOnlyList<Redirect>> GetByTargetContentItemIdAsync(Guid contentItemId, CancellationToken cancellationToken = default);
+
     void Add(Redirect redirect);
 
     void Remove(Redirect redirect);
