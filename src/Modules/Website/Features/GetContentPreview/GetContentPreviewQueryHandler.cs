@@ -19,6 +19,7 @@ public sealed class GetContentPreviewQueryHandler(
     IContentItemRepository contentItemRepository,
     IContentTypeRepository contentTypeRepository,
     ISiteLanguageRepository siteLanguageRepository,
+    ISiteSettingsRepository siteSettingsRepository,
     IMediaAssetRepository mediaAssetRepository,
     IFileStorageService fileStorageService,
     IVideoRepository videoRepository,
@@ -50,7 +51,8 @@ public sealed class GetContentPreviewQueryHandler(
             return Result.Failure<ContentPreviewResponse>(InvalidTokenError);
         }
 
-        var languageCode = await ResolveLanguageCodeAsync(tokenResult.Value.LanguageCode, cancellationToken);
+        var defaultLanguage = await siteLanguageRepository.GetDefaultAsync(cancellationToken);
+        var languageCode = ResolveLanguageCode(tokenResult.Value.LanguageCode, defaultLanguage!.Code);
         var translation = contentItem.Translations.FirstOrDefault(t => t.LanguageCode == languageCode);
         if (translation is null)
         {
@@ -84,12 +86,27 @@ public sealed class GetContentPreviewQueryHandler(
             ? await BuildRelatedAsync(contentItem, languageCode, cancellationToken)
             : [];
 
+        // ADR-024 §15: the same ContentSeoResolver chain the public list/detail endpoints use ("aynı
+        // çözüm kuralları önizlemede de kullanılır") - canonicalPath is the item's own path, exactly as
+        // it will read once published (RoutePathFormat.BuildPublicPath), even though this response is
+        // never indexed (see the endpoint's X-Robots-Tag/no-store headers).
+        var path = RoutePathFormat.BuildPublicPath(languageCode.Value, defaultLanguage.Code.Value, translation.FullPath);
+        var settings = await siteSettingsRepository.GetAsync(cancellationToken) ?? SiteSettings.CreateDefault();
+        var settingsTranslation = settings.Translations.FirstOrDefault(t => t.LanguageCode == languageCode);
+        var resolvedSeo = ContentSeoResolver.Resolve(
+            translation.Seo, translation.Title, translation.Summary, path, contentItem.DetailImageMediaId, contentItem.CoverImageMediaId,
+            settings.DefaultOgImageMediaId, settingsTranslation?.DefaultMetaDescription ?? string.Empty);
+        var ogImage = await BuildImageAsync(resolvedSeo.OgImageMediaId, cancellationToken);
+        var seo = new ContentPreviewSeoResponse(
+            resolvedSeo.MetaTitle, resolvedSeo.MetaDescription, resolvedSeo.OgTitle, resolvedSeo.OgDescription, ogImage?.Original,
+            resolvedSeo.CanonicalUrl, resolvedSeo.NoIndex);
+
         return Result.Success(new ContentPreviewResponse(
             contentItem.Id, contentType.Key.Value, contentType.DetailTemplate, translation.Title, translation.Summary, translation.Body,
-            coverImage, detailImage, gallery, videos, attachments, categories, tags, related));
+            coverImage, detailImage, gallery, videos, attachments, categories, tags, related, seo));
     }
 
-    private async Task<LanguageCode> ResolveLanguageCodeAsync(string? tokenLanguageCode, CancellationToken cancellationToken)
+    private static LanguageCode ResolveLanguageCode(string? tokenLanguageCode, LanguageCode defaultLanguageCode)
     {
         if (!string.IsNullOrWhiteSpace(tokenLanguageCode))
         {
@@ -100,8 +117,7 @@ public sealed class GetContentPreviewQueryHandler(
             }
         }
 
-        var defaultLanguage = await siteLanguageRepository.GetDefaultAsync(cancellationToken);
-        return defaultLanguage!.Code;
+        return defaultLanguageCode;
     }
 
     private async Task<ContentPreviewImageResponse?> BuildImageAsync(Guid? mediaAssetId, CancellationToken cancellationToken)

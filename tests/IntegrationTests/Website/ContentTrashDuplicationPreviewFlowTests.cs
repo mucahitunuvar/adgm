@@ -370,6 +370,12 @@ public class ContentTrashDuplicationPreviewFlowTests : IClassFixture<CustomWebAp
         Assert.Equal("noindex, nofollow", string.Join(", ", previewResponse.Headers.GetValues("X-Robots-Tag")));
         var preview = await previewResponse.Content.ReadFromJsonAsync<ContentPreviewResponse>();
         Assert.Equal("Önizleme Başlığı", preview!.Title);
+
+        // Bugfix: preview used to have no SEO block at all (ADR-024 §15's documented gap) - it now
+        // shares ContentSeoResolver with the public list/detail endpoints, falling back to the title
+        // when the translation's own SEO fields are empty, exactly like they do.
+        Assert.NotNull(preview.Seo);
+        Assert.Equal("Önizleme Başlığı", preview.Seo.MetaTitle);
     }
 
     [Fact]
