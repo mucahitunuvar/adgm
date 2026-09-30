@@ -11,6 +11,7 @@ public sealed class UpdateRedirectCommandHandler(
     IRedirectRepository redirectRepository,
     IContentItemRepository contentItemRepository,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<UpdateRedirectCommand, Result>
 {
@@ -61,6 +62,7 @@ public sealed class UpdateRedirectCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

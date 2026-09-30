@@ -14,6 +14,7 @@ public sealed class DeleteTagCommandHandler(
     IContentItemRepository contentItemRepository,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<DeleteTagCommand, Result>
 {
@@ -44,6 +45,7 @@ public sealed class DeleteTagCommandHandler(
 
         contentTagRepository.Remove(tag);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

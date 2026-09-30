@@ -11,6 +11,7 @@ public sealed class UpdateVideoTranslationCommandHandler(
     IVideoRepository videoRepository,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<UpdateVideoTranslationCommand, Result>
 {
@@ -43,6 +44,7 @@ public sealed class UpdateVideoTranslationCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

@@ -1,10 +1,14 @@
+using GenclikMerkezi.BuildingBlocks.Infrastructure.Caching;
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.Modules.Website.Features.DeleteMediaAsset;
+using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Domain;
 using GenclikMerkezi.SharedKernel.Results;
 using GenclikMerkezi.UnitTests.Website.TestDoubles;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace GenclikMerkezi.UnitTests.Website.Features.DeleteMediaAsset;
 
@@ -14,9 +18,11 @@ public class DeleteMediaAssetCommandHandlerTests
     private readonly FakeMediaUsageChecker _usageChecker = new();
     private readonly FakeMediaFileStorageService _fileStorageService = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
+    private readonly ICacheService _cacheService =
+        new MemoryCacheService(new MemoryCache(new MemoryCacheOptions()), Options.Create(new CacheSettings()));
 
     private DeleteMediaAssetCommandHandler CreateHandler() =>
-        new(_repository, _usageChecker, _fileStorageService, _unitOfWork, NullLogger<DeleteMediaAssetCommandHandler>.Instance);
+        new(_repository, _usageChecker, _fileStorageService, _cacheService, _unitOfWork, NullLogger<DeleteMediaAssetCommandHandler>.Instance);
 
     private static MediaAsset SeedMediaAssetWithVariant(FakeMediaAssetRepository repository)
     {

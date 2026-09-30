@@ -11,6 +11,7 @@ public sealed class DeleteMediaAssetCommandHandler(
     IMediaAssetRepository mediaAssetRepository,
     IMediaUsageChecker mediaUsageChecker,
     IFileStorageService fileStorageService,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork,
     ILogger<DeleteMediaAssetCommandHandler> logger)
     : IRequestHandler<DeleteMediaAssetCommand, Result>
@@ -36,6 +37,7 @@ public sealed class DeleteMediaAssetCommandHandler(
         // command failure (the DB is already the source of truth once committed).
         mediaAssetRepository.Remove(mediaAsset);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         var fileKeys = new List<string> { mediaAsset.Original.FileKey };
         fileKeys.AddRange(mediaAsset.Variants.Select(v => v.File.FileKey));

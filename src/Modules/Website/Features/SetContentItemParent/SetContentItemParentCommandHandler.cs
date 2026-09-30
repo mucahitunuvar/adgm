@@ -13,6 +13,7 @@ public sealed class SetContentItemParentCommandHandler(
     ISiteLanguageRepository siteLanguageRepository,
     ContentPathCascadeService contentPathCascadeService,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<SetContentItemParentCommand, Result>
 {
@@ -113,6 +114,7 @@ public sealed class SetContentItemParentCommandHandler(
         contentItem.SetParent(request.ParentId, userId, now);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

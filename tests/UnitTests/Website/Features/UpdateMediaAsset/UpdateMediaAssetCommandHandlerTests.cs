@@ -1,9 +1,13 @@
+using GenclikMerkezi.BuildingBlocks.Infrastructure.Caching;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.Modules.Website.Features.UpdateMediaAsset;
+using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Domain;
 using GenclikMerkezi.SharedKernel.Results;
 using GenclikMerkezi.UnitTests.BuildingBlocks.TestDoubles;
 using GenclikMerkezi.UnitTests.Website.TestDoubles;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 
 namespace GenclikMerkezi.UnitTests.Website.Features.UpdateMediaAsset;
 
@@ -11,9 +15,11 @@ public class UpdateMediaAssetCommandHandlerTests
 {
     private readonly FakeMediaAssetRepository _repository = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
+    private readonly ICacheService _cacheService =
+        new MemoryCacheService(new MemoryCache(new MemoryCacheOptions()), Options.Create(new CacheSettings()));
 
     private UpdateMediaAssetCommandHandler CreateHandler() =>
-        new(_repository, new FakeCurrentUserContext(Guid.NewGuid()), _unitOfWork);
+        new(_repository, new FakeCurrentUserContext(Guid.NewGuid()), _cacheService, _unitOfWork);
 
     private static MediaAsset SeedMediaAsset(FakeMediaAssetRepository repository)
     {

@@ -1,7 +1,11 @@
+using GenclikMerkezi.BuildingBlocks.Infrastructure.Caching;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.Modules.Website.Features.UpdateRedirect;
+using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.UnitTests.BuildingBlocks.TestDoubles;
 using GenclikMerkezi.UnitTests.Website.TestDoubles;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 
 namespace GenclikMerkezi.UnitTests.Website.Features.UpdateRedirect;
 
@@ -12,9 +16,11 @@ public class UpdateRedirectCommandHandlerTests
     private readonly FakeRedirectRepository _redirectRepository = new();
     private readonly FakeContentItemRepository _contentItemRepository = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
+    private readonly ICacheService _cacheService =
+        new MemoryCacheService(new MemoryCache(new MemoryCacheOptions()), Options.Create(new CacheSettings()));
 
     private UpdateRedirectCommandHandler CreateHandler() =>
-        new(_redirectRepository, _contentItemRepository, new FakeCurrentUserContext(Guid.NewGuid()), _unitOfWork);
+        new(_redirectRepository, _contentItemRepository, new FakeCurrentUserContext(Guid.NewGuid()), _cacheService, _unitOfWork);
 
     private Redirect SeedManualRedirect(string fromPath = "eski-yol", string targetPath = "hedef-1")
     {

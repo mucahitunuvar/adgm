@@ -16,6 +16,7 @@ public sealed class SetContentItemTranslationTagsCommandHandler(
     IContentTagRepository contentTagRepository,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<SetContentItemTranslationTagsCommand, Result>
 {
@@ -104,6 +105,7 @@ public sealed class SetContentItemTranslationTagsCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

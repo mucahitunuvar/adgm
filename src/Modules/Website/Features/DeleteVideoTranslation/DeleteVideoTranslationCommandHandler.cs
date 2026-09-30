@@ -12,6 +12,7 @@ public sealed class DeleteVideoTranslationCommandHandler(
     ISiteLanguageRepository siteLanguageRepository,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<DeleteVideoTranslationCommand, Result>
 {
@@ -49,6 +50,7 @@ public sealed class DeleteVideoTranslationCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

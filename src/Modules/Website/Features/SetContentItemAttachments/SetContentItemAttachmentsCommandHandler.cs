@@ -13,6 +13,7 @@ public sealed class SetContentItemAttachmentsCommandHandler(
     IMediaAssetRepository mediaAssetRepository,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<SetContentItemAttachmentsCommand, Result>
 {
@@ -81,6 +82,7 @@ public sealed class SetContentItemAttachmentsCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

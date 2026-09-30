@@ -24,6 +24,7 @@ public sealed class PermanentlyDeleteExpiredTrashJob(IServiceScopeFactory servic
         using var scope = serviceScopeFactory.CreateScope();
         var contentItemRepository = scope.ServiceProvider.GetRequiredService<IContentItemRepository>();
         var permanentDeletionService = scope.ServiceProvider.GetRequiredService<ContentItemPermanentDeletionService>();
+        var cacheService = scope.ServiceProvider.GetRequiredService<ICacheService>();
         var unitOfWork = scope.ServiceProvider.GetRequiredKeyedService<IUnitOfWork>(WebsiteModuleMarker.UnitOfWorkKey);
 
         var now = timeProvider.GetUtcNow().UtcDateTime;
@@ -51,6 +52,7 @@ public sealed class PermanentlyDeleteExpiredTrashJob(IServiceScopeFactory servic
         if (deletedAny)
         {
             await unitOfWork.SaveChangesAsync(cancellationToken);
+            WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
         }
     }
 }

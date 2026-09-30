@@ -9,6 +9,7 @@ namespace GenclikMerkezi.Modules.Website.Features.ScheduleContentItem;
 public sealed class ScheduleContentItemCommandHandler(
     IContentItemRepository contentItemRepository,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<ScheduleContentItemCommand, Result>
 {
@@ -39,6 +40,7 @@ public sealed class ScheduleContentItemCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

@@ -11,6 +11,7 @@ public sealed class UpdateVideoCommandHandler(
     IMediaAssetRepository mediaAssetRepository,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<UpdateVideoCommand, Result>
 {
@@ -44,6 +45,7 @@ public sealed class UpdateVideoCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

@@ -10,6 +10,7 @@ public sealed class UpdateTagCommandHandler(
     IContentTagRepository contentTagRepository,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<UpdateTagCommand, Result>
 {
@@ -35,6 +36,7 @@ public sealed class UpdateTagCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

@@ -32,6 +32,8 @@ using GenclikMerkezi.Modules.Website.Features.GetContentItemById;
 using GenclikMerkezi.Modules.Website.Features.GetContentItems;
 using GenclikMerkezi.Modules.Website.Features.GetContentPreview;
 using GenclikMerkezi.Modules.Website.Features.GetContentTrash;
+using GenclikMerkezi.Modules.Website.Features.GetPublicContentById;
+using GenclikMerkezi.Modules.Website.Features.GetPublicContents;
 using GenclikMerkezi.Modules.Website.Features.GetContentTypeById;
 using GenclikMerkezi.Modules.Website.Features.GetContentTypes;
 using GenclikMerkezi.Modules.Website.Features.GetMediaAssetById;
@@ -142,6 +144,8 @@ public static class WebsiteModuleEndpointExtensions
         DuplicateContentItemEndpoint.Map(app);
         CreateContentPreviewLinkEndpoint.Map(app);
         GetContentPreviewEndpoint.Map(app);
+        GetPublicContentsEndpoint.Map(app);
+        GetPublicContentByIdEndpoint.Map(app);
 
         CreateRedirectEndpoint.Map(app);
         UpdateRedirectEndpoint.Map(app);

@@ -1,7 +1,11 @@
+using GenclikMerkezi.BuildingBlocks.Infrastructure.Caching;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.Modules.Website.Features.ConvertNotFoundPathToRedirect;
+using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.UnitTests.BuildingBlocks.TestDoubles;
 using GenclikMerkezi.UnitTests.Website.TestDoubles;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 
 namespace GenclikMerkezi.UnitTests.Website.Features.ConvertNotFoundPathToRedirect;
 
@@ -13,9 +17,12 @@ public class ConvertNotFoundPathToRedirectCommandHandlerTests
     private readonly FakeRedirectRepository _redirectRepository = new();
     private readonly FakeContentItemRepository _contentItemRepository = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
+    private readonly ICacheService _cacheService =
+        new MemoryCacheService(new MemoryCache(new MemoryCacheOptions()), Options.Create(new CacheSettings()));
 
     private ConvertNotFoundPathToRedirectCommandHandler CreateHandler() =>
-        new(_notFoundLogRepository, _redirectRepository, _contentItemRepository, new FakeCurrentUserContext(Guid.NewGuid()), _unitOfWork);
+        new(_notFoundLogRepository, _redirectRepository, _contentItemRepository, new FakeCurrentUserContext(Guid.NewGuid()), _cacheService,
+            _unitOfWork);
 
     private NotFoundLog SeedNotFoundLog(string path = "cok-tiklanan-404")
     {

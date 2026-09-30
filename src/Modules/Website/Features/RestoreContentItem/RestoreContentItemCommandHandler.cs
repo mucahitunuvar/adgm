@@ -13,6 +13,7 @@ public sealed class RestoreContentItemCommandHandler(
     IContentItemRepository contentItemRepository,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<RestoreContentItemCommand, Result>
 {
@@ -41,6 +42,7 @@ public sealed class RestoreContentItemCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

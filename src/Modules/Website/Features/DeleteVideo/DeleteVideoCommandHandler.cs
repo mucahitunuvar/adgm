@@ -9,6 +9,7 @@ namespace GenclikMerkezi.Modules.Website.Features.DeleteVideo;
 public sealed class DeleteVideoCommandHandler(
     IVideoRepository videoRepository,
     IVideoUsageChecker videoUsageChecker,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<DeleteVideoCommand, Result>
 {
@@ -30,6 +31,7 @@ public sealed class DeleteVideoCommandHandler(
 
         videoRepository.Remove(video);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

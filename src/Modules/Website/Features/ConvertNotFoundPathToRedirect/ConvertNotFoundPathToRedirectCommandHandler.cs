@@ -15,6 +15,7 @@ public sealed class ConvertNotFoundPathToRedirectCommandHandler(
     IRedirectRepository redirectRepository,
     IContentItemRepository contentItemRepository,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<ConvertNotFoundPathToRedirectCommand, Result<ConvertNotFoundPathToRedirectResponse>>
 {
@@ -69,6 +70,7 @@ public sealed class ConvertNotFoundPathToRedirectCommandHandler(
         redirectRepository.Add(redirect);
         notFoundLogRepository.Remove(notFoundLog);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success(new ConvertNotFoundPathToRedirectResponse(redirect.Id, redirect.FromPath));
     }

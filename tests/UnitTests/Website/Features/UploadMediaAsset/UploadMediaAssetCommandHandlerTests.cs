@@ -1,10 +1,14 @@
 using System.Text;
+using GenclikMerkezi.BuildingBlocks.Infrastructure.Caching;
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.Modules.Website.Features.UploadMediaAsset;
+using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Results;
 using GenclikMerkezi.UnitTests.BuildingBlocks.TestDoubles;
 using GenclikMerkezi.UnitTests.Website.TestDoubles;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 
 namespace GenclikMerkezi.UnitTests.Website.Features.UploadMediaAsset;
 
@@ -15,10 +19,12 @@ public class UploadMediaAssetCommandHandlerTests
     private readonly FakeImageProcessor _imageProcessor = new();
     private readonly FakeMediaFileStorageService _fileStorageService = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
+    private readonly ICacheService _cacheService =
+        new MemoryCacheService(new MemoryCache(new MemoryCacheOptions()), Options.Create(new CacheSettings()));
 
     private UploadMediaAssetCommandHandler CreateHandler() =>
         new(_mediaAssetRepository, _siteLanguageRepository, _imageProcessor, _fileStorageService,
-            new FakeCurrentUserContext(Guid.NewGuid()), _unitOfWork);
+            new FakeCurrentUserContext(Guid.NewGuid()), _cacheService, _unitOfWork);
 
     private static MemoryStream CreateContent(string text = "content") => new(Encoding.UTF8.GetBytes(text));
 

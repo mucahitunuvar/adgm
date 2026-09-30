@@ -16,6 +16,7 @@ public sealed class CreateContentItemCommandHandler(
     IHtmlContentSanitizer htmlContentSanitizer,
     ContentPathCascadeService contentPathCascadeService,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<CreateContentItemCommand, Result<CreateContentItemResponse>>
 {
@@ -99,6 +100,7 @@ public sealed class CreateContentItemCommandHandler(
 
         contentItemRepository.Add(contentItemResult.Value);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success(new CreateContentItemResponse(contentItemResult.Value.Id, defaultLanguage.Code.Value, translation.FullPath));
     }

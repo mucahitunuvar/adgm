@@ -9,6 +9,7 @@ namespace GenclikMerkezi.Modules.Website.Features.UnpublishContentItem;
 public sealed class UnpublishContentItemCommandHandler(
     IContentItemRepository contentItemRepository,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<UnpublishContentItemCommand, Result>
 {
@@ -40,6 +41,7 @@ public sealed class UnpublishContentItemCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

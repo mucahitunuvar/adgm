@@ -10,4 +10,23 @@ public static class WebsiteCacheKeys
     public static string PublicSite(string languageCode) => $"{Prefix}{languageCode}";
 
     public static string InvalidationPrefix => Prefix;
+
+    // ADR-024 §17 (Faz 1b Görev 7): everything derived from content/type/category/tag/video/media/
+    // redirect/language state - the public list, the public detail, and public route resolution - is
+    // cached under this single prefix, so one coarse-grained RemoveByPrefix (deliberately not
+    // fine-grained per ADR-024 Faz 1b's own "kaba taneli temizlik kabul edilebilir" call) clears all
+    // of it whenever any of that state changes.
+    private const string PublicContentPrefix = "website:public-content:";
+
+    public static string PublicContentList(
+        string contentTypeKey, string languageCode, string? category, string? tag, string? from, string? to, bool? featured, int page,
+        int pageSize) =>
+        $"{PublicContentPrefix}list:{contentTypeKey}:{languageCode}:{category}:{tag}:{from}:{to}:{featured}:{page}:{pageSize}";
+
+    public static string PublicContentDetail(Guid contentItemId, string languageCode) =>
+        $"{PublicContentPrefix}detail:{contentItemId}:{languageCode}";
+
+    public static string RouteResolution(string normalizedPath) => $"{PublicContentPrefix}route:{normalizedPath}";
+
+    public static string PublicContentInvalidationPrefix => PublicContentPrefix;
 }

@@ -15,6 +15,7 @@ public sealed class UploadMediaAssetCommandHandler(
     IImageProcessor imageProcessor,
     IFileStorageService fileStorageService,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<UploadMediaAssetCommand, Result<UploadMediaAssetResponse>>
 {
@@ -78,6 +79,7 @@ public sealed class UploadMediaAssetCommandHandler(
 
         mediaAssetRepository.Add(mediaAsset);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success(await BuildResponseAsync(mediaAsset, cancellationToken));
     }

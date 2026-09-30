@@ -9,6 +9,7 @@ namespace GenclikMerkezi.Modules.Website.Features.DeactivateContentType;
 public sealed class DeactivateContentTypeCommandHandler(
     IContentTypeRepository contentTypeRepository,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<DeactivateContentTypeCommand, Result>
 {
@@ -33,6 +34,7 @@ public sealed class DeactivateContentTypeCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

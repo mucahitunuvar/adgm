@@ -10,6 +10,7 @@ public sealed class ActivateVideoCommandHandler(
     IVideoRepository videoRepository,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<ActivateVideoCommand, Result>
 {
@@ -34,6 +35,7 @@ public sealed class ActivateVideoCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

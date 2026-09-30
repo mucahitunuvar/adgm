@@ -13,6 +13,7 @@ public sealed class CreateVideoCommandHandler(
     IMediaAssetRepository mediaAssetRepository,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<CreateVideoCommand, Result<CreateVideoResponse>>
 {
@@ -43,6 +44,7 @@ public sealed class CreateVideoCommandHandler(
 
         videoRepository.Add(videoResult.Value);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success(new CreateVideoResponse(
             videoResult.Value.Id, videoResult.Value.YouTubeVideoId.Value, defaultLanguage.Code.Value));

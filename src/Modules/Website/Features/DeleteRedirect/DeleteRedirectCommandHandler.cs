@@ -9,7 +9,9 @@ namespace GenclikMerkezi.Modules.Website.Features.DeleteRedirect;
 // Both automatic and manual redirects can be deleted (ADR-024 §15) - only editing (UpdateRedirect) is
 // restricted to manual ones.
 public sealed class DeleteRedirectCommandHandler(
-    IRedirectRepository redirectRepository, [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
+    IRedirectRepository redirectRepository,
+    ICacheService cacheService,
+    [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<DeleteRedirectCommand, Result>
 {
     public async Task<Result> Handle(DeleteRedirectCommand request, CancellationToken cancellationToken)
@@ -22,6 +24,7 @@ public sealed class DeleteRedirectCommandHandler(
 
         redirectRepository.Remove(redirect);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

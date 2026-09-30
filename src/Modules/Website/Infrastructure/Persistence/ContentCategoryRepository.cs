@@ -16,6 +16,12 @@ public sealed class ContentCategoryRepository(WebsiteDbContext dbContext) : ICon
             .OrderBy(c => c.SortOrder)
             .ToListAsync(cancellationToken);
 
+    public Task<ContentCategory?> GetByTypeAndSlugAsync(
+        Guid contentTypeId, LanguageCode languageCode, string slug, CancellationToken cancellationToken = default) =>
+        dbContext.ContentCategories
+            .Where(c => c.ContentTypeId == contentTypeId)
+            .FirstOrDefaultAsync(c => c.Translations.Any(t => t.LanguageCode == languageCode && t.Slug == slug), cancellationToken);
+
     public Task<bool> SlugExistsAsync(
         Guid contentTypeId, LanguageCode languageCode, string slug, Guid? excludeId, CancellationToken cancellationToken = default) =>
         dbContext.ContentCategories

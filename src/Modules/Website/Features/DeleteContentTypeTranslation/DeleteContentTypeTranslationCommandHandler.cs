@@ -11,6 +11,7 @@ public sealed class DeleteContentTypeTranslationCommandHandler(
     IContentTypeRepository contentTypeRepository,
     ISiteLanguageRepository siteLanguageRepository,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<DeleteContentTypeTranslationCommand, Result>
 {
@@ -50,6 +51,7 @@ public sealed class DeleteContentTypeTranslationCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

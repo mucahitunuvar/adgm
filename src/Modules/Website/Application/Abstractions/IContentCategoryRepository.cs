@@ -8,6 +8,11 @@ public interface IContentCategoryRepository
 
     Task<IReadOnlyList<ContentCategory>> GetByContentTypeIdAsync(Guid contentTypeId, CancellationToken cancellationToken = default);
 
+    // ADR-024 §17 (Faz 1b Görev 7): the public list endpoint's `category` filter resolves a slug (not
+    // an id) within the requested type and language.
+    Task<ContentCategory?> GetByTypeAndSlugAsync(
+        Guid contentTypeId, LanguageCode languageCode, string slug, CancellationToken cancellationToken = default);
+
     // Cross-aggregate uniqueness check (ADR-024 §4.1): a language's slug must be unique within its
     // ContentType, excludeId lets an update check against every OTHER category of the same type
     // without a query for "does this category collide with itself" always trivially succeeding.

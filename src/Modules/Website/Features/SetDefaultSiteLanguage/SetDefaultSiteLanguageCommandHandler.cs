@@ -46,6 +46,7 @@ public sealed class SetDefaultSiteLanguageCommandHandler(
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         WebsiteCacheInvalidator.InvalidatePublicSite(cacheService);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

@@ -1,3 +1,4 @@
+using GenclikMerkezi.BuildingBlocks.Infrastructure.Caching;
 using GenclikMerkezi.Modules.Website;
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Application.ContentPaths;
@@ -5,9 +6,11 @@ using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.Modules.Website.Infrastructure.Jobs;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.UnitTests.Website.TestDoubles;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace GenclikMerkezi.UnitTests.Website.Jobs;
 
@@ -33,6 +36,8 @@ public class PermanentlyDeleteExpiredTrashJobTests
         services.AddSingleton<IRedirectRepository>(_redirectRepository);
         services.AddSingleton<ContentItemPermanentDeletionService>();
         services.AddSingleton<ILogger<ContentItemPermanentDeletionService>>(NullLogger<ContentItemPermanentDeletionService>.Instance);
+        services.AddSingleton<ICacheService>(
+            new MemoryCacheService(new MemoryCache(new MemoryCacheOptions()), Options.Create(new CacheSettings())));
         services.AddKeyedSingleton<IUnitOfWork>(WebsiteModuleMarker.UnitOfWorkKey, _unitOfWork);
         var serviceProvider = services.BuildServiceProvider();
 

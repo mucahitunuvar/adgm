@@ -10,6 +10,7 @@ namespace GenclikMerkezi.Modules.Website.Features.UpdateMediaAsset;
 public sealed class UpdateMediaAssetCommandHandler(
     IMediaAssetRepository mediaAssetRepository,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<UpdateMediaAssetCommand, Result>
 {
@@ -55,6 +56,7 @@ public sealed class UpdateMediaAssetCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

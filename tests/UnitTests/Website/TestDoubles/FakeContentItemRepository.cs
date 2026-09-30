@@ -96,6 +96,59 @@ public sealed class FakeContentItemRepository : IContentItemRepository
     public Task<IReadOnlyList<ContentItem>> GetByRelatedContentItemIdAsync(Guid relatedContentItemId, CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<ContentItem>>(_contentItems.Where(c => c.RelatedContentItemIds.Contains(relatedContentItemId)).ToList());
 
+    public Task<PagedResult<PublicContentListItemCandidate>> SearchPublicListAsync(
+        Guid contentTypeId,
+        LanguageCode languageCode,
+        IReadOnlyList<Guid>? categoryIds,
+        Guid? tagId,
+        string? search,
+        DateTime? from,
+        DateTime? to,
+        bool? featured,
+        ContentTypeSortMode sortMode,
+        PagedRequest pagedRequest,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _contentItems.Where(c =>
+            c.ContentTypeId == contentTypeId && c.DeletedAtUtc is null && c.Status == ContentItemStatus.Published
+            && c.Translations.Any(t => t.LanguageCode == languageCode));
+
+        if (categoryIds is { Count: > 0 })
+        {
+            query = query.Where(c => c.CategoryIds.Any(categoryIds.Contains));
+        }
+
+        if (tagId is not null)
+        {
+            query = query.Where(c => c.Translations.Any(t => t.LanguageCode == languageCode && t.TagIds.Contains(tagId.Value)));
+        }
+
+        if (featured is not null)
+        {
+            query = query.Where(c => c.IsFeatured == featured.Value);
+        }
+
+        var candidates = query
+            .Select(c =>
+            {
+                var translation = c.Translations.First(t => t.LanguageCode == languageCode);
+                var effectiveDate = c.PublishAtUtc ?? c.PublishedAtUtc ?? DateTime.MinValue;
+                return new PublicContentListItemCandidate(
+                    c.Id, translation.Title, translation.Summary, translation.Body, translation.FullPath, c.CoverImageMediaId,
+                    c.DetailImageMediaId, c.PublishAtUtc, c.UnpublishAtUtc, effectiveDate, c.IsFeatured, c.CategoryIds, translation.Seo);
+            })
+            .Where(x => string.IsNullOrWhiteSpace(search) || x.Title.Contains(search) || x.Summary.Contains(search))
+            .Where(x => from is null || x.EffectivePublishDate >= from.Value)
+            .Where(x => to is null || x.EffectivePublishDate <= to.Value);
+
+        var ordered = sortMode == ContentTypeSortMode.Manual
+            ? candidates.OrderBy(x => x.Title)
+            : candidates.OrderByDescending(x => x.EffectivePublishDate);
+
+        var items = ordered.ToList();
+        return Task.FromResult(new PagedResult<PublicContentListItemCandidate>(items, items.Count, pagedRequest.Page, pagedRequest.PageSize));
+    }
+
     public void Add(ContentItem contentItem) => _contentItems.Add(contentItem);
 
     public void Remove(ContentItem contentItem) => _contentItems.Remove(contentItem);

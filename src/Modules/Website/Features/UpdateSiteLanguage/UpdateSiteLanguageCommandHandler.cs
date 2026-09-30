@@ -30,6 +30,7 @@ public sealed class UpdateSiteLanguageCommandHandler(
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         WebsiteCacheInvalidator.InvalidatePublicSite(cacheService);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

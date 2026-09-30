@@ -1,6 +1,10 @@
+using GenclikMerkezi.BuildingBlocks.Infrastructure.Caching;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.Modules.Website.Features.DeleteRedirect;
+using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.UnitTests.Website.TestDoubles;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 
 namespace GenclikMerkezi.UnitTests.Website.Features.DeleteRedirect;
 
@@ -8,8 +12,10 @@ public class DeleteRedirectCommandHandlerTests
 {
     private readonly FakeRedirectRepository _redirectRepository = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
+    private readonly ICacheService _cacheService =
+        new MemoryCacheService(new MemoryCache(new MemoryCacheOptions()), Options.Create(new CacheSettings()));
 
-    private DeleteRedirectCommandHandler CreateHandler() => new(_redirectRepository, _unitOfWork);
+    private DeleteRedirectCommandHandler CreateHandler() => new(_redirectRepository, _cacheService, _unitOfWork);
 
     [Fact]
     public async Task Handle_WithNonExistentRedirect_ReturnsNotFound()

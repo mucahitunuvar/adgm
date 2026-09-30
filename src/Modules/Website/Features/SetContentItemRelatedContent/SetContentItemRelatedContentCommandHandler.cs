@@ -11,6 +11,7 @@ public sealed class SetContentItemRelatedContentCommandHandler(
     IContentTypeRepository contentTypeRepository,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<SetContentItemRelatedContentCommand, Result>
 {
@@ -60,6 +61,7 @@ public sealed class SetContentItemRelatedContentCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

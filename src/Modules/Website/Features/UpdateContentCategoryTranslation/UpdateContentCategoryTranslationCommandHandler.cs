@@ -11,6 +11,7 @@ public sealed class UpdateContentCategoryTranslationCommandHandler(
     IContentCategoryRepository contentCategoryRepository,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<UpdateContentCategoryTranslationCommand, Result>
 {
@@ -59,6 +60,7 @@ public sealed class UpdateContentCategoryTranslationCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

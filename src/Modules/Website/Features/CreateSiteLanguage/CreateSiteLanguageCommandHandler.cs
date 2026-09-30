@@ -37,6 +37,7 @@ public sealed class CreateSiteLanguageCommandHandler(
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         WebsiteCacheInvalidator.InvalidatePublicSite(cacheService);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success(new CreateSiteLanguageResponse(
             siteLanguage.Id, siteLanguage.Code.Value, siteLanguage.Name, siteLanguage.SortOrder,

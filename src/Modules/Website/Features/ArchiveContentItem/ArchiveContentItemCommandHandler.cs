@@ -9,6 +9,7 @@ namespace GenclikMerkezi.Modules.Website.Features.ArchiveContentItem;
 public sealed class ArchiveContentItemCommandHandler(
     IContentItemRepository contentItemRepository,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<ArchiveContentItemCommand, Result>
 {
@@ -40,6 +41,7 @@ public sealed class ArchiveContentItemCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

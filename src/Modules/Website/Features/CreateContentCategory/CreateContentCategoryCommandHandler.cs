@@ -13,6 +13,7 @@ public sealed class CreateContentCategoryCommandHandler(
     ISiteLanguageRepository siteLanguageRepository,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<CreateContentCategoryCommand, Result<CreateContentCategoryResponse>>
 {
@@ -82,6 +83,7 @@ public sealed class CreateContentCategoryCommandHandler(
 
         contentCategoryRepository.Add(categoryResult.Value);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success(new CreateContentCategoryResponse(categoryResult.Value.Id, defaultLanguage.Code.Value));
     }

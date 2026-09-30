@@ -217,6 +217,104 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
     public async Task<IReadOnlyList<ContentItem>> GetByRelatedContentItemIdAsync(Guid relatedContentItemId, CancellationToken cancellationToken = default) =>
         await dbContext.ContentItems.Where(ci => ci.RelatedContentItemIds.Contains(relatedContentItemId)).ToListAsync(cancellationToken);
 
+    public async Task<PagedResult<PublicContentListItemCandidate>> SearchPublicListAsync(
+        Guid contentTypeId,
+        LanguageCode languageCode,
+        IReadOnlyList<Guid>? categoryIds,
+        Guid? tagId,
+        string? search,
+        DateTime? from,
+        DateTime? to,
+        bool? featured,
+        ContentTypeSortMode sortMode,
+        PagedRequest pagedRequest,
+        CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.ContentItems.AsNoTracking()
+            .Where(ci => ci.ContentTypeId == contentTypeId && ci.DeletedAtUtc == null && ci.Status == ContentItemStatus.Published)
+            .Where(ci => ci.Translations.Any(t => t.LanguageCode == languageCode));
+
+        if (categoryIds is { Count: > 0 })
+        {
+            query = query.Where(ci => ci.CategoryIds.Any(c => categoryIds.Contains(c)));
+        }
+
+        if (tagId is not null)
+        {
+            query = query.Where(ci => ci.Translations.Any(t => t.LanguageCode == languageCode && t.TagIds.Contains(tagId.Value)));
+        }
+
+        if (featured is not null)
+        {
+            query = query.Where(ci => ci.IsFeatured == featured.Value);
+        }
+
+        var projected = query.Select(ci => new
+        {
+            ci.Id,
+            ci.CoverImageMediaId,
+            ci.DetailImageMediaId,
+            ci.PublishAtUtc,
+            ci.UnpublishAtUtc,
+            ci.PublishedAtUtc,
+            ci.IsFeatured,
+            ci.CategoryIds,
+            ci.SortOrder,
+            Title = ci.Translations.Where(t => t.LanguageCode == languageCode).Select(t => t.Title).First(),
+            Summary = ci.Translations.Where(t => t.LanguageCode == languageCode).Select(t => t.Summary).First(),
+            Body = ci.Translations.Where(t => t.LanguageCode == languageCode).Select(t => t.Body).First(),
+            FullPath = ci.Translations.Where(t => t.LanguageCode == languageCode).Select(t => t.FullPath).First(),
+            Seo = ci.Translations.Where(t => t.LanguageCode == languageCode).Select(t => t.Seo).First(),
+        });
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            projected = projected.Where(x => x.Title.Contains(search) || x.Summary.Contains(search));
+        }
+
+        var effectivePublishDateQuery = projected.Select(x => new
+        {
+            x.Id,
+            x.CoverImageMediaId,
+            x.DetailImageMediaId,
+            x.PublishAtUtc,
+            x.UnpublishAtUtc,
+            x.IsFeatured,
+            x.CategoryIds,
+            x.SortOrder,
+            x.Title,
+            x.Summary,
+            x.Body,
+            x.FullPath,
+            x.Seo,
+            EffectivePublishDate = x.PublishAtUtc ?? x.PublishedAtUtc ?? DateTime.MinValue,
+        });
+
+        if (from is not null)
+        {
+            effectivePublishDateQuery = effectivePublishDateQuery.Where(x => x.EffectivePublishDate >= from.Value);
+        }
+
+        if (to is not null)
+        {
+            effectivePublishDateQuery = effectivePublishDateQuery.Where(x => x.EffectivePublishDate <= to.Value);
+        }
+
+        effectivePublishDateQuery = sortMode == ContentTypeSortMode.Manual
+            ? effectivePublishDateQuery.OrderBy(x => x.SortOrder).ThenBy(x => x.Title)
+            : effectivePublishDateQuery.OrderByDescending(x => x.EffectivePublishDate);
+
+        var paged = await effectivePublishDateQuery.ToPagedResultAsync(pagedRequest, cancellationToken);
+
+        var items = paged.Items
+            .Select(x => new PublicContentListItemCandidate(
+                x.Id, x.Title, x.Summary, x.Body, x.FullPath, x.CoverImageMediaId, x.DetailImageMediaId, x.PublishAtUtc, x.UnpublishAtUtc,
+                x.EffectivePublishDate, x.IsFeatured, x.CategoryIds, x.Seo))
+            .ToList();
+
+        return new PagedResult<PublicContentListItemCandidate>(items, paged.TotalCount, paged.Page, paged.PageSize);
+    }
+
     public void Add(ContentItem contentItem) => dbContext.ContentItems.Add(contentItem);
 
     public void Remove(ContentItem contentItem) => dbContext.ContentItems.Remove(contentItem);

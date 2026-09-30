@@ -9,6 +9,7 @@ namespace GenclikMerkezi.Modules.Website.Features.DeleteContentCategory;
 public sealed class DeleteContentCategoryCommandHandler(
     IContentCategoryRepository contentCategoryRepository,
     IContentItemRepository contentItemRepository,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<DeleteContentCategoryCommand, Result>
 {
@@ -36,6 +37,7 @@ public sealed class DeleteContentCategoryCommandHandler(
 
         contentCategoryRepository.Remove(category);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

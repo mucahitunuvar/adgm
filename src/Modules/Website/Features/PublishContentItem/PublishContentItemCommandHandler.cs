@@ -12,6 +12,7 @@ public sealed class PublishContentItemCommandHandler(
     IContentTypeRepository contentTypeRepository,
     ISiteLanguageRepository siteLanguageRepository,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<PublishContentItemCommand, Result>
 {
@@ -63,6 +64,7 @@ public sealed class PublishContentItemCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

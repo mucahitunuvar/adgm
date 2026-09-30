@@ -20,6 +20,7 @@ public sealed class DuplicateContentItemCommandHandler(
     ContentPathCascadeService contentPathCascadeService,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<DuplicateContentItemCommand, Result<DuplicateContentItemResponse>>
 {
@@ -170,6 +171,7 @@ public sealed class DuplicateContentItemCommandHandler(
 
         contentItemRepository.Add(newItem);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success(new DuplicateContentItemResponse(newItem.Id));
     }

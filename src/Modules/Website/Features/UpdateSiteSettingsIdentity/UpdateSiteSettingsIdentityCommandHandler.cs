@@ -76,6 +76,10 @@ public sealed class UpdateSiteSettingsIdentityCommandHandler(
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         WebsiteCacheInvalidator.InvalidatePublicSite(cacheService);
+        // ADR-024 §17: this group also carries DefaultOgImageMediaId and DefaultMetaDescription, both
+        // of which ContentSeoResolver falls back to when a content item's own SEO is empty - a change
+        // here can make an already-cached list/detail response's resolved SEO stale too.
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

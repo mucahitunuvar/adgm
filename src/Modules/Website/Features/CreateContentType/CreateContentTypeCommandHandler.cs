@@ -11,6 +11,7 @@ public sealed class CreateContentTypeCommandHandler(
     IContentTypeRepository contentTypeRepository,
     ISiteLanguageRepository siteLanguageRepository,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<CreateContentTypeCommand, Result<CreateContentTypeResponse>>
 {
@@ -75,6 +76,7 @@ public sealed class CreateContentTypeCommandHandler(
 
         contentTypeRepository.Add(contentTypeResult.Value);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success(new CreateContentTypeResponse(
             contentTypeResult.Value.Id, contentTypeResult.Value.Key.Value, defaultLanguage.Code.Value));

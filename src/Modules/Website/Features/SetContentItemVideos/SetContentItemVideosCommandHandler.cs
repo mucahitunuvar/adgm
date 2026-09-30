@@ -12,6 +12,7 @@ public sealed class SetContentItemVideosCommandHandler(
     IVideoRepository videoRepository,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<SetContentItemVideosCommand, Result>
 {
@@ -58,6 +59,7 @@ public sealed class SetContentItemVideosCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

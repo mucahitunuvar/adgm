@@ -14,6 +14,7 @@ public sealed class MergeTagCommandHandler(
     IContentItemRepository contentItemRepository,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<MergeTagCommand, Result>
 {
@@ -61,6 +62,7 @@ public sealed class MergeTagCommandHandler(
 
         contentTagRepository.Remove(source);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

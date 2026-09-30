@@ -10,6 +10,7 @@ public sealed class UpdateContentCategoryCommandHandler(
     IContentCategoryRepository contentCategoryRepository,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<UpdateContentCategoryCommand, Result>
 {
@@ -34,6 +35,7 @@ public sealed class UpdateContentCategoryCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

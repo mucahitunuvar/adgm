@@ -14,6 +14,7 @@ public sealed class UpdateContentTypeTranslationCommandHandler(
     ISiteLanguageRepository siteLanguageRepository,
     ContentPathCascadeService contentPathCascadeService,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<UpdateContentTypeTranslationCommand, Result>
 {
@@ -114,6 +115,7 @@ public sealed class UpdateContentTypeTranslationCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

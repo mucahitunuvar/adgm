@@ -11,6 +11,7 @@ public sealed class UpdateContentItemCommandHandler(
     IContentTypeRepository contentTypeRepository,
     IMediaAssetRepository mediaAssetRepository,
     ICurrentUserContext currentUserContext,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<UpdateContentItemCommand, Result>
 {
@@ -61,6 +62,7 @@ public sealed class UpdateContentItemCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }

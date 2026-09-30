@@ -12,6 +12,7 @@ public sealed class PermanentlyDeleteContentItemCommandHandler(
     ContentItemPermanentDeletionService permanentDeletionService,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
+    ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
     : IRequestHandler<PermanentlyDeleteContentItemCommand, Result>
 {
@@ -37,6 +38,7 @@ public sealed class PermanentlyDeleteContentItemCommandHandler(
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        WebsiteCacheInvalidator.InvalidatePublicContent(cacheService);
 
         return Result.Success();
     }
