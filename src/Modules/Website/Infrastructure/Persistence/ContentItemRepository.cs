@@ -309,6 +309,22 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
         return new PagedResult<PublicContentListItemCandidate>(items, paged.TotalCount, paged.Page, paged.PageSize);
     }
 
+    // ADR-024 §17 (Faz 1b bugfix): a single query (a UNION of the PublishAtUtc and UnpublishAtUtc
+    // columns) rather than one query per column - GetPublicContentsQueryHandler runs this on every
+    // request (cache hit or miss) to decide the list cache's TTL, so it stays a single lightweight
+    // round trip. `> now` on a nullable column is false for both a null value and one that is already
+    // in the past, so no separate null check is needed.
+    public Task<DateTime?> GetEarliestUpcomingTransitionAsync(Guid contentTypeId, DateTime now, CancellationToken cancellationToken = default)
+    {
+        var visibleOfType = dbContext.ContentItems.AsNoTracking()
+            .Where(ci => ci.ContentTypeId == contentTypeId && ci.DeletedAtUtc == null && ci.Status == ContentItemStatus.Published);
+
+        var upcomingTransitions = visibleOfType.Where(ci => ci.PublishAtUtc > now).Select(ci => ci.PublishAtUtc!.Value)
+            .Union(visibleOfType.Where(ci => ci.UnpublishAtUtc > now).Select(ci => ci.UnpublishAtUtc!.Value));
+
+        return upcomingTransitions.OrderBy(t => t).Select(t => (DateTime?)t).FirstOrDefaultAsync(cancellationToken);
+    }
+
     public void Add(ContentItem contentItem) => dbContext.ContentItems.Add(contentItem);
 
     public void Remove(ContentItem contentItem) => dbContext.ContentItems.Remove(contentItem);

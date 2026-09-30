@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using GenclikMerkezi.IntegrationTests.Identity;
 using GenclikMerkezi.Modules.Identity.Features.Login;
+using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Features.CreateContentCategory;
 using GenclikMerkezi.Modules.Website.Features.CreateContentItem;
 using GenclikMerkezi.Modules.Website.Features.GetContentCategoriesByType;
@@ -14,6 +15,7 @@ using GenclikMerkezi.Modules.Website.Features.PublishContentItem;
 using GenclikMerkezi.Modules.Website.Features.SetContentItemCategories;
 using GenclikMerkezi.Modules.Website.Features.UpdateContentItemTranslation;
 using GenclikMerkezi.SharedKernel.Results;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GenclikMerkezi.IntegrationTests.Website;
 
@@ -311,6 +313,36 @@ public class PublicContentListAndDetailFlowTests : IClassFixture<CustomWebApplic
         var body = await response.Content.ReadFromJsonAsync<PublicContentListResponse>();
         Assert.DoesNotContain(body!.Items.Items, i => i.Id == scheduled.Id);
         Assert.DoesNotContain(body.Items.Items, i => i.Id == expired.Id);
+    }
+
+    // --- List: cache TTL ---
+
+    // Exercises GetEarliestUpcomingTransitionAsync directly against the real repository/Sqlite
+    // database (it has no HTTP surface of its own - GetPublicContentsQueryHandler uses it only to
+    // decide the list cache's TTL, per-request, before the cache lookup itself) - primarily to confirm
+    // the UNION-of-two-columns query actually translates to SQL and picks the earliest of the two,
+    // not just that it compiles. ContentCacheTtlCalculatorTests already covers the TTL math itself.
+    [Fact]
+    public async Task GetEarliestUpcomingTransitionAsync_ReturnsTheSoonestFutureTransitionAcrossItems()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var newsTypeId = await GetContentTypeIdByKeyAsync(accessToken, "news");
+
+        var soonerItem = await CreateContentItemAsync(accessToken, newsTypeId, null, $"Yakin-{Guid.NewGuid():N}");
+        await PublishAsync(accessToken, soonerItem.Id, DateTime.UtcNow.AddHours(1));
+
+        var laterItem = await CreateContentItemAsync(accessToken, newsTypeId, null, $"Uzak-{Guid.NewGuid():N}");
+        await PublishAsync(accessToken, laterItem.Id, DateTime.UtcNow.AddDays(5));
+
+        using var scope = _factory.Services.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<IContentItemRepository>();
+        var now = DateTime.UtcNow;
+
+        var earliest = await repository.GetEarliestUpcomingTransitionAsync(newsTypeId, now, CancellationToken.None);
+
+        Assert.NotNull(earliest);
+        Assert.True(earliest.Value < now.AddHours(2));
+        Assert.True(earliest.Value > now);
     }
 
     // --- List: cache invalidation ---

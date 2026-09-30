@@ -7,12 +7,13 @@ using MediatR;
 
 namespace GenclikMerkezi.Modules.Website.Features.GetPublicContents;
 
-// ADR-024 §17 (Faz 1b Görev 7). Cache: a `search` request is never cached (unbounded key space);
-// everything else is cached under WebsiteCacheKeys.PublicContentList, TTL shortened when the page's
-// own type/category schedule has nothing to do with individual items' PublishAtUtc/UnpublishAtUtc (a
-// listing page's own visibility does not change on a per-item schedule - only its item SET does, and
-// that recomputes every request that misses cache) - so the list endpoint always uses the default TTL
-// rather than trying to track every item's own transition.
+// ADR-024 §17 (Faz 1b Görev 7, TTL shortening added in a later bugfix). Cache: a `search` request is
+// never cached (unbounded key space); everything else is cached under
+// WebsiteCacheKeys.PublicContentList, TTL shortened to the ContentType's own earliest upcoming
+// PublishAtUtc/UnpublishAtUtc transition (ContentCacheTtlCalculator, the same rule the detail endpoint
+// already used) - GetEarliestUpcomingTransitionAsync runs on every request (cache hit or miss, since
+// the TTL is decided before knowing which one this is) as a single lightweight query, so a scheduled
+// publish/unpublish is reflected in the list within seconds rather than up to the default TTL late.
 public sealed class GetPublicContentsQueryHandler(
     IContentTypeRepository contentTypeRepository,
     IContentCategoryRepository contentCategoryRepository,
@@ -109,6 +110,9 @@ public sealed class GetPublicContentsQueryHandler(
         }
         else
         {
+            var earliestUpcomingTransition = await contentItemRepository.GetEarliestUpcomingTransitionAsync(contentType.Id, now, cancellationToken);
+            var ttl = ContentCacheTtlCalculator.Calculate(now, [earliestUpcomingTransition]);
+
             var cacheKey = WebsiteCacheKeys.PublicContentList(
                 contentType.Key.Value, resolvedLanguage.Code.Value, selectedCategory?.Id.ToString(), tagIdFilter?.ToString(),
                 request.From?.ToString("O"), request.To?.ToString("O"), request.Featured, pagedRequest.Page, pagedRequest.PageSize);
@@ -117,7 +121,8 @@ public sealed class GetPublicContentsQueryHandler(
                 ct => contentItemRepository.SearchPublicListAsync(
                     contentType.Id, resolvedLanguage.Code, categoryIdFilter, tagIdFilter, null, request.From, request.To, request.Featured,
                     contentType.SortMode, now, pagedRequest, ct),
-                cancellationToken: cancellationToken);
+                ttl,
+                cancellationToken);
         }
 
         var categoriesById = allCategories.ToDictionary(c => c.Id);

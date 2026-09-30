@@ -110,6 +110,13 @@ public interface IContentItemRepository
         PagedRequest pagedRequest,
         CancellationToken cancellationToken = default);
 
+    // ADR-024 §17 (Faz 1b bugfix): the public list cache's TTL-shortening query - the earliest
+    // PublishAtUtc/UnpublishAtUtc among this ContentType's currently-Published, non-deleted items that
+    // is still in the future (a schedule on a Draft/Unpublished/Archived item cannot make it visible on
+    // its own, so those are excluded the same way ContentItemVisibility does). Null when no such
+    // transition exists, in which case the caller falls back to ContentCacheTtlCalculator.DefaultTtl.
+    Task<DateTime?> GetEarliestUpcomingTransitionAsync(Guid contentTypeId, DateTime now, CancellationToken cancellationToken = default);
+
     void Add(ContentItem contentItem);
 
     void Remove(ContentItem contentItem);

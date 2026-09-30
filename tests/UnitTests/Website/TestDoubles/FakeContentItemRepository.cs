@@ -149,6 +149,20 @@ public sealed class FakeContentItemRepository : IContentItemRepository
         return Task.FromResult(new PagedResult<PublicContentListItemCandidate>(items, items.Count, pagedRequest.Page, pagedRequest.PageSize));
     }
 
+    public Task<DateTime?> GetEarliestUpcomingTransitionAsync(Guid contentTypeId, DateTime now, CancellationToken cancellationToken = default)
+    {
+        var visibleOfType = _contentItems.Where(c =>
+            c.ContentTypeId == contentTypeId && c.DeletedAtUtc is null && c.Status == ContentItemStatus.Published);
+
+        var upcoming = visibleOfType
+            .SelectMany(c => new DateTime?[] { c.PublishAtUtc, c.UnpublishAtUtc })
+            .Where(t => t > now)
+            .OrderBy(t => t)
+            .FirstOrDefault();
+
+        return Task.FromResult(upcoming);
+    }
+
     public void Add(ContentItem contentItem) => _contentItems.Add(contentItem);
 
     public void Remove(ContentItem contentItem) => _contentItems.Remove(contentItem);
