@@ -8,6 +8,9 @@ obj/
 appsettings.Development.json
 appsettings.*.local.json
 
+## Runtime data (uploaded files, Data Protection keys) - never commit, regenerated/uploaded at runtime.
+**/App_Data/
+
 ## IDE
 .vs/
 .vscode/
