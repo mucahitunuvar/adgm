@@ -1,0 +1,25 @@
+using GenclikMerkezi.BuildingBlocks.Infrastructure.Http;
+using MediatR;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+
+namespace GenclikMerkezi.Modules.Website.Features.GetBlockTypes;
+
+internal static class GetBlockTypesEndpoint
+{
+    public static void Map(IEndpointRouteBuilder app)
+    {
+        app.MapGet(
+                "/api/v1/admin/website/block-types",
+                async (ISender sender, CancellationToken cancellationToken) =>
+                {
+                    var result = await sender.Send(new GetBlockTypesQuery(), cancellationToken);
+                    return result.ToOkOrProblem();
+                })
+            .RequireAuthorization(WebsitePolicies.DesignManage)
+            .RequireRateLimiting("authenticated")
+            .WithName("GetBlockTypes")
+            .WithTags("Website");
+    }
+}

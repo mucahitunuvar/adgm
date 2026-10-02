@@ -1,4 +1,6 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
+using GenclikMerkezi.Modules.Website.Application.BlockTypes;
+using GenclikMerkezi.Modules.Website.Application.BlockTypes.Definitions;
 using GenclikMerkezi.Modules.Website.Application.ContentPaths;
 using GenclikMerkezi.Modules.Website.Application.ImpactMetrics;
 using GenclikMerkezi.Modules.Website.Application.LinkTargets;
@@ -61,6 +63,7 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<ISliderRepository, SliderRepository>();
         services.AddScoped<IPartnerRepository, PartnerRepository>();
         services.AddScoped<IImpactMetricRepository, ImpactMetricRepository>();
+        services.AddScoped<IPageLayoutRepository, PageLayoutRepository>();
         services.AddScoped<LinkTargetResolver>();
         services.AddScoped<SliderPublicQueryService>();
         services.AddScoped<PartnerPublicQueryService>();
@@ -82,9 +85,33 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IMediaUsageProvider, VideoMediaUsageProvider>();
         services.AddScoped<IMediaUsageProvider, SliderMediaUsageProvider>();
         services.AddScoped<IMediaUsageProvider, PartnerMediaUsageProvider>();
+        services.AddScoped<IMediaUsageProvider, LayoutMediaUsageProvider>();
         services.AddScoped<IVideoUsageChecker, VideoUsageChecker>();
         services.AddScoped<ISliderUsageChecker, SliderUsageChecker>();
+        services.AddScoped<PageLayoutReferenceScanner>();
         services.AddSingleton<IHtmlContentSanitizer, HtmlSanitizerContentSanitizer>();
+
+        // §4.1 "Blok tipleri kodla tanımlanır": every IBlockTypeDefinition in the Faz 2 Görev 4
+        // catalog, fanned into IBlockTypeRegistry the same way IMediaUsageProvider fans into
+        // CompositeMediaUsageChecker.
+        services.AddSingleton<IBlockTypeDefinition, HeroSliderBlockTypeDefinition>();
+        services.AddSingleton<IBlockTypeDefinition, LogoStripBlockTypeDefinition>();
+        services.AddSingleton<IBlockTypeDefinition, QuickLinksBlockTypeDefinition>();
+        services.AddSingleton<IBlockTypeDefinition, ContentListBlockTypeDefinition>();
+        services.AddSingleton<IBlockTypeDefinition, UpcomingEventsBlockTypeDefinition>();
+        services.AddSingleton<IBlockTypeDefinition, JobListBlockTypeDefinition>();
+        services.AddSingleton<IBlockTypeDefinition, FeatureMosaicBlockTypeDefinition>();
+        services.AddSingleton<IBlockTypeDefinition, ProcessStepsBlockTypeDefinition>();
+        services.AddSingleton<IBlockTypeDefinition, VideoFeatureBlockTypeDefinition>();
+        services.AddSingleton<IBlockTypeDefinition, ImpactStatsBlockTypeDefinition>();
+        services.AddSingleton<IBlockTypeDefinition, CtaBlockTypeDefinition>();
+        services.AddSingleton<IBlockTypeDefinition, RichTextBlockTypeDefinition>();
+        services.AddSingleton<IBlockTypeDefinition, ImageTextBlockTypeDefinition>();
+        services.AddSingleton<IBlockTypeDefinition, FaqBlockTypeDefinition>();
+        services.AddSingleton<IBlockTypeDefinition, GalleryBlockTypeDefinition>();
+        services.AddSingleton<IBlockTypeRegistry, BlockTypeRegistry>();
+        services.AddScoped<PageLayoutReferenceValidator>();
+        services.AddScoped<LayoutBlockInputProcessor>();
         services.AddSingleton<IContentPreviewLinkGenerator, DataProtectionContentPreviewLinkGenerator>();
 
         // ADR-024 §1/§12.3 Görev 8: IBotProtectionVerifier's Cloudflare Turnstile implementation

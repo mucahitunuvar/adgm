@@ -38,6 +38,8 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
 
     public DbSet<ImpactMetric> ImpactMetrics => Set<ImpactMetric>();
 
+    public DbSet<PageLayout> PageLayouts => Set<PageLayout>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(WebsiteDbContext).Assembly);

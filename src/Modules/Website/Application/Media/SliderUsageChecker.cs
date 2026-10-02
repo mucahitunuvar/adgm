@@ -1,13 +1,20 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
+using GenclikMerkezi.Modules.Website.Application.BlockTypes;
 
 namespace GenclikMerkezi.Modules.Website.Application.Media;
 
-// §2: always-empty stub, exactly like VideoUsageChecker's own pre-Görev-4 state - no aggregate
-// references a Slider yet (PageLayout's hero-slider block does not exist until Görev 4, which replaces
-// this with a real implementation the same way VideoUsageChecker replaced its own stub in Faz 1b Görev
-// 4). Until then, DeleteSlider is always allowed.
-public sealed class SliderUsageChecker : ISliderUsageChecker
+// §4.3: the real implementation, replacing Görev 2's always-empty stub now that PageLayout's
+// hero-slider block exists - a Slider referenced by a hero-slider block in any layout's draft or
+// published blocks cannot be deleted.
+public sealed class SliderUsageChecker(PageLayoutReferenceScanner scanner) : ISliderUsageChecker
 {
-    public Task<IReadOnlyList<SliderUsage>> GetUsagesAsync(Guid sliderId, CancellationToken cancellationToken = default) =>
-        Task.FromResult<IReadOnlyList<SliderUsage>>([]);
+    public async Task<IReadOnlyList<SliderUsage>> GetUsagesAsync(Guid sliderId, CancellationToken cancellationToken = default)
+    {
+        var layouts = await scanner.FindReferencingAsync(refs => refs.SliderIds.Contains(sliderId), cancellationToken);
+
+        return layouts
+            .Select(layout => new SliderUsage(
+                "page-layout", layout.Id, PageLayoutReferenceScanner.DescribeLayout(layout), PageLayoutReferenceScanner.DescribeLayoutUrl(layout)))
+            .ToList();
+    }
 }

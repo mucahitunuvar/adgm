@@ -849,6 +849,63 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                     b.ToTable("NotFoundLogs", (string)null);
                 });
 
+            modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.PageLayout", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ContentItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("HasUnpublishedChanges")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("PublishedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("PublishedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("TargetKind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentItemId");
+
+                    b.ToTable("PageLayouts", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("32f97881-23f2-6a71-abbd-ebb7300e8d56"),
+                            CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedByUserId = new Guid("00000000-0000-0000-0000-000000000000"),
+                            HasUnpublishedChanges = false,
+                            RowVersion = new byte[] { 84, 145, 72, 93, 5, 57, 150, 227, 92, 180, 53, 63, 104, 4, 60, 150 },
+                            TargetKind = "Home"
+                        });
+                });
+
             modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.Partner", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2393,6 +2450,141 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                         });
 
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.PageLayout", b =>
+                {
+                    b.OwnsMany("GenclikMerkezi.Modules.Website.Domain.LayoutBlock", "DraftBlocks", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("BlockTypeKey")
+                                .IsRequired()
+                                .HasMaxLength(50)
+                                .HasColumnType("nvarchar(50)");
+
+                            b1.Property<bool>("IsActive")
+                                .HasColumnType("bit");
+
+                            b1.Property<Guid>("PageLayoutId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("SettingsJson")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<int>("SortOrder")
+                                .HasColumnType("int");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("PageLayoutId");
+
+                            b1.ToTable("PageLayoutDraftBlocks", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("PageLayoutId");
+
+                            b1.OwnsMany("GenclikMerkezi.Modules.Website.Domain.LayoutBlockTranslation", "Translations", b2 =>
+                                {
+                                    b2.Property<Guid>("Id")
+                                        .HasColumnType("uniqueidentifier");
+
+                                    b2.Property<string>("LanguageCode")
+                                        .IsRequired()
+                                        .HasMaxLength(35)
+                                        .HasColumnType("nvarchar(35)")
+                                        .HasColumnName("LanguageCode");
+
+                                    b2.Property<Guid>("LayoutBlockId")
+                                        .HasColumnType("uniqueidentifier");
+
+                                    b2.Property<string>("TextsJson")
+                                        .IsRequired()
+                                        .HasColumnType("nvarchar(max)");
+
+                                    b2.HasKey("Id");
+
+                                    b2.HasIndex("LayoutBlockId", "LanguageCode")
+                                        .IsUnique();
+
+                                    b2.ToTable("PageLayoutDraftBlockTranslations", (string)null);
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("LayoutBlockId");
+                                });
+
+                            b1.Navigation("Translations");
+                        });
+
+                    b.OwnsMany("GenclikMerkezi.Modules.Website.Domain.LayoutBlock", "PublishedBlocks", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("BlockTypeKey")
+                                .IsRequired()
+                                .HasMaxLength(50)
+                                .HasColumnType("nvarchar(50)");
+
+                            b1.Property<bool>("IsActive")
+                                .HasColumnType("bit");
+
+                            b1.Property<Guid>("PageLayoutId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("SettingsJson")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<int>("SortOrder")
+                                .HasColumnType("int");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("PageLayoutId");
+
+                            b1.ToTable("PageLayoutPublishedBlocks", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("PageLayoutId");
+
+                            b1.OwnsMany("GenclikMerkezi.Modules.Website.Domain.LayoutBlockTranslation", "Translations", b2 =>
+                                {
+                                    b2.Property<Guid>("Id")
+                                        .HasColumnType("uniqueidentifier");
+
+                                    b2.Property<string>("LanguageCode")
+                                        .IsRequired()
+                                        .HasMaxLength(35)
+                                        .HasColumnType("nvarchar(35)")
+                                        .HasColumnName("LanguageCode");
+
+                                    b2.Property<Guid>("LayoutBlockId")
+                                        .HasColumnType("uniqueidentifier");
+
+                                    b2.Property<string>("TextsJson")
+                                        .IsRequired()
+                                        .HasColumnType("nvarchar(max)");
+
+                                    b2.HasKey("Id");
+
+                                    b2.HasIndex("LayoutBlockId", "LanguageCode")
+                                        .IsUnique();
+
+                                    b2.ToTable("PageLayoutPublishedBlockTranslations", (string)null);
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("LayoutBlockId");
+                                });
+
+                            b1.Navigation("Translations");
+                        });
+
+                    b.Navigation("DraftBlocks");
+
+                    b.Navigation("PublishedBlocks");
                 });
 
             modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.Partner", b =>

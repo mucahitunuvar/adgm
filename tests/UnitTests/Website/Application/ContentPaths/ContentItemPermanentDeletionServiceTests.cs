@@ -16,9 +16,12 @@ public class ContentItemPermanentDeletionServiceTests
     private readonly FakeContentItemRepository _contentItemRepository = new();
     private readonly FakeRedirectRepository _redirectRepository = new();
     private readonly FakeMenuRepository _menuRepository = new();
+    private readonly FakePageLayoutRepository _pageLayoutRepository = new();
 
     private ContentItemPermanentDeletionService CreateService() =>
-        new(_contentItemRepository, _redirectRepository, _menuRepository, NullLogger<ContentItemPermanentDeletionService>.Instance);
+        new(
+            _contentItemRepository, _redirectRepository, _menuRepository, _pageLayoutRepository,
+            NullLogger<ContentItemPermanentDeletionService>.Instance);
 
     private static ContentItem CreateItem(Guid? parentId = null, string slug = "haber") =>
         ContentItem.Create(
@@ -95,5 +98,19 @@ public class ContentItemPermanentDeletionServiceTests
         var updatedItem = Assert.Single(menu.Items);
         Assert.False(updatedItem.IsActive);
         Assert.True(updatedItem.LinkTarget.IsEmpty);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_RemovesThePageLayoutForTheItem()
+    {
+        var item = CreateItem(slug: "silinecek");
+        _contentItemRepository.Seed(item);
+
+        var layout = PageLayout.CreateForContent(item.Id, UserId, Now).Value;
+        _pageLayoutRepository.Seed(layout);
+
+        await CreateService().DeleteAsync(item, UserId, Now, CancellationToken.None);
+
+        Assert.Null(await _pageLayoutRepository.GetByContentItemIdAsync(item.Id));
     }
 }

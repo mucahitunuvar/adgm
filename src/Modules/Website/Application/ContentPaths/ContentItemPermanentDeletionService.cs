@@ -18,6 +18,7 @@ public sealed class ContentItemPermanentDeletionService(
     IContentItemRepository contentItemRepository,
     IRedirectRepository redirectRepository,
     IMenuRepository menuRepository,
+    IPageLayoutRepository pageLayoutRepository,
     ILogger<ContentItemPermanentDeletionService> logger)
 {
     public async Task<Result> DeleteAsync(ContentItem contentItem, Guid actingUserId, DateTime now, CancellationToken cancellationToken)
@@ -53,6 +54,17 @@ public sealed class ContentItemPermanentDeletionService(
             logger.LogInformation(
                 "Cleared and deactivated menu item(s) in menu '{MenuLocation}' linking to permanently deleted content item {ContentItemId}.",
                 menu.Location, contentItem.Id);
+        }
+
+        // Faz 2 Görev 4 master prompt §4.3: "İçerik kalıcı silindiğinde düzeni de aynı transaction'da
+        // silinir" - a Content-target PageLayout only ever exists for this one ContentItem, so it
+        // cannot be left behind as an orphan.
+        var layout = await pageLayoutRepository.GetByContentItemIdAsync(contentItem.Id, cancellationToken);
+        if (layout is not null)
+        {
+            pageLayoutRepository.Remove(layout);
+            logger.LogInformation(
+                "Deleting page layout {PageLayoutId} for permanently deleted content item {ContentItemId}.", layout.Id, contentItem.Id);
         }
 
         contentItemRepository.Remove(contentItem);
