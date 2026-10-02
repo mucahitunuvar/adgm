@@ -43,6 +43,14 @@ using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Declared this early so both the Data Protection block below and the rate-limiting/Hangfire
+// configuration further down can read it - IntegrationTests' CustomWebApplicationFactory sets the
+// "Testing" environment via UseEnvironment, never DPAPI-protects its throwaway keys (DPAPI keys are
+// bound to the machine/user profile running the test, which CI runners may not have), and redirects
+// FileStorage/Data Protection paths into a per-factory temp directory instead of this project's
+// App_Data (SECURITY.md §23.2 / ADR-024 §4.5).
+var isTestingEnvironment = builder.Environment.IsEnvironment("Testing");
+
 builder.Services.AddOpenApi();
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -92,9 +100,17 @@ builder.Services.AddScoped<IWebsiteEmailSender, NotificationWebsiteEmailSender>(
 // ADR-024 §4.5 (Faz 1b Görev 6): signed, time-limited content preview link tokens use ASP.NET Core
 // Data Protection. Keys are persisted under App_Data (never under webuploads' public static-file
 // root) so an IIS application pool recycle does not invalidate every outstanding preview link - the
-// default (in-memory/registry) key storage would not survive a recycle.
+// default (in-memory/registry) key storage would not survive a recycle. The directory is
+// configurable (DataProtection:KeyDirectory, defaulting to App_Data/dataprotection-keys) so
+// CustomWebApplicationFactory can redirect it into a per-test-run temp folder instead of writing
+// into this project's own source tree (a prior test run leaked an unencrypted key file into git -
+// see SECURITY.md §23.2).
+var dataProtectionKeyDirectory = Path.Combine(
+    builder.Environment.ContentRootPath,
+    builder.Configuration["DataProtection:KeyDirectory"] ?? Path.Combine("App_Data", "dataprotection-keys"));
+
 builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "App_Data", "dataprotection-keys")))
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeyDirectory))
     .SetApplicationName("GenclikMerkezi");
 
 // ADR-024 Faz 1b Görev 1: canlı ortam (Turhost/IIS) reverse proxy'siz çalıştığı için varsayılan
@@ -108,8 +124,6 @@ builder.Services.AddOptions<ReverseProxySettings>()
         "ReverseProxy:Enabled is true but both KnownProxies and KnownNetworks are empty - configure at " +
         "least one trusted proxy address or network, or X-Forwarded-For could be spoofed by any client.")
     .ValidateOnStart();
-
-var isTestingEnvironment = builder.Environment.IsEnvironment("Testing");
 
 // Part 0 (Hangfire altyapısı): tüm modüllerin yeniden kullanabileceği genel bir background-job
 // altyapısı - herhangi bir modüle ait değil, Host'ta bir kez kaydedilir (CAP/AddMessaging ile aynı

@@ -85,6 +85,13 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
     private readonly SqliteConnection _websiteSqliteConnection;
 
+    // A prior test run leaked an unencrypted Data Protection key and hundreds of test-upload files
+    // into the Host project's own App_Data folder (and from there, into git - see SECURITY.md
+    // §23.2): every factory instance now gets its own throwaway directory under the OS temp folder
+    // instead, deleted again in Dispose.
+    private readonly string _temporaryDataDirectory =
+        Path.Combine(Path.GetTempPath(), "GenclikMerkezi.Tests", Guid.NewGuid().ToString("N"));
+
     public CustomWebApplicationFactory()
     {
         _websiteSqliteConnection = new SqliteConnection(_websiteSqliteConnectionString);
@@ -157,6 +164,13 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("Jwt:SigningKey", "integration-test-signing-key-do-not-use-in-prod");
         builder.UseSetting("Jwt:AccessTokenExpirationMinutes", "15");
         builder.UseSetting("Jwt:RefreshTokenExpirationDays", "7");
+
+        // Absolute paths - LocalDiskFileStorageService/Program.cs's Data Protection setup both use a
+        // configured path as-is (Path.IsPathRooted) instead of resolving it against the Host
+        // project's ContentRootPath whenever it is already rooted.
+        builder.UseSetting("FileStorage:RootDirectory", Path.Combine(_temporaryDataDirectory, "uploads"));
+        builder.UseSetting("FileStorage:PublicRootDirectory", Path.Combine(_temporaryDataDirectory, "webuploads"));
+        builder.UseSetting("DataProtection:KeyDirectory", Path.Combine(_temporaryDataDirectory, "dataprotection-keys"));
 
         builder.ConfigureServices(services =>
         {
@@ -301,6 +315,22 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         DropDatabase(_employmentDatabaseName);
         DropDatabase(_careerDevelopmentDatabaseName);
         _websiteSqliteConnection.Dispose();
+
+        try
+        {
+            if (Directory.Exists(_temporaryDataDirectory))
+            {
+                Directory.Delete(_temporaryDataDirectory, recursive: true);
+            }
+        }
+        catch (IOException)
+        {
+            // Best-effort cleanup, same tolerance DropDatabase above documents - a held file handle
+            // would only leak one throwaway temp folder, not fail the test run.
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
     }
 
     // Best-effort cleanup of the throwaway LocalDB databases - EF Core's connection pool may
