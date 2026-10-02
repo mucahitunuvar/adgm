@@ -20,14 +20,15 @@ public sealed class PageLayoutConfiguration : IEntityTypeConfiguration<PageLayou
         builder.Property(p => p.TargetKind).HasConversion<string>().HasMaxLength(20).IsRequired();
         builder.Property(p => p.ContentItemId);
 
-        // §4.3 "Content hedefi ... içerik başına tek düzen": enforced at the Application layer
-        // (ReplaceContentDraftBlocksCommandHandler checks IPageLayoutRepository.GetByContentItemIdAsync
-        // before creating a new row), the same "no DB-level uniqueness constraint, the handler checks
-        // first" choice FullPathExistsAsync/RoutePrefixExistsAsync/SlugExistsAsync already use - a
-        // partial unique index's filter syntax differs across the SqlServer/Sqlite providers this
-        // module must run on (ADR-012), so a plain non-unique index (for lookup performance only) is
-        // used instead.
-        builder.HasIndex(p => p.ContentItemId);
+        // §4.3 "Content hedefi ... içerik başına tek düzen": the Application layer already checks
+        // this (ReplaceContentDraftBlocksCommandHandler calls IPageLayoutRepository.GetByContentItemIdAsync
+        // before creating a new row), but a plain (non-filtered) unique index on (TargetKind,
+        // ContentItemId) backs it at the database level too - a race between two concurrent first-saves
+        // for the same content item would otherwise let both succeed. No filtered/partial index is
+        // needed: exactly one row ever has ContentItemId == null (the seeded Home row, never created
+        // again through an admin action - IPageLayoutRepository has no "add a Home row" method), so
+        // SQL Server's single-NULL-per-unique-index rule is a non-issue here.
+        builder.HasIndex(p => new { p.TargetKind, p.ContentItemId }).IsUnique();
 
         builder.Property(p => p.HasUnpublishedChanges).IsRequired();
         builder.Property(p => p.PublishedAtUtc);
