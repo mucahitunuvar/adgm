@@ -34,6 +34,10 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
 
     public DbSet<Slider> Sliders => Set<Slider>();
 
+    public DbSet<Partner> Partners => Set<Partner>();
+
+    public DbSet<ImpactMetric> ImpactMetrics => Set<ImpactMetric>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(WebsiteDbContext).Assembly);

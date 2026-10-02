@@ -1,7 +1,9 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Application.ContentPaths;
+using GenclikMerkezi.Modules.Website.Application.ImpactMetrics;
 using GenclikMerkezi.Modules.Website.Application.LinkTargets;
 using GenclikMerkezi.Modules.Website.Application.Media;
+using GenclikMerkezi.Modules.Website.Application.Partners;
 using GenclikMerkezi.Modules.Website.Application.RouteResolution;
 using GenclikMerkezi.Modules.Website.Application.Sliders;
 using GenclikMerkezi.Modules.Website.Infrastructure;
@@ -57,8 +59,12 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IContentTagRepository, ContentTagRepository>();
         services.AddScoped<IMenuRepository, MenuRepository>();
         services.AddScoped<ISliderRepository, SliderRepository>();
+        services.AddScoped<IPartnerRepository, PartnerRepository>();
+        services.AddScoped<IImpactMetricRepository, ImpactMetricRepository>();
         services.AddScoped<LinkTargetResolver>();
         services.AddScoped<SliderPublicQueryService>();
+        services.AddScoped<PartnerPublicQueryService>();
+        services.AddScoped<ImpactMetricPublicQueryService>();
         services.AddScoped<ContentPathCascadeService>();
         services.AddScoped<RelatedContentResolutionService>();
         services.AddScoped<ContentItemPermanentDeletionService>();
@@ -75,6 +81,7 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IMediaUsageProvider, ContentItemMediaUsageProvider>();
         services.AddScoped<IMediaUsageProvider, VideoMediaUsageProvider>();
         services.AddScoped<IMediaUsageProvider, SliderMediaUsageProvider>();
+        services.AddScoped<IMediaUsageProvider, PartnerMediaUsageProvider>();
         services.AddScoped<IVideoUsageChecker, VideoUsageChecker>();
         services.AddScoped<ISliderUsageChecker, SliderUsageChecker>();
         services.AddSingleton<IHtmlContentSanitizer, HtmlSanitizerContentSanitizer>();

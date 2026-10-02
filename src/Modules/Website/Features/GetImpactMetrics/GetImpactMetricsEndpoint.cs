@@ -1,0 +1,31 @@
+using GenclikMerkezi.BuildingBlocks.Infrastructure.Http;
+using GenclikMerkezi.SharedKernel.Results;
+using MediatR;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+
+namespace GenclikMerkezi.Modules.Website.Features.GetImpactMetrics;
+
+internal static class GetImpactMetricsEndpoint
+{
+    public static void Map(IEndpointRouteBuilder app)
+    {
+        app.MapGet(
+                "/api/v1/admin/website/impact-metrics",
+                async (bool? isActive, string? search, int? page, int? pageSize, ISender sender, CancellationToken cancellationToken) =>
+                {
+                    var query = new GetImpactMetricsQuery(isActive, search)
+                    {
+                        Page = page ?? 1,
+                        PageSize = pageSize ?? PagedRequest.DefaultPageSize,
+                    };
+                    var result = await sender.Send(query, cancellationToken);
+                    return result.ToOkOrProblem();
+                })
+            .RequireAuthorization(WebsitePolicies.DesignManage)
+            .RequireRateLimiting("authenticated")
+            .WithName("GetImpactMetrics")
+            .WithTags("Website");
+    }
+}
