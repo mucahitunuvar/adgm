@@ -10,8 +10,16 @@ public sealed class FakeVideoRepository : IVideoRepository
 
     public void Seed(Video video) => _videos.Add(video);
 
+    public int GetByIdsAsyncCallCount { get; private set; }
+
     public Task<Video?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         Task.FromResult(_videos.FirstOrDefault(v => v.Id == id));
+
+    public Task<IReadOnlyList<Video>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        GetByIdsAsyncCallCount++;
+        return Task.FromResult<IReadOnlyList<Video>>(_videos.Where(v => ids.Contains(v.Id)).ToList());
+    }
 
     public Task<PagedResult<Video>> SearchAsync(
         bool? isActive, string? search, LanguageCode defaultLanguageCode, PagedRequest pagedRequest, CancellationToken cancellationToken = default)

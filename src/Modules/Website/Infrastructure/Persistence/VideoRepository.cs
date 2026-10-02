@@ -11,6 +11,16 @@ public sealed class VideoRepository(WebsiteDbContext dbContext) : IVideoReposito
     public Task<Video?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         dbContext.Videos.FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
 
+    public async Task<IReadOnlyList<Video>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        return await dbContext.Videos.AsNoTracking().Where(v => ids.Contains(v.Id)).ToListAsync(cancellationToken);
+    }
+
     public Task<PagedResult<Video>> SearchAsync(
         bool? isActive, string? search, LanguageCode defaultLanguageCode, PagedRequest pagedRequest, CancellationToken cancellationToken = default)
     {

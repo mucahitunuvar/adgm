@@ -50,9 +50,11 @@ using GenclikMerkezi.Modules.Website.Features.GetContentPreview;
 using GenclikMerkezi.Modules.Website.Features.GetContentTrash;
 using GenclikMerkezi.Modules.Website.Features.GetPublicContentById;
 using GenclikMerkezi.Modules.Website.Features.GetPublicContents;
+using GenclikMerkezi.Modules.Website.Features.GetPublicHome;
 using GenclikMerkezi.Modules.Website.Features.GetContentTypeById;
 using GenclikMerkezi.Modules.Website.Features.GetContentTypes;
 using GenclikMerkezi.Modules.Website.Features.GetHomeLayout;
+using GenclikMerkezi.Modules.Website.Features.GetHomeLayoutPreview;
 using GenclikMerkezi.Modules.Website.Features.GetImpactMetricById;
 using GenclikMerkezi.Modules.Website.Features.GetImpactMetrics;
 using GenclikMerkezi.Modules.Website.Features.GetMediaAssetById;
@@ -268,6 +270,8 @@ public static class WebsiteModuleEndpointExtensions
         PublishContentLayoutEndpoint.Map(app);
         DiscardHomeLayoutDraftEndpoint.Map(app);
         DiscardContentLayoutDraftEndpoint.Map(app);
+        GetHomeLayoutPreviewEndpoint.Map(app);
+        GetPublicHomeEndpoint.Map(app);
 
         return app;
     }

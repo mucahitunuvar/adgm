@@ -28,5 +28,11 @@ public static class WebsiteCacheKeys
 
     public static string RouteResolution(string normalizedPath) => $"{PublicContentPrefix}route:{normalizedPath}";
 
+    // Faz 2 Görev 5 master prompt §5.1/§5.3: the public home page's resolved blocks - lives under the
+    // same PublicContentPrefix as the list/detail/route caches, so it is already cleared by every
+    // mutation handler that calls InvalidatePublicContent/InvalidateAllPublic (content, content type,
+    // category, slider, partner, impact metric and page layout handlers all already do).
+    public static string PublicHome(string languageCode) => $"{PublicContentPrefix}home:{languageCode}";
+
     public static string PublicContentInvalidationPrefix => PublicContentPrefix;
 }

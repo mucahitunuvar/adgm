@@ -1,3 +1,5 @@
+using GenclikMerkezi.Modules.Website.Application.BlockTypes.PublicResolution;
+
 namespace GenclikMerkezi.Modules.Website.Features.GetContentPreview;
 
 // ADR-024 §4.5 (Faz 1b Görev 6): a reasonably complete detail view for the token's target - title,
@@ -21,4 +23,5 @@ public sealed record ContentPreviewResponse(
     IReadOnlyList<string> Categories,
     IReadOnlyList<string> Tags,
     IReadOnlyList<ContentPreviewRelatedItemResponse> Related,
-    ContentPreviewSeoResponse Seo);
+    ContentPreviewSeoResponse Seo,
+    IReadOnlyList<PublicLayoutBlockResponse>? Blocks);

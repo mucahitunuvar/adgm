@@ -11,6 +11,16 @@ public sealed class MediaAssetRepository(WebsiteDbContext dbContext) : IMediaAss
     public Task<MediaAsset?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         dbContext.MediaAssets.FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
 
+    public async Task<IReadOnlyList<MediaAsset>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        return await dbContext.MediaAssets.AsNoTracking().Where(m => ids.Contains(m.Id)).ToListAsync(cancellationToken);
+    }
+
     public Task<PagedResult<MediaAsset>> SearchAsync(
         MediaAssetKind? kind,
         string? folder,

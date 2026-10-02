@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
+using GenclikMerkezi.Modules.Website.Application.BlockTypes.PublicResolution;
 using GenclikMerkezi.Modules.Website.Application.ContentPaths;
 using GenclikMerkezi.Modules.Website.Application.Media;
 using GenclikMerkezi.Modules.Website.Domain;
@@ -26,6 +27,8 @@ public sealed class GetContentPreviewQueryHandler(
     IContentCategoryRepository contentCategoryRepository,
     IContentTagRepository contentTagRepository,
     RelatedContentResolutionService relatedContentResolutionService,
+    IPageLayoutRepository pageLayoutRepository,
+    PublicPageLayoutResolver publicPageLayoutResolver,
     TimeProvider timeProvider)
     : IRequestHandler<GetContentPreviewQuery, Result<ContentPreviewResponse>>
 {
@@ -86,6 +89,21 @@ public sealed class GetContentPreviewQueryHandler(
             ? await BuildRelatedAsync(contentItem, languageCode, cancellationToken)
             : [];
 
+        // Faz 2 Görev 5 master prompt §5.1: "Faz 1b'deki içerik önizleme uç noktası taslak blokları
+        // döner (editör kaydetmeden önce düzeni görebilsin)" - draft blocks, unlike the public detail
+        // endpoint's published ones.
+        IReadOnlyList<PublicLayoutBlockResponse>? blocks = null;
+        if (contentType.SupportsBlockLayout)
+        {
+            var layout = await pageLayoutRepository.GetByContentItemIdAsync(contentItem.Id, cancellationToken);
+            if (layout is not null)
+            {
+                var now = timeProvider.GetUtcNow().UtcDateTime;
+                blocks = await publicPageLayoutResolver.ResolveAsync(
+                    layout.DraftBlocks, languageCode, defaultLanguage!.Code, now, cancellationToken);
+            }
+        }
+
         // ADR-024 §15: the same ContentSeoResolver chain the public list/detail endpoints use ("aynı
         // çözüm kuralları önizlemede de kullanılır") - canonicalPath is the item's own path, exactly as
         // it will read once published (RoutePathFormat.BuildPublicPath), even though this response is
@@ -103,7 +121,7 @@ public sealed class GetContentPreviewQueryHandler(
 
         return Result.Success(new ContentPreviewResponse(
             contentItem.Id, contentType.Key.Value, contentType.DetailTemplate, translation.Title, translation.Summary, translation.Body,
-            coverImage, detailImage, gallery, videos, attachments, categories, tags, related, seo));
+            coverImage, detailImage, gallery, videos, attachments, categories, tags, related, seo, blocks));
     }
 
     private static LanguageCode ResolveLanguageCode(string? tokenLanguageCode, LanguageCode defaultLanguageCode)

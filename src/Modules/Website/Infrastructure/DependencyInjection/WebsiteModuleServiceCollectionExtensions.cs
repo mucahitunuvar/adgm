@@ -1,6 +1,7 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Application.BlockTypes;
 using GenclikMerkezi.Modules.Website.Application.BlockTypes.Definitions;
+using GenclikMerkezi.Modules.Website.Application.BlockTypes.PublicResolution;
 using GenclikMerkezi.Modules.Website.Application.ContentPaths;
 using GenclikMerkezi.Modules.Website.Application.ImpactMetrics;
 using GenclikMerkezi.Modules.Website.Application.LinkTargets;
@@ -68,6 +69,7 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<SliderPublicQueryService>();
         services.AddScoped<PartnerPublicQueryService>();
         services.AddScoped<ImpactMetricPublicQueryService>();
+        services.AddScoped<PublicPageLayoutResolver>();
         services.AddScoped<ContentPathCascadeService>();
         services.AddScoped<RelatedContentResolutionService>();
         services.AddScoped<ContentItemPermanentDeletionService>();

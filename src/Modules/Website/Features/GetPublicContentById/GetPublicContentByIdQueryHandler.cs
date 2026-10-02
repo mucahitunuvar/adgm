@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
+using GenclikMerkezi.Modules.Website.Application.BlockTypes.PublicResolution;
 using GenclikMerkezi.Modules.Website.Application.ContentPaths;
 using GenclikMerkezi.Modules.Website.Application.Media;
 using GenclikMerkezi.Modules.Website.Domain;
@@ -24,6 +25,9 @@ public sealed class GetPublicContentByIdQueryHandler(
     IContentTagRepository contentTagRepository,
     RelatedContentResolutionService relatedContentResolutionService,
     ContentPathCascadeService contentPathCascadeService,
+    IPageLayoutRepository pageLayoutRepository,
+    PublicPageLayoutResolver publicPageLayoutResolver,
+    ISliderRepository sliderRepository,
     ICacheService cacheService,
     TimeProvider timeProvider)
     : IRequestHandler<GetPublicContentByIdQuery, Result<PublicContentDetailResponse>>
@@ -71,6 +75,17 @@ public sealed class GetPublicContentByIdQueryHandler(
             transitions.Add(ancestor.UnpublishAtUtc);
         }
 
+        // Faz 2 Görev 5 master prompt §5.3: when this type carries a block layout, its cached response
+        // can also depend on other content's/sliders' schedules (hero-slider, content-list, ...) -
+        // reusing the site-wide earliest-upcoming-transition calculation Görev 1's public site cache
+        // already computes is enough ("Pratikte Görev 1'deki site geneli en yakın zamanlama hesabını
+        // kullanmak yeterlidir").
+        if (contentType.SupportsBlockLayout)
+        {
+            transitions.Add(await contentItemRepository.GetEarliestUpcomingTransitionAsync(now, cancellationToken));
+            transitions.Add(await sliderRepository.GetEarliestUpcomingSlideTransitionAsync(now, cancellationToken));
+        }
+
         var ttl = ContentCacheTtlCalculator.Calculate(now, transitions);
         var cacheKey = WebsiteCacheKeys.PublicContentDetail(contentItem.Id, resolvedLanguage.Code.Value);
 
@@ -108,6 +123,20 @@ public sealed class GetPublicContentByIdQueryHandler(
             ? await BuildRelatedAsync(contentItem, languageCode, defaultLanguage.Code.Value, now, cancellationToken)
             : [];
 
+        // Faz 2 Görev 5 master prompt §5.1: "türü SupportsBlockLayout ise ve yayındaki düzeni varsa
+        // blocks alanı eklenir" - omitted (null) for every other type, or when the type supports block
+        // layouts but this specific item never got one.
+        IReadOnlyList<PublicLayoutBlockResponse>? blocks = null;
+        if (contentType.SupportsBlockLayout)
+        {
+            var layout = await pageLayoutRepository.GetByContentItemIdAsync(contentItem.Id, cancellationToken);
+            if (layout is not null)
+            {
+                blocks = await publicPageLayoutResolver.ResolveAsync(
+                    layout.PublishedBlocks, languageCode, defaultLanguage.Code, now, cancellationToken);
+            }
+        }
+
         var breadcrumb = BuildBreadcrumb(contentItem, contentType, translation, ancestorChain, resolvedLanguage, defaultLanguage);
         var alternates = BuildAlternates(contentItem, ancestorChain, resolvedLanguage.Code.Value, defaultLanguage.Code.Value, activeLanguages);
 
@@ -124,7 +153,7 @@ public sealed class GetPublicContentByIdQueryHandler(
         return new PublicContentDetailResponse(
             contentItem.Id, contentType.Key.Value, contentType.DetailTemplate, translation.Title, translation.Summary, translation.Body, path,
             contentItem.PublishAtUtc ?? contentItem.PublishedAtUtc ?? now, contentItem.UpdatedAtUtc, coverImage, detailImage, gallery, videos,
-            attachments, categories, tags, children, related, breadcrumb, alternates, seo);
+            attachments, categories, tags, children, related, breadcrumb, alternates, seo, blocks);
     }
 
     private async Task<IReadOnlyList<ContentItem>> GetAncestorChainAsync(ContentItem item, CancellationToken cancellationToken)

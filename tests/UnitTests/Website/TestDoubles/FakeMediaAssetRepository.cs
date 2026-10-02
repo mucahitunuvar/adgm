@@ -12,8 +12,16 @@ public sealed class FakeMediaAssetRepository : IMediaAssetRepository
 
     public void Seed(MediaAsset mediaAsset) => _mediaAssets.Add(mediaAsset);
 
+    public int GetByIdsAsyncCallCount { get; private set; }
+
     public Task<MediaAsset?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         Task.FromResult(_mediaAssets.FirstOrDefault(m => m.Id == id));
+
+    public Task<IReadOnlyList<MediaAsset>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        GetByIdsAsyncCallCount++;
+        return Task.FromResult<IReadOnlyList<MediaAsset>>(_mediaAssets.Where(m => ids.Contains(m.Id)).ToList());
+    }
 
     public Task<PagedResult<MediaAsset>> SearchAsync(
         MediaAssetKind? kind,
