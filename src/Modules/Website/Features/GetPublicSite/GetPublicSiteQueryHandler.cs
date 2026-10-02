@@ -18,6 +18,7 @@ public sealed class GetPublicSiteQueryHandler(
     IFileStorageService fileStorageService,
     IMenuRepository menuRepository,
     IContentItemRepository contentItemRepository,
+    ISliderRepository sliderRepository,
     LinkTargetResolver linkTargetResolver,
     ICacheService cacheService,
     TimeProvider timeProvider)
@@ -36,11 +37,13 @@ public sealed class GetPublicSiteQueryHandler(
 
         var now = timeProvider.GetUtcNow().UtcDateTime;
 
-        // ADR-024 §17 (Faz 2 Görev 1 §1.3): shortened to the site-wide nearest future
-        // PublishAtUtc/UnpublishAtUtc among ALL content types (a menu link can point at any of them) -
-        // designed to be extended by Görev 2/6 with slide/pop-up scheduling.
-        var earliestUpcomingTransition = await contentItemRepository.GetEarliestUpcomingTransitionAsync(now, cancellationToken);
-        var ttl = ContentCacheTtlCalculator.Calculate(now, [earliestUpcomingTransition]);
+        // ADR-024 §17 (Faz 2 Görev 1 §1.3, extended by Görev 2 §2): shortened to the site-wide nearest
+        // future PublishAtUtc/UnpublishAtUtc among ALL content types (a menu link can point at any of
+        // them) and every slider's slides - designed to be extended further by Görev 6 with pop-up
+        // scheduling.
+        var earliestUpcomingContentTransition = await contentItemRepository.GetEarliestUpcomingTransitionAsync(now, cancellationToken);
+        var earliestUpcomingSlideTransition = await sliderRepository.GetEarliestUpcomingSlideTransitionAsync(now, cancellationToken);
+        var ttl = ContentCacheTtlCalculator.Calculate(now, [earliestUpcomingContentTransition, earliestUpcomingSlideTransition]);
 
         var response = await cacheService.GetOrCreateAsync(
             WebsiteCacheKeys.PublicSite(resolvedLanguage.Code.Value),

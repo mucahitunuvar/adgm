@@ -4,22 +4,22 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-namespace GenclikMerkezi.Modules.Website.Features.GetSliderById;
+namespace GenclikMerkezi.Modules.Website.Features.DeleteSlider;
 
-internal static class GetSliderByIdEndpoint
+internal static class DeleteSliderEndpoint
 {
     public static void Map(IEndpointRouteBuilder app)
     {
-        app.MapGet(
+        app.MapDelete(
                 "/api/v1/admin/website/sliders/{id:guid}",
                 async (Guid id, ISender sender, CancellationToken cancellationToken) =>
                 {
-                    var result = await sender.Send(new GetSliderByIdQuery(id), cancellationToken);
-                    return result.ToOkOrProblem();
+                    var result = await sender.Send(new DeleteSliderCommand(id), cancellationToken);
+                    return result.ToNoContentOrProblem();
                 })
             .RequireAuthorization(WebsitePolicies.DesignManage)
             .RequireRateLimiting("authenticated")
-            .WithName("GetSliderById")
+            .WithName("DeleteSlider")
             .WithTags("Website");
     }
 }

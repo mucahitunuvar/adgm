@@ -47,7 +47,6 @@ public sealed class Slide : Entity
     }
 
     public static Result<Slide> Create(
-        Guid id,
         Guid desktopImageMediaId,
         Guid? mobileImageMediaId,
         LinkTarget linkTarget,
@@ -81,7 +80,8 @@ public sealed class Slide : Entity
                 "Slide.ButtonLabelRequiresLink", "A slide with a button label must also have a link target."));
         }
 
-        var slide = new Slide(id, desktopImageMediaId, mobileImageMediaId, linkTarget, sortOrder, isActive, publishAtUtc, unpublishAtUtc);
+        var slide = new Slide(
+            Guid.NewGuid(), desktopImageMediaId, mobileImageMediaId, linkTarget, sortOrder, isActive, publishAtUtc, unpublishAtUtc);
         slide._translations.AddRange(translations);
 
         return Result.Success(slide);

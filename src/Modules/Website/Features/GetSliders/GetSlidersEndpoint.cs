@@ -1,6 +1,7 @@
 using GenclikMerkezi.BuildingBlocks.Infrastructure.Http;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
 namespace GenclikMerkezi.Modules.Website.Features.GetSliders;
