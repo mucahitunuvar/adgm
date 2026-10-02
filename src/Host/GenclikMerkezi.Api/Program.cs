@@ -109,9 +109,19 @@ var dataProtectionKeyDirectory = Path.Combine(
     builder.Environment.ContentRootPath,
     builder.Configuration["DataProtection:KeyDirectory"] ?? Path.Combine("App_Data", "dataprotection-keys"));
 
-builder.Services.AddDataProtection()
+var dataProtectionBuilder = builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeyDirectory))
     .SetApplicationName("GenclikMerkezi");
+
+// SECURITY.md §23.2: on Windows (IIS/on-prem deployment target - ADR-024 §1), keys are additionally
+// encrypted at rest with DPAPI, scoped to the application pool's user profile ("Load User Profile =
+// True" is required in IIS for this to work across process recycles). Skipped in the Testing
+// environment: DPAPI keys are bound to the machine/user profile that encrypted them, which a CI
+// runner cannot be assumed to retain between runs, and these are throwaway keys anyway.
+if (OperatingSystem.IsWindows() && !isTestingEnvironment)
+{
+    dataProtectionBuilder.ProtectKeysWithDpapi();
+}
 
 // ADR-024 Faz 1b Görev 1: canlı ortam (Turhost/IIS) reverse proxy'siz çalıştığı için varsayılan
 // olarak kapalı - Enabled=true iken KnownProxies/KnownNetworks'ten en az biri dolu olmalı, aksi halde

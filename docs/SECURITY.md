@@ -846,12 +846,25 @@ yazılır (varsayılan bellek-içi/registry saklama, bir IIS application pool re
 
 * **web sitesi genel köküne (`webuploads`/public static-file root'una) açılmamalıdır** — yalnızca
   bu klasörün kendisi, arka planda dosya sisteminde durur; hiçbir HTTP yolu bu dizine işaret etmez.
+* **asla repoya girmemelidir** — `.gitignore`'da `**/App_Data/` ile hariç tutulur; bu klasör
+  yalnızca çalışan sunucuda bulunur, kaynak kontrolünde değil.
 * **yedeklenmelidir** — kaybolması, o ana kadar üretilmiş tüm önizleme linklerini (süreleri
   dolmadan) geçersiz kılar; bu veri kaybı bir güvenlik olayı değildir ama operasyonel bir
   sürekliliği bozar.
 * Anahtarların kendisi `Secrets Management` (§19) kapsamında değerlendirilmelidir: bu klasöre
   yetkisiz dosya sistemi erişimi, geçmişte üretilmiş tüm önizleme token'larının taklit
   edilebilmesi anlamına gelir.
+* **Windows'ta (IIS/on-prem dağıtım hedefi) diskte DPAPI ile şifreli tutulur**
+  (`ProtectKeysWithDpapi()`, `Testing` ortamı hariç) — anahtar dosyası diskten çalınsa bile, aynı
+  makine/kullanıcı profili dışında deşifre edilemez. Bunun çalışması için **IIS application
+  pool'unda "Load User Profile" `True` olmalıdır**; aksi halde pool her recycle'da DPAPI'nin
+  bağlı olduğu kullanıcı profilini kaybeder ve önceki anahtarlar okunamaz hale gelir.
+* Geliştirme ortamındaki bir test çalıştırması, şifrelenmemiş bir anahtar dosyasını ve 658 test
+  yükleme dosyasını yanlışlıkla public repoya commit etti (bkz. `chore: stop tracking App_Data and
+  ignore runtime files`); sızan anahtar **yenilendi** (yerel `dataprotection-keys` klasörü
+  silindi — uygulama ilk açılışta yeni bir anahtar üretir). Entegrasyon testleri artık bu klasöre
+  hiç yazmıyor, kendi geçici dizinlerini kullanıyor (bkz. `test: write test uploads and data
+  protection keys to temp directories`).
 
 ## 23.3 YouTube Küçük Resmi ve Ziyaretçi IP'si
 
