@@ -42,6 +42,8 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
 
     public DbSet<Popup> Popups => Set<Popup>();
 
+    public DbSet<LegalDocument> LegalDocuments => Set<LegalDocument>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(WebsiteDbContext).Assembly);

@@ -14,6 +14,8 @@ using GenclikMerkezi.Modules.Website.Features.CreateContentType;
 using GenclikMerkezi.Modules.Website.Features.CreateRedirect;
 using GenclikMerkezi.Modules.Website.Features.CreateSiteLanguage;
 using GenclikMerkezi.Modules.Website.Features.CreateImpactMetric;
+using GenclikMerkezi.Modules.Website.Features.CreateLegalDocument;
+using GenclikMerkezi.Modules.Website.Features.CreateLegalDocumentDraft;
 using GenclikMerkezi.Modules.Website.Features.CreatePartner;
 using GenclikMerkezi.Modules.Website.Features.CreatePopup;
 using GenclikMerkezi.Modules.Website.Features.CreateSlider;
@@ -32,6 +34,8 @@ using GenclikMerkezi.Modules.Website.Features.DeleteContentItemTranslation;
 using GenclikMerkezi.Modules.Website.Features.DeleteContentTypeTranslation;
 using GenclikMerkezi.Modules.Website.Features.DeleteImpactMetric;
 using GenclikMerkezi.Modules.Website.Features.DeleteImpactMetricTranslation;
+using GenclikMerkezi.Modules.Website.Features.DeleteLegalDocument;
+using GenclikMerkezi.Modules.Website.Features.DeleteLegalDocumentDraft;
 using GenclikMerkezi.Modules.Website.Features.DeleteMediaAsset;
 using GenclikMerkezi.Modules.Website.Features.DeleteNotFoundPath;
 using GenclikMerkezi.Modules.Website.Features.DeletePartner;
@@ -56,12 +60,16 @@ using GenclikMerkezi.Modules.Website.Features.GetContentTrash;
 using GenclikMerkezi.Modules.Website.Features.GetPublicContentById;
 using GenclikMerkezi.Modules.Website.Features.GetPublicContents;
 using GenclikMerkezi.Modules.Website.Features.GetPublicHome;
+using GenclikMerkezi.Modules.Website.Features.GetPublicLegalDocument;
+using GenclikMerkezi.Modules.Website.Features.GetPublicLegalDocumentVersion;
 using GenclikMerkezi.Modules.Website.Features.GetContentTypeById;
 using GenclikMerkezi.Modules.Website.Features.GetContentTypes;
 using GenclikMerkezi.Modules.Website.Features.GetHomeLayout;
 using GenclikMerkezi.Modules.Website.Features.GetHomeLayoutPreview;
 using GenclikMerkezi.Modules.Website.Features.GetImpactMetricById;
 using GenclikMerkezi.Modules.Website.Features.GetImpactMetrics;
+using GenclikMerkezi.Modules.Website.Features.GetLegalDocumentById;
+using GenclikMerkezi.Modules.Website.Features.GetLegalDocuments;
 using GenclikMerkezi.Modules.Website.Features.GetMediaAssetById;
 using GenclikMerkezi.Modules.Website.Features.GetMediaAssetFolders;
 using GenclikMerkezi.Modules.Website.Features.GetMediaAssets;
@@ -87,6 +95,7 @@ using GenclikMerkezi.Modules.Website.Features.GetVideos;
 using GenclikMerkezi.Modules.Website.Features.MergeTag;
 using GenclikMerkezi.Modules.Website.Features.PermanentlyDeleteContentItem;
 using GenclikMerkezi.Modules.Website.Features.PublishContentItem;
+using GenclikMerkezi.Modules.Website.Features.PublishLegalDocumentDraft;
 using GenclikMerkezi.Modules.Website.Features.PublishContentLayout;
 using GenclikMerkezi.Modules.Website.Features.PublishHomeLayout;
 using GenclikMerkezi.Modules.Website.Features.ReplaceContentDraftBlocks;
@@ -114,6 +123,8 @@ using GenclikMerkezi.Modules.Website.Features.UpdateContentType;
 using GenclikMerkezi.Modules.Website.Features.UpdateContentTypeTranslation;
 using GenclikMerkezi.Modules.Website.Features.UpdateImpactMetric;
 using GenclikMerkezi.Modules.Website.Features.UpdateImpactMetricTranslation;
+using GenclikMerkezi.Modules.Website.Features.UpdateLegalDocumentDraftBody;
+using GenclikMerkezi.Modules.Website.Features.UpdateLegalDocumentTranslation;
 using GenclikMerkezi.Modules.Website.Features.UpdateMediaAsset;
 using GenclikMerkezi.Modules.Website.Features.UpdatePartner;
 using GenclikMerkezi.Modules.Website.Features.UpdatePartnerTranslation;
@@ -296,6 +307,19 @@ public static class WebsiteModuleEndpointExtensions
         // ADR-024 §12.3 (Faz 3 Görev 1): anonymous submission protection - the form/newsletter/cookie
         // consent endpoints added in later Görev's all depend on this token.
         GetSubmissionTokenEndpoint.Map(app);
+
+        // ADR-024 §12.1 (Faz 3 Görev 2): versioned legal documents, entirely panel-managed.
+        CreateLegalDocumentEndpoint.Map(app);
+        UpdateLegalDocumentTranslationEndpoint.Map(app);
+        CreateLegalDocumentDraftEndpoint.Map(app);
+        UpdateLegalDocumentDraftBodyEndpoint.Map(app);
+        PublishLegalDocumentDraftEndpoint.Map(app);
+        DeleteLegalDocumentDraftEndpoint.Map(app);
+        DeleteLegalDocumentEndpoint.Map(app);
+        GetLegalDocumentsEndpoint.Map(app);
+        GetLegalDocumentByIdEndpoint.Map(app);
+        GetPublicLegalDocumentEndpoint.Map(app);
+        GetPublicLegalDocumentVersionEndpoint.Map(app);
 
         return app;
     }

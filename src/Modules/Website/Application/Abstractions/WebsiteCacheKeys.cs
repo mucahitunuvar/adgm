@@ -35,4 +35,15 @@ public static class WebsiteCacheKeys
     public static string PublicHome(string languageCode) => $"{PublicContentPrefix}home:{languageCode}";
 
     public static string PublicContentInvalidationPrefix => PublicContentPrefix;
+
+    // ADR-024 §12.1 (Faz 3 Görev 2): the effective-version and specific-version public responses live
+    // under the same PublicContentPrefix as list/detail/route/home, so the existing
+    // InvalidatePublicContent/InvalidateAllPublic sweep every LegalDocument-mutating handler already
+    // calls (§1 "Cache: Public okumaları etkileyen her mutasyon InvalidateAllPublic çağırır") clears
+    // these too, with no new invalidation method needed.
+    public static string PublicLegalDocument(string key, string languageCode) =>
+        $"{PublicContentPrefix}legal-document:{key}:{languageCode}";
+
+    public static string PublicLegalDocumentVersion(string key, int versionNumber, string languageCode) =>
+        $"{PublicContentPrefix}legal-document-version:{key}:{versionNumber}:{languageCode}";
 }

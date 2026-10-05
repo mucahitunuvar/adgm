@@ -4,6 +4,7 @@ using GenclikMerkezi.Modules.Website.Application.BlockTypes.Definitions;
 using GenclikMerkezi.Modules.Website.Application.BlockTypes.PublicResolution;
 using GenclikMerkezi.Modules.Website.Application.ContentPaths;
 using GenclikMerkezi.Modules.Website.Application.ImpactMetrics;
+using GenclikMerkezi.Modules.Website.Application.LegalDocuments;
 using GenclikMerkezi.Modules.Website.Application.LinkTargets;
 using GenclikMerkezi.Modules.Website.Application.Media;
 using GenclikMerkezi.Modules.Website.Application.Partners;
@@ -68,6 +69,8 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IImpactMetricRepository, ImpactMetricRepository>();
         services.AddScoped<IPageLayoutRepository, PageLayoutRepository>();
         services.AddScoped<IPopupRepository, PopupRepository>();
+        services.AddScoped<ILegalDocumentRepository, LegalDocumentRepository>();
+        services.AddScoped<ILegalDocumentUsageChecker, LegalDocumentUsageChecker>();
         services.AddScoped<LinkTargetResolver>();
         services.AddScoped<SliderPublicQueryService>();
         services.AddScoped<PartnerPublicQueryService>();
