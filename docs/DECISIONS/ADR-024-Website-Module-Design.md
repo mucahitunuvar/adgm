@@ -163,57 +163,92 @@ Draft ──► Published ◄──► Unpublished (pasif)
 - **Kullanım takibi:** Bir içerikte, blokta, slider'da vb. kullanılan medya silinemez; kullanıldığı yerler listelenir.
 - Public medya uzun süreli cache header'larıyla doğrudan servis edilir. Form ekleri gibi özel dosyalar yalnızca yetkili endpoint'ten stream edilir.
 
-### 7. Menüler
+### 7. Menüler (Faz 2 Görev 1'de netleşti/uygulandı)
 
-- `Menu` aggregate'i bir konuma bağlıdır (`Header`, `Footer`, `Utility`, `Mobile`; konum listesi genişletilebilir).
-- İçinde iç içe `MenuItem` ağacı bulunur. Öğe türleri:
-  - `Group` — linksiz başlık (kategorize etmek için)
-  - `Content` — bir ContentItem'a link
-  - `ContentTypeListing` — bir türün liste sayfasına link
-  - `InternalPath` — sabit iç yol (`/portal/giris`)
-  - `ExternalUrl`
-- Alanlar: dile göre etiket, ikon, yeni sekmede açma, `IsActive`, `SortOrder`.
-- Kurallar: döngü yok, maksimum derinlik 3. Bağlı içerik yayında değilse veya türü pasifse öğe public yanıtta otomatik gizlenir.
+- `Menu` aggregate'i bir konuma bağlıdır. Konumlar: `Header`, `Utility`, `Footer` - üçü de migration ile boş seed edilir, admin tarafından oluşturulmaz/silinmez, yalnızca içeriği (`MenuItem` ağacı, `ReplaceItems` ile tüm ağaç birden) değiştirilir. Bu ADR'nin ilk taslağındaki `Mobile` konumu Faz 2 master prompt'unun kullanıcı kararıyla (§1) düşürülmüştür: ayrı bir mobil menü tutulmaz, frontend mobil menüyü `Header`'dan üretir.
+- İçinde iç içe `MenuItem` ağacı bulunur (`ParentId`, aynı menü içindeki başka bir `MenuItem`'a düz skaler referans - EF navigation yok, ağaç bellekte dolaşılarak kurulur/doğrulanır). Öğenin ayrı bir "Group" türü yoktur: `LinkTarget`'ı boş (`LinkTarget.CreateEmpty()`) olan bir öğe kendiliğinden linksiz bir grup başlığıdır.
+- **`LinkTarget`**: `Menu`, `Slider` (§8.2) ve `Popup`'ın (§9) paylaştığı ortak bir Domain value object'i. Dört karşılıklı dışlayıcı şekil + boş durum:
+  - `Content` → bir `ContentItem` kimliği
+  - `ContentTypeListing` → bir `ContentType` kimliği
+  - `InternalPath` → `/` ile başlayan, `//`/`\`/şema (`:`) içermeyen, en fazla 500 karakterlik sabit iç yol
+  - `ExternalUrl` → mutlak `https`/`http`/`mailto:`/`tel:`, en fazla 1000 karakter
+  - `None` → link yok (grup başlığı veya linki opsiyonel bırakılmış bir öğe/slide/pop-up)
+
+  Hedefi public `href`'e çeviren tek bir Application servisi vardır (`LinkTargetResolver`); bir sayfadaki tüm hedefler **toplu** (`ResolveManyAsync`) çözülür - N+1 yok. `Content` hedefi görünmüyorsa (kendisi/bir atası görünmez, türü pasif, `HasDetailPage=false`, istenen dilde çevirisi yok) veya `ContentTypeListing` hedefi geçersizse (tür pasif, `HasListingPage=false`, dilde çevirisi yok) çözümleme `null` döner.
+- Alanlar: dile göre etiket, ikon (`IconKey`, `[a-z0-9-]`, maks 50), yeni sekmede açma, `IsActive`, `SortOrder`.
+- Kurallar: döngü yok, maksimum derinlik 3, menü başına en fazla 200 öğe, `Utility` menüsü tek seviyelidir (çocuk öğe reddedilir).
+- **Güncelleme tüm ağacı birden değiştirir:** editör sürükle-bırak ağacı tek çağrıda gönderir; istemci tarafı geçici kimlikler Application katmanında gerçek kimliklere çözülür, `RowVersion` ile iyimser eşzamanlılık uygulanır.
+- Bağlı içerik yayında değilse veya türü pasifse öğe public yanıtta otomatik gizlenir (link çözümlenemediği için); hiç görünür çocuğu kalmayan grup başlıkları da gizlenir.
 - Menü öğesini pasifleştirmek yalnızca linki gizler; bir bölümü tamamen kapatmak için ContentType pasifleştirilir.
+- **Kullanım koruması:** Bir `ContentItem` kalıcı silindiğinde (çöp kutusu job'ı dahil), ona `Content` tipiyle bağlı tüm menü öğelerinin linki temizlenir ve öğe pasife alınır (`Menu.DeactivateItemsLinkingToContent`) - aynı transaction'da, kalıcı silme işlemiyle birlikte; böylece öğe sessizce aktif-ama-boş bir grup başlığına dönüşmez.
 
 ### 8. Tasarım modülü
 
-#### 8.1. Sayfa düzeni (blok tabanlı)
+#### 8.1. Sayfa düzeni (blok tabanlı) (Faz 2 Görev 4/5'te netleşti/uygulandı)
 
 - Serbest sürükle-bırak builder **değildir**; kodla gelen blok tiplerinin seçilip sıralandığı, açılıp kapandığı ve ayarlandığı bir sistemdir. Her blok tipinin frontend'de karşılık gelen bir bileşeni vardır.
-- `PageLayout` bir hedefe bağlanır: `Home` ya da `SupportsBlockLayout` açık bir ContentItem.
-- `PageLayout` **taslak ve yayın** olmak üzere iki sürüm tutar; değişiklikler taslakta yapılır, önizlenir, yayınlanır.
-- `LayoutBlock`: `BlockType`, `SortOrder`, `IsActive`, dile göre metinler, `Settings` (JSON). Ayarlar, backend'deki blok tipi kaydında tanımlı validator ile doğrulanır; tanımsız blok tipi veya geçersiz ayar kabul edilmez.
-- İlk hedef ana sayfadır; yapı baştan her içeriğe bağlanabilir kurulur.
+- `PageLayout` bir hedefe bağlanır: `Home` (migration ile tek satır seed edilir, admin oluşturmaz/silmez) ya da `SupportsBlockLayout` açık, çöp kutusunda olmayan bir `ContentItem` (içerik başına tek düzen; ilk taslak kaydında oluşur).
+- `PageLayout` **taslak ve yayın** olmak üzere iki ayrı blok listesi tutar (`DraftBlocks`/`PublishedBlocks`); değişiklikler taslakta yapılır, `.../preview` ile önizlenir, `Publish` ile taslak yayındaki listeye kopyalanır (referans doğrulaması bu anda tekrar yapılır), `DiscardDraft` ile taslak yayındaki haline döndürülür. Düzen başına en fazla 30 blok. `RowVersion`, veritabanı üretimli bir rowversion sütunu değil - modül SqlServer ve Sqlite'ın ikisinde de çalıştığı için (ADR-012) - her mutasyonda yeniden üretilen, uygulama tarafından yönetilen bir eşzamanlılık token'ıdır (modüldeki diğer tüm aggregate'lerle aynı desen).
+- `LayoutBlock`: `BlockType`, `SortOrder`, `IsActive`, dile göre metinler (`TextsJson`), `Settings` (JSON, `SettingsJson`). Ayarlar ve metinler backend'deki blok tipi kaydında tanımlı validator ile doğrulanır; tanımsız blok tipi veya geçersiz ayar kabul edilmez. JSON deserialize edilirken bilinmeyen alanlar **reddedilir** (`System.Text.Json`, `UnmappedMemberHandling.Disallow`).
+- **Blok tipi kaydının tek kaynağı:** `GET /api/v1/admin/website/block-types`, her blok tipinin `Settings`/`Texts` C# kayıtlarını `System.Reflection` ile gezen küçük, modül içi bir `BlockTypeFieldDescriber` kullanır - ad (camelCase), tip ve zorunluluk C# nullability'sinden, sınırlar (`MinLength`/`MaxLength`/`Range`) `System.ComponentModel.DataAnnotations` niteliklerinden çıkarılır. Bu nitelikler yalnızca bu uç nokta için açıklama metadata'sıdır; doğrulamanın kendisi hâlâ blok tipinin `ValidateSettings`/`ValidateTexts`'idir - aynı property üzerinde oldukları için şema, saklanan şekilden kopamaz. Yeni bir JSON-Schema kütüphanesi eklenmemiştir (AGENTS.md §47: küçük bir sorunu çözmek için paket eklenmez; repo'da başka bir "kendi şeklini reflection'la anlat" yardımcısı da yoktu).
+- Kullanım koruması: taslak **ve** yayındaki blokların referans verdiği medya, video, slider ve göstergeler silinemez (`LayoutMediaUsageProvider`; `ISliderUsageChecker`'ın gerçek implementasyonu; `IVideoUsageChecker`'a düzen kaynağı eklendi). İçerik türü/kategori yalnızca pasife alınabildiği (silinemediği) için onlara referans blokta kalabilir - public tarafta bu, aşağıdaki gizleme kurallarıyla ele alınır.
+- İçerik kalıcı silindiğinde düzeni de aynı transaction'da silinir.
 
-Başlangıç blok kataloğu: `HeroSlider`, `LogoStrip`, `QuickLinks`, `ContentList`, `UpcomingEvents`, `JobList`, `FeatureMosaic`, `ProcessSteps`, `VideoFeature`, `ImpactStats`, `Cta`, `RichText`, `ImageText`, `Faq`, `Gallery`.
+Başlangıç blok kataloğu (uygulandı, 15 blok tipi; `(dil)` işaretli alanlar `Texts` kaydına, diğerleri `Settings`'e aittir; tüm link alanları §7'deki `LinkTarget`'tır):
 
-`JobList` bloğu yalnızca ayar tutar (adet, filtre); veriyi frontend doğrudan Employer API'sinden çeker. Website, ilan verisini kopyalamaz.
+| Key | Ayarlar | Metinler (dil) | Hedef |
+|---|---|---|---|
+| `hero-slider` | `sliderId` | — | Home, Content |
+| `logo-strip` | `maxItems` (1-30) | `title` (ops.) | Home, Content |
+| `quick-links` | `items[]` (1-8): `iconKey`, `link` | `items[]`: `label`, `description` (ops.) | Home, Content |
+| `content-list` | `contentTypeKey`, `count` (1-12), `featuredOnly`, `categoryId` (ops.), `view` (`cards`/`list`) | `title`, `moreLabel` (ops.) | Home, Content |
+| `upcoming-events` | `contentTypeKeys[]` (`SupportsEvent` türler), `count` (1-12) | `title`, `moreLabel` (ops.) | Home, Content |
+| `job-list` | `count` (1-12) | `title`, `moreLabel` (ops.) | **Home yalnızca** |
+| `feature-mosaic` | `items[]` (1-5): `imageMediaId` (ops.), `link` | `items[]`: `eyebrow` (ops.), `title` | Home, Content |
+| `process-steps` | `stepCount` (2-8) | `title`, `steps[]`: `title`, `text` | Home, Content |
+| `video-feature` | `videoId` | `eyebrow` (ops.), `title`, `text` (ops.), `link`+`linkLabel` (ops.) | Home, Content |
+| `impact-stats` | `metricIds[]` (boşsa tüm aktifler, en fazla 8) | `title` (ops.) | Home, Content |
+| `cta` | `buttons[]` (1-3): `link`, `style` (`primary`/`secondary`/`quiet`) | `eyebrow` (ops.), `title`, `buttons[]`: `label` | Home, Content |
+| `rich-text` | — | `body` (sanitize) | Home, Content |
+| `image-text` | `imageMediaId`, `imagePosition` (`left`/`right`), `link` (ops.) | `title`, `body` (sanitize), `linkLabel` (ops.) | Home, Content |
+| `faq` | `contentTypeKey`, `categoryId` (ops.), `count` (1-30) | `title` (ops.) | Home, Content |
+| `gallery` | `mediaIds[]` (1-30) | `title` (ops.) | Home, Content |
 
-#### 8.2. Bloklara veri sağlayan aggregate'ler
+`job-list` bloğu yalnızca ayar tutar; veriyi frontend doğrudan Employer API'sinden çeker. Website, ilan verisini kopyalamaz.
 
-- **`Slider`**: sıralı slide'lar — masaüstü ve mobil görsel, dile göre başlık/metin/buton etiketi ve linki, `PublishAtUtc`/`UnpublishAtUtc`, `IsActive`.
-- **`Partner`**: logo, ad, link, `SortOrder`, `IsActive` (logo şeridi ve iş birlikleri sayfası).
-- **`ImpactMetric`**: dile göre etiket, değer, birim, **dönem** ve **kaynak** zorunlu. Doğrulanmamış rakam yayınlanmaz. İleride diğer modüllerden (ör. Employment'tan işe yerleşme sayısı) Host adaptörüyle beslenebilir; bu ADR kapsamında manuel girilir.
+**Public blok verisi:** `GET /api/v1/public/home` (ana sayfanın yayındaki blokları + `ContentSeoResolver` ile site varsayılan SEO'su) ve içerik detayına (`GET /api/v1/public/contents/{id}`) eklenen `blocks` alanı (`SupportsBlockLayout` türde ve yayındaki düzen varsa). Faz 1b'deki önizleme uçları (içerik önizleme ve yeni `GET .../layouts/home/preview`) **taslak** blokları döner ve cache'lenmez. Bir düzenin tüm blokları için referanslar toplu çözülür (tüm medya/link/video kimlikleri tek sorguda); liste tipi bloklar (`content-list`, `upcoming-events`, `faq`) kendi sorgularını çalıştırır - bu kabul edilebilir bulunmuştur. Gizleme kuralları (hata değil, bloğun yanıttan çıkarılması): blok pasifse; istenen dilde metni yoksa; zorunlu referans artık yoksa/kullanılamıyorsa (slider'ın görünür slide'ı kalmadı, tür/video pasif vb.); liste tipi blokların `data`'sı boş kalıyorsa; çözümlenemeyen linkler (tekil linklerde ilgili öğe/buton, dizi tipi bloklarda ilgili dizi öğesi gizlenir - öğe kalmazsa blok gizlenir).
+
+#### 8.2. Bloklara veri sağlayan aggregate'ler (Faz 2 Görev 2/3'te netleşti/uygulandı)
+
+- **`Slider`**: değiştirilemez bir `Key` (`[a-z0-9-]`, maks 50, benzersiz; ör. `home-hero`) ile tanımlanır, en fazla 20 sıralı `Slide` tutar. `Slide`: masaüstü görsel (zorunlu), mobil görsel (opsiyonel), `LinkTarget` (§7; buton etiketi varsa zorunlu), `SortOrder`, `IsActive`, `PublishAtUtc`/`UnpublishAtUtc` (görünürlük tek bir expression - `SlideVisibility`), dile göre öncül etiket/başlık/metin/buton etiketi/alt metin override'ı. Alt metin zinciri: `AltTextOverride` → masaüstü görselin medya kütüphanesindeki o dildeki alt metni → boş (Faz 1b galeri kuralıyla aynı). Ad çevirileri ve slide listesi ayrı uçlardan (`PUT .../sliders/{id}`, `PUT .../sliders/{id}/slides`) tüm liste olarak `RowVersion` ile değiştirilir. `SliderMediaUsageProvider` ile kullanımdaki görseller silinemez; `ISliderUsageChecker`'ın gerçek implementasyonu Görev 4'te (PageLayout kullanım koruması) eklenir.
+- **`Partner`**: logo (zorunlu), dile göre ad ve opsiyonel açıklama, opsiyonel mutlak `https` link, `SortOrder`, `IsActive`. `GET /api/v1/public/partners?lang=` iş birlikleri sayfası için; logo şeridi bloğu (§8.1) aynı sorgu servisini kullanır. `PartnerMediaUsageProvider` ile kullanımdaki logo silinemez.
+- **`ImpactMetric`**: dile göre etiket, birim; değer (decimal, ≥0, en fazla 2 ondalık); **dönem** ve **kaynak** zorunlu. Doğrulanmamış rakam yayınlanmaz - bir gösterge, varsayılan dilde `Period`/`Source` dolu olmadan aktif edilemez; aktifken bu alanlar boşaltılamaz. İleride diğer modüllerden (ör. Employment'tan işe yerleşme sayısı) Host adaptörüyle beslenebilir; bu ADR kapsamında manuel girilir.
 
 #### 8.3. Tema ayarları
 
 `SiteSettings.Theme`: logo (açık/koyu), favicon, ana ve ikincil renk, font ailesi. Frontend bunları CSS değişkenlerine basar. Amaç, modülün başka projelerde kod değişikliği olmadan farklı kimlikle kullanılabilmesidir.
 
-### 9. Pop-up ve duyuru şeridi
+### 9. Pop-up ve duyuru şeridi (Faz 2 Görev 6'da netleşti/uygulandı)
 
 `Popup` aggregate'i iki görünüm moduna sahiptir: `Modal` ve `Banner` (sitenin üstünde ince bilgi bandı).
 
 | Alan | Açıklama |
 |---|---|
-| Çeviriler | Başlık, içerik, buton etiketi |
-| `ImageId`, `LinkUrl` | Opsiyonel |
-| `Targeting` | Tüm site / ana sayfa / belirli içerikler / yol listesi |
-| `DeviceTarget` | Hepsi / masaüstü / mobil |
+| `DisplayMode` | `Modal` / `Banner` |
+| `ImageMediaId` | Opsiyonel, yalnızca `Modal` (`Banner`'da görsel olamaz) |
+| `LinkTarget` | Menu/Slider ile paylaşılan ortak value object (§7); opsiyonel, buton etiketi varsa zorunlu |
+| Çeviriler | `Title` (maks 150; `Banner`'da opsiyonel), `Body` (sanitize; `Banner`'da maks 300 karakter düz metin, HTML yok), `ButtonLabel` (maks 50) |
+| `Targeting` | `PopupTargeting` value object: `AllPages` / `HomeOnly` / `Contents` (en fazla 50 `ContentItem` kimliği) / `Paths` (en fazla 20 yol; her biri tam yol ya da `/*` ile biten önek, dil öneki içermez) |
+| `DeviceTarget` | `All` / `Desktop` / `Mobile` |
 | `PublishAtUtc`, `UnpublishAtUtc`, `IsActive` | Zamanlama |
-| `DelaySeconds` | Gösterim gecikmesi |
-| `Frequency` | Her ziyaret / oturumda bir / N günde bir (takip tarayıcıda) |
-| `Priority` | Aynı anda tek modal gösterilir: en yüksek öncelikli |
+| `DelaySeconds` | 0-60; `Banner`'da her zaman 0 |
+| `Frequency` | `EveryVisit` / `OncePerSession` / `EveryNDays` (+ `FrequencyDays`, 1-365, yalnızca `EveryNDays`); takip tarayıcıda yapılır |
+| `Dismissible` | `Banner`'da seçilebilir; `Modal`'da her zaman `true` (istenen değerden bağımsız) |
+| `Priority` | 0-100; aynı anda tek modal gösterilir: en yüksek öncelikli |
+
+Kurallar: aynı anda en fazla 20 aktif ve süresi dolmamış pop-up - veritabanı genelinde sayım gerektirdiği için, `ContentType.RoutePrefix` benzersizliği gibi, Application katmanındaki komut handler'ında doğrulanır. Görünürlük (`IsActive` + zaman aralığı) tek bir expression'dır (`PopupVisibility`).
+
+Public yanıt: `GET /api/v1/public/site`'nin `popups` alanı - o anda görünür ve istenen dilde çevirisi olan tüm pop-up/şeritler, `Priority` azalan sıralı. `Contents` hedeflemesi istenen dildeki yollara çevrilir (görünmeyen içerikler listeden çıkarılır); link'i çözümlenemeyen pop-up'ın butonu gizlenir, pop-up'ın kendisi gösterilir (Slide'ın aynı kuralı, §8.2). **Hangi pop-up'ın gösterileceğine frontend karar verir**: sayfa yoluna uyan en yüksek öncelikli bir `Modal` ve bir `Banner`. `PopupMediaUsageProvider` ile kullanımdaki görsel silinemez.
 
 Çerez onay banner'ı bu yapının dışındadır (bkz. §13).
 
@@ -343,6 +378,8 @@ Başka modüllerin backend davranışını değiştiren bayraklar (ör. istihdam
 - Liste sorguları projection + `AsNoTracking` kullanır; çeviri tablosu dil filtresiyle join edilir, tüm çeviriler yüklenmez.
 - **Invalidation granülerliği** (Faz 1b Görev 7, uygulandı): tek bir kaba taneli önek (`website:public-content:`) kullanılır; `ContentItem`, `ContentType`, `ContentCategory`, `ContentTag`, `Video`, `MediaAsset`, `Redirect`, `SiteLanguage` veya SEO'yu besleyen `SiteSettings` alanlarını değiştiren **her** komut handler'ı, commit sonrası bu öneki tamamen temizler (`ICacheService.RemoveByPrefix`). Anahtar bazlı hedefli invalidation (ör. yalnızca etkilenen içeriğin/listelerin anahtarını silmek) yerine bu tercih edilmiştir - kaç farklı liste/detay anahtarının bir tekil mutasyondan etkilendiğini önceden çıkarmak (kategori ağacı, ilişkili içerik, alt içerik zincirleri, alternates) kırılgan ve hataya açık bir bağımlılık grafiği gerektirirdi. Bedeli, ilgisiz bir mutasyonun da tüm public içerik cache'ini temizlemesidir; bu, düşük yazma/yüksek okuma oranı ve public trafiğin çoğunlukla ilk isteğin cache'i yeniden dolduracağı varsayımıyla kabul edilebilir bulunmuştur (ADR-024 Faz 1b master prompt'unda "kaba taneli temizlik kabul edilebilir" olarak onaylanmıştır). `NotFound` rota çözümleme sonuçları hiçbir zaman cache'lenmez (bir sonraki isteğin güncel veriyi görmesi için); arama (`search`) sorguları da sınırsız anahtar alanı nedeniyle cache'lenmez. Her mutasyon handler'ının invalidation'ı çağırdığı `tests/ArchitectureTests/PublicContentCacheInvalidationTests.cs` ile (dosya bazlı çağrı taraması + gerekçeli istisna listesi) test edilir.
 
+**Faz 2 genişletmesi** (menü/slider/pop-up, Görev 1/2/6): `GET /api/v1/public/site` yanıtı artık menülere (içerik/tür hedefli `LinkTarget`'lar üzerinden) ve pop-up'lara bağlı olduğu için, `ContentItem`/`ContentType`/`ContentCategory` mutasyonlarını işleyen her komut handler'ı artık `InvalidatePublicContent` yerine `InvalidateAllPublic` (hem public-content hem public-site önekini aynı çağrıda temizleyen yardımcı) çağırır. Public site cache'inin TTL'i de `ContentCacheTtlCalculator` yeniden kullanılarak, site genelindeki en yakın zamanlama anına göre (tüm içerik türlerindeki `PublishAtUtc`/`UnpublishAtUtc`, her slider'ın slide zamanlamaları, her aktif pop-up'ın kendi zamanlaması) kısaltılır. `PublicContentCacheInvalidationTests` mimari testi bu fazda eklenen tüm mutasyon handler'larını kapsayacak şekilde güncellenmiştir.
+
 ### 18. Faz planı
 
 | Faz | Kapsam |
@@ -350,7 +387,7 @@ Başka modüllerin backend davranışını değiştiren bayraklar (ör. istihdam
 | **0 — Temel** ✅ | WebsiteDbContext, SiteLanguage, çeviri deseni, `Slug`/`Seo` value object'leri, HtmlSanitizer, isimli policy'ler, MediaAsset + SkiaSharp boyutları + public medya servisi, SiteSettings (tema, iletişim, IBAN, bayraklar, bakım modu), `IBotProtectionVerifier` + Turnstile adaptörü, `IWebsiteEmailSender` + Notification adaptörü |
 | **1a — İçerik çekirdeği (tür, içerik, yol, yönlendirme)** ✅ | ContentType, ContentItem (çeviri, hiyerarşi, durum/zamanlama, sıra, öne çıkan), yol hesaplama + otomatik `Redirect`, elle yönlendirme yönetimi, 404 kaydı (`NotFoundLog`), public route çözümleme (`GET /api/v1/public/routes/resolve`) |
 | **1b — İçerik çekirdeği (devamı)** ✅ | Galeri, video kütüphanesi + içerik video listesi, dosya ekleri, kategoriler, etiketler, ilişkili içerik, önizleme linki, çöp kutusu + kalıcı silme job'ı, kopyalama, public liste/detay endpoint'leri (`GET /api/v1/public/contents`, `GET /api/v1/public/contents/{id}`), breadcrumb, public cache + invalidation. **Kapsam dışı bırakılan (bu fazda uygulanmadı):** form bağlantısı (`FormDefinition`/`FormSubmission` motoru Faz 3'te gelir; `SupportsForm` bayrağı ve içerik-form ilişkisi alanı şimdilik veri modelinde yer tutar ama işlevsel değildir) |
-| **2 — Sunum** | Menü, PageLayout + bloklar, Slider, Partner, ImpactMetric, Pop-up/Banner |
+| **2 — Sunum** ✅ | `LinkTarget` + `LinkTargetResolver` (Menu/Slider/Popup'ın paylaştığı ortak hedef VO'su), konum bazlı `Menu` (`Header`/`Utility`/`Footer`; ayrı mobil menü yok, frontend `Header`'dan üretir), `Slider` + zamanlanmış `Slide`'lar, `Partner`, `ImpactMetric`, kod tabanlı blok tipi kaydı (`BlockTypeFieldDescriber` ile tek kaynaktan `GET .../block-types`) + taslak/yayın `PageLayout` (`Home` ve `SupportsBlockLayout` içerikler), public ana sayfa (`GET /api/v1/public/home`) ve içerik detayına eklenen `blocks` alanı, `Popup`/`Banner` (hedefleme, sıklık, öncelik) |
 | **3 — Etkileşim** | LegalDocument, form motoru + içerik–form bağlantısı, bülten, script yönetimi |
 | **4 — Etkinlik** | EventSchedule, EventRegistration (doğrulama, kontenjan, yedek, iptal), `.ics`, katılımcı dışa aktarımı |
 | **5 — Keşif** | SearchDocument + genel arama + `IExternalSearchSource` + Employer Host adaptörü + senkron job'ı, sitemap/robots, schema.org verisi, revizyon geçmişi |
