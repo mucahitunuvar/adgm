@@ -7,6 +7,7 @@ using GenclikMerkezi.Modules.Website.Application.ImpactMetrics;
 using GenclikMerkezi.Modules.Website.Application.LinkTargets;
 using GenclikMerkezi.Modules.Website.Application.Media;
 using GenclikMerkezi.Modules.Website.Application.Partners;
+using GenclikMerkezi.Modules.Website.Application.PublicSubmissions;
 using GenclikMerkezi.Modules.Website.Application.RouteResolution;
 using GenclikMerkezi.Modules.Website.Application.Sliders;
 using GenclikMerkezi.Modules.Website.Infrastructure;
@@ -15,6 +16,7 @@ using GenclikMerkezi.Modules.Website.Infrastructure.Jobs;
 using GenclikMerkezi.Modules.Website.Infrastructure.Media;
 using GenclikMerkezi.Modules.Website.Infrastructure.Persistence;
 using GenclikMerkezi.Modules.Website.Infrastructure.Preview;
+using GenclikMerkezi.Modules.Website.Infrastructure.PublicSubmissions;
 using GenclikMerkezi.Modules.Website.Infrastructure.Sanitization;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using Microsoft.EntityFrameworkCore;
@@ -127,6 +129,12 @@ public static class WebsiteModuleServiceCollectionExtensions
             client.BaseAddress = new Uri("https://challenges.cloudflare.com/");
             client.Timeout = TimeSpan.FromSeconds(5);
         });
+
+        // ADR-024 §12.3 (Faz 3 Görev 1): anonymous submission protection - the token generator is
+        // Data Protection-backed (Infrastructure), the guard itself is pure orchestration over other
+        // ports (Application), same split as IContentPreviewLinkGenerator/IMediaUsageChecker above.
+        services.AddSingleton<ISubmissionTokenGenerator, DataProtectionSubmissionTokenGenerator>();
+        services.AddScoped<IPublicSubmissionGuard, PublicSubmissionGuard>();
 
         // ADR-024 §2: named policies, all resolving to the literal Admin role for now. Only this
         // block changes when a real permission system arrives - endpoints stay untouched.

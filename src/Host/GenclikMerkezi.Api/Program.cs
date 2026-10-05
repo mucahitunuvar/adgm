@@ -181,6 +181,13 @@ var authenticatedEndpointPermitLimit = isTestingEnvironment ? 1000 : 60;
 var publicReadEndpointPermitLimit = builder.Configuration.GetValue(
     "RateLimiting:PublicReadPermitLimit", isTestingEnvironment ? 1000 : 300);
 
+// ADR-024 §12.3 (Faz 3 Görev 1): anonymous state-changing writes (form submissions, newsletter
+// subscriptions, cookie consents, and the submission-token endpoint they all depend on) get their own,
+// much tighter policy than "public-read"'s GETs - a single page view never fans out into many of
+// these, so 10/min in production is deliberately low.
+var publicFormsEndpointPermitLimit = builder.Configuration.GetValue(
+    "RateLimiting:PublicFormsPermitLimit", isTestingEnvironment ? 1000 : 10);
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -221,6 +228,19 @@ builder.Services.AddRateLimiter(options =>
         factory: _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = publicReadEndpointPermitLimit,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0,
+        }));
+
+    // Anonymous public form-related writes (ADR-024 §12.3/Faz 3 Görev 1): submission-token issuance,
+    // form submissions, newsletter subscriptions and cookie consents. Partitioned per client IP, same
+    // as "public-read" and "auth".
+    options.AddPolicy("public-forms", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: GetClientIpAddress(httpContext),
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = publicFormsEndpointPermitLimit,
             Window = TimeSpan.FromMinutes(1),
             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
             QueueLimit = 0,

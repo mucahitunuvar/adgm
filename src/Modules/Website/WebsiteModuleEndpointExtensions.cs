@@ -80,6 +80,7 @@ using GenclikMerkezi.Modules.Website.Features.GetSiteLanguages;
 using GenclikMerkezi.Modules.Website.Features.GetSiteSettings;
 using GenclikMerkezi.Modules.Website.Features.GetSliderById;
 using GenclikMerkezi.Modules.Website.Features.GetSliders;
+using GenclikMerkezi.Modules.Website.Features.GetSubmissionToken;
 using GenclikMerkezi.Modules.Website.Features.GetTags;
 using GenclikMerkezi.Modules.Website.Features.GetVideoById;
 using GenclikMerkezi.Modules.Website.Features.GetVideos;
@@ -291,6 +292,10 @@ public static class WebsiteModuleEndpointExtensions
         DiscardContentLayoutDraftEndpoint.Map(app);
         GetHomeLayoutPreviewEndpoint.Map(app);
         GetPublicHomeEndpoint.Map(app);
+
+        // ADR-024 §12.3 (Faz 3 Görev 1): anonymous submission protection - the form/newsletter/cookie
+        // consent endpoints added in later Görev's all depend on this token.
+        GetSubmissionTokenEndpoint.Map(app);
 
         return app;
     }

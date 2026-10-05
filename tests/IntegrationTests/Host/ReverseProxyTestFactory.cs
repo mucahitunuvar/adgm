@@ -6,7 +6,8 @@ namespace GenclikMerkezi.IntegrationTests.Host;
 // ADR-024 Faz 1b Görev 1: overrides just the ReverseProxy/RateLimiting settings a test needs -
 // everything else (Identity/Notification/etc. LocalDB wiring, Website's Sqlite database) stays
 // exactly as CustomWebApplicationFactory sets it up.
-public sealed class ReverseProxyTestFactory(bool reverseProxyEnabled, string[] knownNetworks, int? publicReadPermitLimit = null)
+public sealed class ReverseProxyTestFactory(
+    bool reverseProxyEnabled, string[] knownNetworks, int? publicReadPermitLimit = null, int? publicFormsPermitLimit = null)
     : CustomWebApplicationFactory
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -22,6 +23,11 @@ public sealed class ReverseProxyTestFactory(bool reverseProxyEnabled, string[] k
         if (publicReadPermitLimit is not null)
         {
             builder.UseSetting("RateLimiting:PublicReadPermitLimit", publicReadPermitLimit.Value.ToString());
+        }
+
+        if (publicFormsPermitLimit is not null)
+        {
+            builder.UseSetting("RateLimiting:PublicFormsPermitLimit", publicFormsPermitLimit.Value.ToString());
         }
     }
 }
