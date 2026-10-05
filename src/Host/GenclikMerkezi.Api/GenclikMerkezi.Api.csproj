@@ -13,6 +13,10 @@
     <PackageReference Include="Hangfire.Core" Version="1.8.15" />
     <PackageReference Include="Hangfire.SqlServer" Version="1.8.15" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.15" />
+    <!-- Pins a transitive dependency (brought in by Microsoft.AspNetCore.OpenApi 10.0.8) past
+         GHSA-v5pm-xwqc-g5wc (stack overflow on a circular schema reference); same 2.x major, no API
+         surface change for this project. -->
+    <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
   </ItemGroup>
 
   <ItemGroup>
