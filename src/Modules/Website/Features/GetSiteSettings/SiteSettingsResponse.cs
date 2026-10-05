@@ -25,5 +25,6 @@ public sealed record SiteSettingsResponse(
     bool BotProtectionEnabled,
     string TurnstileSiteKey,
     string SubmissionReferencePrefix,
+    string? NewsletterPrivacyNoticeKey,
     bool MaintenanceModeEnabled,
     DateTime? UpdatedAtUtc);

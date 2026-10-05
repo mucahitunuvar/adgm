@@ -44,6 +44,7 @@ public class PublicContentCacheInvalidationTests
         "UpdateSiteSettingsBotProtectionCommandHandler",
         "UpdateSiteSettingsBankAccountsCommandHandler",
         "UpdateSiteSettingsSubmissionsCommandHandler",
+        "UpdateSiteSettingsNewsletterCommandHandler",
 
         // Faz 2 Görev 1: Menu only feeds the public-site bootstrap response (GetPublicSite) - it never
         // touches the public-content list/detail/route-resolution cache, unlike ContentItem/ContentType/
@@ -63,6 +64,15 @@ public class PublicContentCacheInvalidationTests
         "ArchiveFormSubmissionCommandHandler",
         "UnarchiveFormSubmissionCommandHandler",
         "RecordPersonalDataAccessCommandHandler",
+
+        // Faz 3 Görev 6: a newsletter subscribe/confirm/unsubscribe or an admin-initiated subscriber
+        // deletion never changes any publicly cached response - the newsletter subscribe endpoint reads
+        // SiteSettings/LegalDocument directly (never through the public content/site cache), so there is
+        // nothing for these to invalidate.
+        "SubscribeToNewsletterCommandHandler",
+        "ConfirmNewsletterSubscriptionCommandHandler",
+        "UnsubscribeFromNewsletterCommandHandler",
+        "DeleteNewsletterSubscriberCommandHandler",
     };
 
     [Fact]

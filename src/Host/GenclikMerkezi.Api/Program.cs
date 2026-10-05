@@ -366,6 +366,8 @@ if (!isTestingEnvironment)
         "website-archive-closed-form-submissions", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
     RecurringJob.AddOrUpdate<AnonymizeExpiredFormSubmissionsJob>(
         "website-anonymize-expired-form-submissions", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
+    RecurringJob.AddOrUpdate<CleanupExpiredNewsletterSubscribersJob>(
+        "website-cleanup-expired-newsletter-subscribers", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
 }
 
 app.Run();

@@ -11,6 +11,7 @@ using GenclikMerkezi.Modules.Website.Features.ArchiveContentItem;
 using GenclikMerkezi.Modules.Website.Features.ArchiveFormSubmission;
 using GenclikMerkezi.Modules.Website.Features.AssignFormSubmission;
 using GenclikMerkezi.Modules.Website.Features.ChangeFormSubmissionStatus;
+using GenclikMerkezi.Modules.Website.Features.ConfirmNewsletterSubscription;
 using GenclikMerkezi.Modules.Website.Features.ConvertNotFoundPathToRedirect;
 using GenclikMerkezi.Modules.Website.Features.CreateContentCategory;
 using GenclikMerkezi.Modules.Website.Features.CreateContentItem;
@@ -36,6 +37,7 @@ using GenclikMerkezi.Modules.Website.Features.DeactivateFormDefinition;
 using GenclikMerkezi.Modules.Website.Features.DeactivateVideo;
 using GenclikMerkezi.Modules.Website.Features.DeleteContentCategory;
 using GenclikMerkezi.Modules.Website.Features.DeleteContentCategoryTranslation;
+using GenclikMerkezi.Modules.Website.Features.DeleteNewsletterSubscriber;
 using GenclikMerkezi.Modules.Website.Features.DeleteContentItem;
 using GenclikMerkezi.Modules.Website.Features.DeleteContentItemTranslation;
 using GenclikMerkezi.Modules.Website.Features.DeleteContentTypeTranslation;
@@ -60,6 +62,7 @@ using GenclikMerkezi.Modules.Website.Features.DiscardContentLayoutDraft;
 using GenclikMerkezi.Modules.Website.Features.DiscardHomeLayoutDraft;
 using GenclikMerkezi.Modules.Website.Features.DownloadFormSubmissionFile;
 using GenclikMerkezi.Modules.Website.Features.DuplicateContentItem;
+using GenclikMerkezi.Modules.Website.Features.ExportNewsletterSubscribers;
 using GenclikMerkezi.Modules.Website.Features.GetBlockTypes;
 using GenclikMerkezi.Modules.Website.Features.GetContentCategoriesByType;
 using GenclikMerkezi.Modules.Website.Features.GetFormDefinitionById;
@@ -91,6 +94,7 @@ using GenclikMerkezi.Modules.Website.Features.GetMediaAssetFolders;
 using GenclikMerkezi.Modules.Website.Features.GetMediaAssets;
 using GenclikMerkezi.Modules.Website.Features.GetMenuByLocation;
 using GenclikMerkezi.Modules.Website.Features.GetMenus;
+using GenclikMerkezi.Modules.Website.Features.GetNewsletterSubscribers;
 using GenclikMerkezi.Modules.Website.Features.GetNotFoundPaths;
 using GenclikMerkezi.Modules.Website.Features.GetPartnerById;
 using GenclikMerkezi.Modules.Website.Features.GetPartners;
@@ -132,9 +136,11 @@ using GenclikMerkezi.Modules.Website.Features.SetContentItemVideos;
 using GenclikMerkezi.Modules.Website.Features.SetDefaultSiteLanguage;
 using GenclikMerkezi.Modules.Website.Features.SetFormFields;
 using GenclikMerkezi.Modules.Website.Features.SubmitFormSubmission;
+using GenclikMerkezi.Modules.Website.Features.SubscribeToNewsletter;
 using GenclikMerkezi.Modules.Website.Features.UnarchiveContentItem;
 using GenclikMerkezi.Modules.Website.Features.UnarchiveFormSubmission;
 using GenclikMerkezi.Modules.Website.Features.UnpublishContentItem;
+using GenclikMerkezi.Modules.Website.Features.UnsubscribeFromNewsletter;
 using GenclikMerkezi.Modules.Website.Features.UpdateContentCategory;
 using GenclikMerkezi.Modules.Website.Features.UpdateContentCategoryTranslation;
 using GenclikMerkezi.Modules.Website.Features.UpdateContentItem;
@@ -163,6 +169,7 @@ using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsContact;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsFeatures;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsIdentity;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsMaintenance;
+using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsNewsletter;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsSubmissions;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsTheme;
 using GenclikMerkezi.Modules.Website.Features.UpdateTag;
@@ -198,6 +205,7 @@ public static class WebsiteModuleEndpointExtensions
         UpdateSiteSettingsMaintenanceEndpoint.Map(app);
         UpdateSiteSettingsBotProtectionEndpoint.Map(app);
         UpdateSiteSettingsSubmissionsEndpoint.Map(app);
+        UpdateSiteSettingsNewsletterEndpoint.Map(app);
         GetPublicSiteEndpoint.Map(app);
 
         CreateContentTypeEndpoint.Map(app);
@@ -371,6 +379,15 @@ public static class WebsiteModuleEndpointExtensions
         ArchiveFormSubmissionEndpoint.Map(app);
         UnarchiveFormSubmissionEndpoint.Map(app);
         GetPersonalDataAccessLogEndpoint.Map(app);
+
+        // ADR-024 §14 (Faz 3 Görev 6): double opt-in newsletter subscriptions, admin list/export/delete
+        // and the personal data access log entries they write.
+        SubscribeToNewsletterEndpoint.Map(app);
+        ConfirmNewsletterSubscriptionEndpoint.Map(app);
+        UnsubscribeFromNewsletterEndpoint.Map(app);
+        GetNewsletterSubscribersEndpoint.Map(app);
+        ExportNewsletterSubscribersEndpoint.Map(app);
+        DeleteNewsletterSubscriberEndpoint.Map(app);
 
         return app;
     }

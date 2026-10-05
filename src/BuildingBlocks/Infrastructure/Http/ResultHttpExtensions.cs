@@ -37,4 +37,13 @@ public static class ResultHttpExtensions
     {
         return result.IsSuccess ? Results.NoContent() : result.ToProblem();
     }
+
+    // ADR-024 §14 (Faz 3 Görev 6): "Kayıt sızdırmaz: E-posta zaten kayıtlı olsa da aynı yanıt döner
+    // (202)" - the newsletter subscribe endpoint's success response, deliberately indistinguishable
+    // whether this created a row, resent a pending confirmation, or did nothing for an already-active
+    // email.
+    public static IResult ToAcceptedOrProblem(this Result result)
+    {
+        return result.IsSuccess ? Results.Accepted() : result.ToProblem();
+    }
 }

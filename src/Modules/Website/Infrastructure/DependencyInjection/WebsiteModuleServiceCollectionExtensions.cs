@@ -17,6 +17,7 @@ using GenclikMerkezi.Modules.Website.Infrastructure;
 using GenclikMerkezi.Modules.Website.Infrastructure.BotProtection;
 using GenclikMerkezi.Modules.Website.Infrastructure.Jobs;
 using GenclikMerkezi.Modules.Website.Infrastructure.Media;
+using GenclikMerkezi.Modules.Website.Infrastructure.Newsletter;
 using GenclikMerkezi.Modules.Website.Infrastructure.Persistence;
 using GenclikMerkezi.Modules.Website.Infrastructure.Preview;
 using GenclikMerkezi.Modules.Website.Infrastructure.PublicSubmissions;
@@ -78,6 +79,7 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IFormSubmissionRepository, FormSubmissionRepository>();
         services.AddScoped<IFormSubmissionSequenceRepository, FormSubmissionSequenceRepository>();
         services.AddScoped<IPersonalDataAccessLogRepository, PersonalDataAccessLogRepository>();
+        services.AddScoped<INewsletterSubscriberRepository, NewsletterSubscriberRepository>();
         services.AddScoped<PublicFormDefinitionResolver>();
         services.AddScoped<LinkTargetResolver>();
         services.AddScoped<SliderPublicQueryService>();
@@ -96,6 +98,7 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddTransient<PermanentlyDeleteExpiredTrashJob>();
         services.AddTransient<ArchiveClosedFormSubmissionsJob>();
         services.AddTransient<AnonymizeExpiredFormSubmissionsJob>();
+        services.AddTransient<CleanupExpiredNewsletterSubscribersJob>();
         services.AddSingleton<IImageProcessor, SkiaSharpImageProcessor>();
         services.AddScoped<IMediaUsageChecker, CompositeMediaUsageChecker>();
         services.AddScoped<IMediaUsageProvider, SiteSettingsMediaUsageProvider>();
@@ -148,6 +151,10 @@ public static class WebsiteModuleServiceCollectionExtensions
         // ports (Application), same split as IContentPreviewLinkGenerator/IMediaUsageChecker above.
         services.AddSingleton<ISubmissionTokenGenerator, DataProtectionSubmissionTokenGenerator>();
         services.AddScoped<IPublicSubmissionGuard, PublicSubmissionGuard>();
+
+        // ADR-024 §14 (Faz 3 Görev 6): the newsletter double opt-in confirmation link - same Data
+        // Protection backing as ISubmissionTokenGenerator/IContentPreviewLinkGenerator above.
+        services.AddSingleton<INewsletterConfirmationLinkGenerator, DataProtectionNewsletterConfirmationLinkGenerator>();
 
         // ADR-024 §2: named policies, all resolving to the literal Admin role for now. Only this
         // block changes when a real permission system arrives - endpoints stay untouched.

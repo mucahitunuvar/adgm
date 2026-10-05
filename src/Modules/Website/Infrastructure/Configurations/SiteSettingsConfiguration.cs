@@ -108,6 +108,15 @@ public sealed class SiteSettingsConfiguration : IEntityTypeConfiguration<SiteSet
         builder.Property(s => s.TurnstileSiteKey).HasMaxLength(200).IsRequired();
         builder.Property(s => s.SubmissionReferencePrefix).HasMaxLength(6).IsRequired();
 
+        // Nullable value-object column (ADR-024 §14, Faz 3 Görev 6): EF Core skips the converter and
+        // copies null straight through for a null model value, so this conversion needs no null checks
+        // of its own - the same reasoning FormSubmissionConfiguration's own non-nullable LegalDocumentKey
+        // conversion documents, just relying on EF's documented null short-circuit instead.
+        builder.Property(s => s.NewsletterPrivacyNoticeKey)
+            .HasConversion(key => key!.Value, value => LegalDocumentKey.Create(value).Value)
+            .HasColumnName("NewsletterPrivacyNoticeKey")
+            .HasMaxLength(LegalDocumentKey.MaxLength);
+
         builder.Property(s => s.UpdatedByUserId);
         builder.Property(s => s.UpdatedAtUtc);
     }

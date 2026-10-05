@@ -72,6 +72,12 @@ public sealed partial class SiteSettings : AggregateRoot
     // rather than hardcoded into FormSubmission itself.
     public string SubmissionReferencePrefix { get; private set; } = DefaultSubmissionReferencePrefix;
 
+    // ADR-024 §14 (Faz 3 Görev 6): which LegalDocument (Kind = PrivacyNotice) the newsletter subscribe
+    // form presents - null until an admin configures it via UpdateSiteSettingsNewsletter, in which case
+    // SubscribeToNewsletter treats the newsletter as not yet available (same 404 as NewsletterEnabled
+    // being off), rather than guessing a document.
+    public LegalDocumentKey? NewsletterPrivacyNoticeKey { get; private set; }
+
     public byte[] RowVersion { get; private set; } = Guid.NewGuid().ToByteArray();
 
     public Guid? UpdatedByUserId { get; private set; }
@@ -227,6 +233,12 @@ public sealed partial class SiteSettings : AggregateRoot
         Touch(updatedByUserId, updatedAtUtc);
 
         return Result.Success();
+    }
+
+    public void UpdateNewsletterPrivacyNoticeKey(LegalDocumentKey? newsletterPrivacyNoticeKey, Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        NewsletterPrivacyNoticeKey = newsletterPrivacyNoticeKey;
+        Touch(updatedByUserId, updatedAtUtc);
     }
 
     // Global on/off switch only - the message itself is per-language (SetMaintenanceMessage), since a

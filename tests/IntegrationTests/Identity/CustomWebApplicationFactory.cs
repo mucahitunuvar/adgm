@@ -317,6 +317,20 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         return careerAdvisor!.Email;
     }
 
+    // ADR-024 §14 (Faz 3 Görev 6): the unsubscribe link's token is never returned by any HTTP response
+    // (it would only ever be embedded in a future campaign-sender's email, out of this phase's scope -
+    // see the module's own remarks on NewsletterSubscriber.UnsubscribeToken), so NewsletterFlowTests
+    // reads it directly, the same bypass-the-HTTP-surface pattern SeedNotFoundLogAsync/
+    // GetAdminAuditLogEntriesAsync already use above for their own no-endpoint-yet data.
+    public async Task<(string UnsubscribeToken, NewsletterSubscriberStatus Status)> GetNewsletterSubscriberStateAsync(string email)
+    {
+        using var scope = Services.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<INewsletterSubscriberRepository>();
+        var normalizedEmail = NewsletterSubscriber.NormalizeEmail(email).Value;
+        var subscriber = await repository.GetByEmailAsync(normalizedEmail);
+        return (subscriber!.UnsubscribeToken, subscriber.Status);
+    }
+
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
