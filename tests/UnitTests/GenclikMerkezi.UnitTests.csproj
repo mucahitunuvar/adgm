@@ -13,6 +13,11 @@
     <PackageReference Include="PdfPig" Version="0.1.16" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <!-- Direct references so HangfireJobSerializationTests exercises the exact Hangfire.Core version
+         the Host project runs and the exact Newtonsoft.Json version it is now pinned to (13.0.4,
+         GHSA-5crp-9r3c-p9vr) - none of the referenced modules bring either package in on their own. -->
+    <PackageReference Include="Hangfire.Core" Version="1.8.15" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
   <ItemGroup>

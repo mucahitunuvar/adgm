@@ -17,6 +17,13 @@
          GHSA-v5pm-xwqc-g5wc (stack overflow on a circular schema reference); same 2.x major, no API
          surface change for this project. -->
     <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
+    <!-- Pins a transitive dependency (brought in by Hangfire.Core/Hangfire.AspNetCore/
+         Hangfire.SqlServer 1.8.15, which declare Newtonsoft.Json >= 11.0.1 with no upper bound) past
+         GHSA-5crp-9r3c-p9vr (StackOverflow/high CPU-RAM DoS on deeply nested JSON). This is a major
+         version jump (11.x -> 13.x) from the version Hangfire ships with, so it is covered by
+         HangfireJobSerializationTests to confirm Hangfire's own job serialization still round-trips
+         method/argument data correctly under 13.0.4. -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
   <ItemGroup>
