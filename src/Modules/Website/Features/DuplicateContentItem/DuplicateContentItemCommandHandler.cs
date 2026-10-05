@@ -154,6 +154,7 @@ public sealed class DuplicateContentItemCommandHandler(
         newItem.SetCategories(source.CategoryIds, userId, now);
         newItem.SetVideos(source.VideoIds, userId, now);
         newItem.SetRelatedContent(source.RelatedContentItemIds, userId, now);
+        newItem.SetFormDefinition(source.FormDefinitionId, userId, now);
 
         var galleryItems = source.GalleryItems
             .Select(g => ContentItemGalleryItem.Create(

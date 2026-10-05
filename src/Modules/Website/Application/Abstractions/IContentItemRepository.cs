@@ -63,6 +63,11 @@ public interface IContentItemRepository
     // VideoIds references videoId, used by DeleteVideoCommandHandler's "kullanımdaysa 409" guard.
     Task<IReadOnlyList<ContentItem>> GetByVideoIdAsync(Guid videoId, CancellationToken cancellationToken = default);
 
+    // ADR-024 §12.2 (Faz 3 Görev 3): FormDefinitionUsageChecker's real implementation - every
+    // ContentItem linked to formDefinitionId, used by DeleteFormDefinitionCommandHandler's "kullanımdaysa
+    // silinemez" guard.
+    Task<IReadOnlyList<ContentItem>> GetByFormDefinitionIdAsync(Guid formDefinitionId, CancellationToken cancellationToken = default);
+
     // ADR-024 §4.1 (Faz 1b Görev 5): RelatedContentResolutionService's manual step - projects the
     // requested language's display fields for visible, translated items among `ids`, in no
     // particular order (the caller re-sorts to `ids`' own order, since RelatedContentItemIds' order

@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Website.Application.BlockTypes.PublicResolution;
+using GenclikMerkezi.Modules.Website.Application.Forms.PublicResolution;
 
 namespace GenclikMerkezi.Modules.Website.Features.GetPublicContentById;
 
@@ -24,4 +25,5 @@ public sealed record PublicContentDetailResponse(
     IReadOnlyList<PublicContentBreadcrumbItemResponse> Breadcrumb,
     IReadOnlyList<PublicContentDetailAlternateResponse> Alternates,
     PublicContentDetailSeoResponse Seo,
-    IReadOnlyList<PublicLayoutBlockResponse>? Blocks);
+    IReadOnlyList<PublicLayoutBlockResponse>? Blocks,
+    PublicFormDefinitionResponse? Form);

@@ -51,6 +51,9 @@ public sealed class FakeContentItemRepository : IContentItemRepository
     public Task<IReadOnlyList<ContentItem>> GetByVideoIdAsync(Guid videoId, CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<ContentItem>>(_contentItems.Where(c => c.VideoIds.Contains(videoId)).ToList());
 
+    public Task<IReadOnlyList<ContentItem>> GetByFormDefinitionIdAsync(Guid formDefinitionId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<ContentItem>>(_contentItems.Where(c => c.FormDefinitionId == formDefinitionId).ToList());
+
     public Task<IReadOnlyList<RelatedContentCandidate>> GetVisibleRelatedCandidatesByIdsAsync(
         IReadOnlyList<Guid> ids, LanguageCode languageCode, DateTime now, CancellationToken cancellationToken = default)
     {

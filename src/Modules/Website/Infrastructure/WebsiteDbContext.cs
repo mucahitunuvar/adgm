@@ -43,6 +43,7 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
     public DbSet<Popup> Popups => Set<Popup>();
 
     public DbSet<LegalDocument> LegalDocuments => Set<LegalDocument>();
+    public DbSet<FormDefinition> FormDefinitions => Set<FormDefinition>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

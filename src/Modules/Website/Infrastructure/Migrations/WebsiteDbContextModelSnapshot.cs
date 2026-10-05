@@ -94,6 +94,9 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                     b.Property<Guid?>("DetailImageMediaId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("FormDefinitionId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("bit");
 
@@ -659,6 +662,62 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                             SupportsTags = false,
                             SupportsVideos = false
                         });
+                });
+
+            modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.FormDefinition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("DefinitionVersion")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Key");
+
+                    b.PrimitiveCollection<string>("NotificationEmails")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("NotificationEmails");
+
+                    b.Property<string>("PrivacyNoticeKey")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("PrivacyNoticeKey");
+
+                    b.Property<int>("RetentionDays")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("FormDefinitions", (string)null);
                 });
 
             modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.ImpactMetric", b =>
@@ -2223,6 +2282,238 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                                     RoutePrefix = "press-releases"
                                 });
                         });
+
+                    b.Navigation("Translations");
+                });
+
+            modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.FormDefinition", b =>
+                {
+                    b.OwnsMany("GenclikMerkezi.Modules.Website.Domain.FormDefinitionTranslation", "Translations", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("Description")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<Guid>("FormDefinitionId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("LanguageCode")
+                                .IsRequired()
+                                .HasMaxLength(35)
+                                .HasColumnType("nvarchar(35)")
+                                .HasColumnName("LanguageCode");
+
+                            b1.Property<string>("SubmitButtonLabel")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)");
+
+                            b1.Property<string>("SuccessMessage")
+                                .IsRequired()
+                                .HasMaxLength(1000)
+                                .HasColumnType("nvarchar(1000)");
+
+                            b1.Property<string>("Title")
+                                .IsRequired()
+                                .HasMaxLength(200)
+                                .HasColumnType("nvarchar(200)");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("FormDefinitionId", "LanguageCode")
+                                .IsUnique();
+
+                            b1.ToTable("FormDefinitionTranslations", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("FormDefinitionId");
+                        });
+
+                    b.OwnsMany("GenclikMerkezi.Modules.Website.Domain.FormExplicitConsentRequirement", "ExplicitConsents", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<Guid>("FormDefinitionId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<bool>("IsRequired")
+                                .HasColumnType("bit");
+
+                            b1.Property<string>("LegalDocumentKey")
+                                .IsRequired()
+                                .HasMaxLength(50)
+                                .HasColumnType("nvarchar(50)")
+                                .HasColumnName("LegalDocumentKey");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("FormDefinitionId");
+
+                            b1.ToTable("FormExplicitConsentRequirements", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("FormDefinitionId");
+                        });
+
+                    b.OwnsMany("GenclikMerkezi.Modules.Website.Domain.FormField", "Fields", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.PrimitiveCollection<string>("AllowedFileTypes")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)")
+                                .HasColumnName("AllowedFileTypes");
+
+                            b1.Property<DateTime?>("DateMax")
+                                .HasColumnType("datetime2");
+
+                            b1.Property<DateTime?>("DateMin")
+                                .HasColumnType("datetime2");
+
+                            b1.Property<Guid>("FormDefinitionId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<bool>("IsRequired")
+                                .HasColumnType("bit");
+
+                            b1.Property<string>("Key")
+                                .IsRequired()
+                                .HasMaxLength(50)
+                                .HasColumnType("nvarchar(50)");
+
+                            b1.Property<int?>("MaxLength")
+                                .HasColumnType("int");
+
+                            b1.Property<int?>("MaxSizeMb")
+                                .HasColumnType("int");
+
+                            b1.Property<int?>("MinLength")
+                                .HasColumnType("int");
+
+                            b1.Property<int>("SortOrder")
+                                .HasColumnType("int");
+
+                            b1.Property<string>("Type")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("nvarchar(20)");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("FormDefinitionId", "Key")
+                                .IsUnique();
+
+                            b1.ToTable("FormFields", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("FormDefinitionId");
+
+                            b1.OwnsMany("GenclikMerkezi.Modules.Website.Domain.FormFieldOption", "Options", b2 =>
+                                {
+                                    b2.Property<Guid>("Id")
+                                        .HasColumnType("uniqueidentifier");
+
+                                    b2.Property<Guid>("FormFieldId")
+                                        .HasColumnType("uniqueidentifier");
+
+                                    b2.Property<string>("Key")
+                                        .IsRequired()
+                                        .HasMaxLength(50)
+                                        .HasColumnType("nvarchar(50)");
+
+                                    b2.HasKey("Id");
+
+                                    b2.HasIndex("FormFieldId");
+
+                                    b2.ToTable("FormFieldOptions", (string)null);
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("FormFieldId");
+
+                                    b2.OwnsMany("GenclikMerkezi.Modules.Website.Domain.FormFieldOptionTranslation", "Translations", b3 =>
+                                        {
+                                            b3.Property<Guid>("Id")
+                                                .HasColumnType("uniqueidentifier");
+
+                                            b3.Property<Guid>("FormFieldOptionId")
+                                                .HasColumnType("uniqueidentifier");
+
+                                            b3.Property<string>("Label")
+                                                .IsRequired()
+                                                .HasMaxLength(200)
+                                                .HasColumnType("nvarchar(200)");
+
+                                            b3.Property<string>("LanguageCode")
+                                                .IsRequired()
+                                                .HasMaxLength(35)
+                                                .HasColumnType("nvarchar(35)")
+                                                .HasColumnName("LanguageCode");
+
+                                            b3.HasKey("Id");
+
+                                            b3.HasIndex("FormFieldOptionId", "LanguageCode")
+                                                .IsUnique();
+
+                                            b3.ToTable("FormFieldOptionTranslations", (string)null);
+
+                                            b3.WithOwner()
+                                                .HasForeignKey("FormFieldOptionId");
+                                        });
+
+                                    b2.Navigation("Translations");
+                                });
+
+                            b1.OwnsMany("GenclikMerkezi.Modules.Website.Domain.FormFieldTranslation", "Translations", b2 =>
+                                {
+                                    b2.Property<Guid>("Id")
+                                        .HasColumnType("uniqueidentifier");
+
+                                    b2.Property<Guid>("FormFieldId")
+                                        .HasColumnType("uniqueidentifier");
+
+                                    b2.Property<string>("HelpText")
+                                        .HasMaxLength(500)
+                                        .HasColumnType("nvarchar(500)");
+
+                                    b2.Property<string>("Label")
+                                        .IsRequired()
+                                        .HasMaxLength(200)
+                                        .HasColumnType("nvarchar(200)");
+
+                                    b2.Property<string>("LanguageCode")
+                                        .IsRequired()
+                                        .HasMaxLength(35)
+                                        .HasColumnType("nvarchar(35)")
+                                        .HasColumnName("LanguageCode");
+
+                                    b2.Property<string>("Placeholder")
+                                        .HasMaxLength(200)
+                                        .HasColumnType("nvarchar(200)");
+
+                                    b2.HasKey("Id");
+
+                                    b2.HasIndex("FormFieldId", "LanguageCode")
+                                        .IsUnique();
+
+                                    b2.ToTable("FormFieldTranslations", (string)null);
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("FormFieldId");
+                                });
+
+                            b1.Navigation("Options");
+
+                            b1.Navigation("Translations");
+                        });
+
+                    b.Navigation("ExplicitConsents");
+
+                    b.Navigation("Fields");
 
                     b.Navigation("Translations");
                 });

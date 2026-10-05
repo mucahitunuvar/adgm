@@ -13,6 +13,7 @@ public sealed record ContentItemDetailResponse(
     string? CoverImageUrl,
     Guid? DetailImageMediaId,
     string? DetailImageUrl,
+    Guid? FormDefinitionId,
     bool IsVisible,
     byte[] RowVersion,
     IReadOnlyList<Guid> CategoryIds,

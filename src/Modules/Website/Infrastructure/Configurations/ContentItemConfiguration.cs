@@ -23,6 +23,7 @@ public sealed class ContentItemConfiguration : IEntityTypeConfiguration<ContentI
         builder.Property(ci => ci.IsFeatured).IsRequired();
         builder.Property(ci => ci.CoverImageMediaId);
         builder.Property(ci => ci.DetailImageMediaId);
+        builder.Property(ci => ci.FormDefinitionId);
 
         // ADR-024 §4.1 (Faz 1b Görev 3): a primitive collection (EF Core 8+), stored as a JSON array
         // column - categories are assigned as a small (<= 10), language-independent set, not a

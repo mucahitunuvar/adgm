@@ -1,6 +1,7 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Application.BlockTypes.PublicResolution;
 using GenclikMerkezi.Modules.Website.Application.ContentPaths;
+using GenclikMerkezi.Modules.Website.Application.Forms.PublicResolution;
 using GenclikMerkezi.Modules.Website.Application.Media;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
@@ -28,6 +29,8 @@ public sealed class GetPublicContentByIdQueryHandler(
     IPageLayoutRepository pageLayoutRepository,
     PublicPageLayoutResolver publicPageLayoutResolver,
     ISliderRepository sliderRepository,
+    IFormDefinitionRepository formDefinitionRepository,
+    PublicFormDefinitionResolver publicFormDefinitionResolver,
     ICacheService cacheService,
     TimeProvider timeProvider)
     : IRequestHandler<GetPublicContentByIdQuery, Result<PublicContentDetailResponse>>
@@ -137,6 +140,16 @@ public sealed class GetPublicContentByIdQueryHandler(
             }
         }
 
+        PublicFormDefinitionResponse? form = null;
+        if (contentType.SupportsForm && contentItem.FormDefinitionId is not null)
+        {
+            var formDefinition = await formDefinitionRepository.GetByIdAsync(contentItem.FormDefinitionId.Value, cancellationToken);
+            if (formDefinition is not null && formDefinition.IsActive)
+            {
+                form = await publicFormDefinitionResolver.ResolveAsync(formDefinition, languageCode, now, cancellationToken);
+            }
+        }
+
         var breadcrumb = BuildBreadcrumb(contentItem, contentType, translation, ancestorChain, resolvedLanguage, defaultLanguage);
         var alternates = BuildAlternates(contentItem, ancestorChain, resolvedLanguage.Code.Value, defaultLanguage.Code.Value, activeLanguages);
 
@@ -153,7 +166,7 @@ public sealed class GetPublicContentByIdQueryHandler(
         return new PublicContentDetailResponse(
             contentItem.Id, contentType.Key.Value, contentType.DetailTemplate, translation.Title, translation.Summary, translation.Body, path,
             contentItem.PublishAtUtc ?? contentItem.PublishedAtUtc ?? now, contentItem.UpdatedAtUtc, coverImage, detailImage, gallery, videos,
-            attachments, categories, tags, children, related, breadcrumb, alternates, seo, blocks);
+            attachments, categories, tags, children, related, breadcrumb, alternates, seo, blocks, form);
     }
 
     private async Task<IReadOnlyList<ContentItem>> GetAncestorChainAsync(ContentItem item, CancellationToken cancellationToken)

@@ -132,6 +132,9 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
     public async Task<IReadOnlyList<ContentItem>> GetByVideoIdAsync(Guid videoId, CancellationToken cancellationToken = default) =>
         await dbContext.ContentItems.Where(ci => ci.VideoIds.Contains(videoId)).ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<ContentItem>> GetByFormDefinitionIdAsync(Guid formDefinitionId, CancellationToken cancellationToken = default) =>
+        await dbContext.ContentItems.Where(ci => ci.FormDefinitionId == formDefinitionId).ToListAsync(cancellationToken);
+
     // ContentItemVisibility.IsVisibleAt(now) is a single Expression<Func<ContentItem, bool>> shared by
     // every query below (and by ContentItem.IsVisible itself) - EF Core's LINQ-to-Entities provider
     // translates the expression tree it is given, which is why the rule lives there instead of a

@@ -4,6 +4,8 @@ using GenclikMerkezi.Modules.Website.Application.BlockTypes.Definitions;
 using GenclikMerkezi.Modules.Website.Application.BlockTypes.PublicResolution;
 using GenclikMerkezi.Modules.Website.Application.ContentPaths;
 using GenclikMerkezi.Modules.Website.Application.ImpactMetrics;
+using GenclikMerkezi.Modules.Website.Application.Forms;
+using GenclikMerkezi.Modules.Website.Application.Forms.PublicResolution;
 using GenclikMerkezi.Modules.Website.Application.LegalDocuments;
 using GenclikMerkezi.Modules.Website.Application.LinkTargets;
 using GenclikMerkezi.Modules.Website.Application.Media;
@@ -71,6 +73,9 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IPopupRepository, PopupRepository>();
         services.AddScoped<ILegalDocumentRepository, LegalDocumentRepository>();
         services.AddScoped<ILegalDocumentUsageChecker, LegalDocumentUsageChecker>();
+        services.AddScoped<IFormDefinitionRepository, FormDefinitionRepository>();
+        services.AddScoped<IFormDefinitionUsageChecker, FormDefinitionUsageChecker>();
+        services.AddScoped<PublicFormDefinitionResolver>();
         services.AddScoped<LinkTargetResolver>();
         services.AddScoped<SliderPublicQueryService>();
         services.AddScoped<PartnerPublicQueryService>();

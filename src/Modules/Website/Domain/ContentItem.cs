@@ -59,6 +59,11 @@ public sealed class ContentItem : AggregateRoot
 
     public Guid? DetailImageMediaId { get; private set; }
 
+    // ADR-024 §12.2 (Faz 3 Görev 3): the form this item links to, when its ContentType has SupportsForm
+    // enabled - e.g. each volunteering opportunity gets its own application form. Null means no form is
+    // linked. Not required to be an active FormDefinition (an admin may link one before activating it).
+    public Guid? FormDefinitionId { get; private set; }
+
     public IReadOnlyList<ContentItemTranslation> Translations => _translations.AsReadOnly();
 
     public IReadOnlyList<Guid> CategoryIds => _categoryIds.AsReadOnly();
@@ -328,6 +333,16 @@ public sealed class ContentItem : AggregateRoot
     public void SetParent(Guid? parentId, Guid updatedByUserId, DateTime updatedAtUtc)
     {
         ParentId = parentId;
+        Touch(updatedByUserId, updatedAtUtc);
+    }
+
+    // ADR-024 §12.2 (Faz 3 Görev 3): whether formDefinitionId is null, references an existing
+    // FormDefinition, and is only assignable when this item's ContentType has SupportsForm enabled are
+    // all cross-aggregate checks the Application-layer command handler performs before calling this -
+    // ContentItem has no ContentType/FormDefinition repository access of its own (mirrors SetParent).
+    public void SetFormDefinition(Guid? formDefinitionId, Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        FormDefinitionId = formDefinitionId;
         Touch(updatedByUserId, updatedAtUtc);
     }
 
