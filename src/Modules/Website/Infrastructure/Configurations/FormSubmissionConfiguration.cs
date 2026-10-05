@@ -33,6 +33,13 @@ public sealed class FormSubmissionConfiguration : IEntityTypeConfiguration<FormS
         builder.Property(s => s.ResponsesJson).IsRequired();
 
         builder.Property(s => s.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+        builder.Property(s => s.AssignedToUserId);
+        builder.HasIndex(s => s.AssignedToUserId);
+        builder.Property(s => s.ClosedAtUtc);
+        builder.Property(s => s.ArchiveEligibleSinceUtc);
+        builder.Property(s => s.ArchivedAtUtc);
+        builder.HasIndex(s => s.ArchivedAtUtc);
+        builder.Property(s => s.AnonymizedAtUtc);
         builder.Property(s => s.RowVersion).IsConcurrencyToken();
 
         builder.OwnsMany(s => s.FileAttachments, attachment =>
@@ -74,5 +81,43 @@ public sealed class FormSubmissionConfiguration : IEntityTypeConfiguration<FormS
             accepted.Property(a => a.IsPrivacyNotice).IsRequired();
         });
         builder.Navigation(s => s.AcceptedLegalVersions).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.OwnsMany(s => s.StatusHistory, history =>
+        {
+            history.ToTable("FormSubmissionStatusHistory");
+            history.WithOwner().HasForeignKey("FormSubmissionId");
+            history.HasKey(h => h.Id);
+            history.Property(h => h.Id).ValueGeneratedNever();
+
+            history.Property(h => h.FromStatus).HasConversion<string>().HasMaxLength(20).IsRequired();
+            history.Property(h => h.ToStatus).HasConversion<string>().HasMaxLength(20).IsRequired();
+            history.Property(h => h.ChangedByUserId).IsRequired();
+            history.Property(h => h.ChangedAtUtc).IsRequired();
+        });
+        builder.Navigation(s => s.StatusHistory).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.OwnsMany(s => s.InternalNotes, notes =>
+        {
+            notes.ToTable("FormSubmissionInternalNotes");
+            notes.WithOwner().HasForeignKey("FormSubmissionId");
+            notes.HasKey(n => n.Id);
+            notes.Property(n => n.Id).ValueGeneratedNever();
+
+            notes.Property(n => n.AuthorUserId).IsRequired();
+            notes.Property(n => n.Text).HasMaxLength(FormSubmissionInternalNote.MaxTextLength).IsRequired();
+            notes.Property(n => n.CreatedAtUtc).IsRequired();
+        });
+        builder.Navigation(s => s.InternalNotes).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.OwnsMany(s => s.PendingFileDeletions, deletions =>
+        {
+            deletions.ToTable("FormSubmissionPendingFileDeletions");
+            deletions.WithOwner().HasForeignKey("FormSubmissionId");
+            deletions.HasKey(d => d.Id);
+            deletions.Property(d => d.Id).ValueGeneratedNever();
+
+            deletions.Property(d => d.FileKey).HasMaxLength(500).IsRequired();
+        });
+        builder.Navigation(s => s.PendingFileDeletions).UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

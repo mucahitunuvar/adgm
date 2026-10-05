@@ -53,6 +53,16 @@ public class PublicContentCacheInvalidationTests
         // Faz 3 Görev 4: a submission never changes any publicly cached response - the FormDefinition/
         // ContentItem it was submitted against are unaffected by it, so there is nothing to invalidate.
         "SubmitFormSubmissionCommandHandler",
+
+        // Faz 3 Görev 5: submission management (status/assignment/notes/archive) and the personal data
+        // access log are purely admin-side bookkeeping on already-submitted data - none of it is ever
+        // read by a public response.
+        "ChangeFormSubmissionStatusCommandHandler",
+        "AssignFormSubmissionCommandHandler",
+        "AddFormSubmissionNoteCommandHandler",
+        "ArchiveFormSubmissionCommandHandler",
+        "UnarchiveFormSubmissionCommandHandler",
+        "RecordPersonalDataAccessCommandHandler",
     };
 
     [Fact]

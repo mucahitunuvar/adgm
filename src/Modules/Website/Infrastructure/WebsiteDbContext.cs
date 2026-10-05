@@ -46,6 +46,7 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
     public DbSet<FormDefinition> FormDefinitions => Set<FormDefinition>();
     public DbSet<FormSubmission> FormSubmissions => Set<FormSubmission>();
     public DbSet<FormSubmissionSequence> FormSubmissionSequences => Set<FormSubmissionSequence>();
+    public DbSet<PersonalDataAccessLog> PersonalDataAccessLogs => Set<PersonalDataAccessLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

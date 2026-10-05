@@ -77,6 +77,7 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IFormDefinitionUsageChecker, FormDefinitionUsageChecker>();
         services.AddScoped<IFormSubmissionRepository, FormSubmissionRepository>();
         services.AddScoped<IFormSubmissionSequenceRepository, FormSubmissionSequenceRepository>();
+        services.AddScoped<IPersonalDataAccessLogRepository, PersonalDataAccessLogRepository>();
         services.AddScoped<PublicFormDefinitionResolver>();
         services.AddScoped<LinkTargetResolver>();
         services.AddScoped<SliderPublicQueryService>();
@@ -93,6 +94,8 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddTransient<CleanupStaleNotFoundLogsJob>();
         services.AddTransient<CleanupUnusedContentTagsJob>();
         services.AddTransient<PermanentlyDeleteExpiredTrashJob>();
+        services.AddTransient<ArchiveClosedFormSubmissionsJob>();
+        services.AddTransient<AnonymizeExpiredFormSubmissionsJob>();
         services.AddSingleton<IImageProcessor, SkiaSharpImageProcessor>();
         services.AddScoped<IMediaUsageChecker, CompositeMediaUsageChecker>();
         services.AddScoped<IMediaUsageProvider, SiteSettingsMediaUsageProvider>();

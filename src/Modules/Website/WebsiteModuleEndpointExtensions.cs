@@ -6,7 +6,11 @@ using GenclikMerkezi.Modules.Website.Features.ActivatePartner;
 using GenclikMerkezi.Modules.Website.Features.ActivatePopup;
 using GenclikMerkezi.Modules.Website.Features.ActivateSiteLanguage;
 using GenclikMerkezi.Modules.Website.Features.ActivateVideo;
+using GenclikMerkezi.Modules.Website.Features.AddFormSubmissionNote;
 using GenclikMerkezi.Modules.Website.Features.ArchiveContentItem;
+using GenclikMerkezi.Modules.Website.Features.ArchiveFormSubmission;
+using GenclikMerkezi.Modules.Website.Features.AssignFormSubmission;
+using GenclikMerkezi.Modules.Website.Features.ChangeFormSubmissionStatus;
 using GenclikMerkezi.Modules.Website.Features.ConvertNotFoundPathToRedirect;
 using GenclikMerkezi.Modules.Website.Features.CreateContentCategory;
 using GenclikMerkezi.Modules.Website.Features.CreateContentItem;
@@ -54,16 +58,20 @@ using GenclikMerkezi.Modules.Website.Features.DeleteVideo;
 using GenclikMerkezi.Modules.Website.Features.DeleteVideoTranslation;
 using GenclikMerkezi.Modules.Website.Features.DiscardContentLayoutDraft;
 using GenclikMerkezi.Modules.Website.Features.DiscardHomeLayoutDraft;
+using GenclikMerkezi.Modules.Website.Features.DownloadFormSubmissionFile;
 using GenclikMerkezi.Modules.Website.Features.DuplicateContentItem;
 using GenclikMerkezi.Modules.Website.Features.GetBlockTypes;
 using GenclikMerkezi.Modules.Website.Features.GetContentCategoriesByType;
 using GenclikMerkezi.Modules.Website.Features.GetFormDefinitionById;
 using GenclikMerkezi.Modules.Website.Features.GetFormDefinitions;
+using GenclikMerkezi.Modules.Website.Features.GetFormSubmissionById;
+using GenclikMerkezi.Modules.Website.Features.GetFormSubmissions;
 using GenclikMerkezi.Modules.Website.Features.GetContentItemById;
 using GenclikMerkezi.Modules.Website.Features.GetContentItems;
 using GenclikMerkezi.Modules.Website.Features.GetContentLayout;
 using GenclikMerkezi.Modules.Website.Features.GetContentPreview;
 using GenclikMerkezi.Modules.Website.Features.GetContentTrash;
+using GenclikMerkezi.Modules.Website.Features.GetPersonalDataAccessLog;
 using GenclikMerkezi.Modules.Website.Features.GetPublicContentById;
 using GenclikMerkezi.Modules.Website.Features.GetPublicContents;
 using GenclikMerkezi.Modules.Website.Features.GetPublicForm;
@@ -125,6 +133,7 @@ using GenclikMerkezi.Modules.Website.Features.SetDefaultSiteLanguage;
 using GenclikMerkezi.Modules.Website.Features.SetFormFields;
 using GenclikMerkezi.Modules.Website.Features.SubmitFormSubmission;
 using GenclikMerkezi.Modules.Website.Features.UnarchiveContentItem;
+using GenclikMerkezi.Modules.Website.Features.UnarchiveFormSubmission;
 using GenclikMerkezi.Modules.Website.Features.UnpublishContentItem;
 using GenclikMerkezi.Modules.Website.Features.UpdateContentCategory;
 using GenclikMerkezi.Modules.Website.Features.UpdateContentCategoryTranslation;
@@ -350,6 +359,18 @@ public static class WebsiteModuleEndpointExtensions
         GetFormDefinitionByIdEndpoint.Map(app);
         GetPublicFormEndpoint.Map(app);
         SubmitFormSubmissionEndpoint.Map(app);
+
+        // ADR-024 §12.2 (Faz 3 Görev 5): submission management, archive/anonymization and the personal
+        // data access log.
+        GetFormSubmissionsEndpoint.Map(app);
+        GetFormSubmissionByIdEndpoint.Map(app);
+        DownloadFormSubmissionFileEndpoint.Map(app);
+        ChangeFormSubmissionStatusEndpoint.Map(app);
+        AssignFormSubmissionEndpoint.Map(app);
+        AddFormSubmissionNoteEndpoint.Map(app);
+        ArchiveFormSubmissionEndpoint.Map(app);
+        UnarchiveFormSubmissionEndpoint.Map(app);
+        GetPersonalDataAccessLogEndpoint.Map(app);
 
         return app;
     }

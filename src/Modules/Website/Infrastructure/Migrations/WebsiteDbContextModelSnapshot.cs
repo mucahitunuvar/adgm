@@ -725,6 +725,21 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("AnonymizedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ArchiveEligibleSinceUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ArchivedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("AssignedToUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ClosedAtUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("DefinitionVersion")
                         .HasColumnType("int");
 
@@ -770,6 +785,10 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ArchivedAtUtc");
+
+                    b.HasIndex("AssignedToUserId");
 
                     b.HasIndex("FormDefinitionId");
 
@@ -1129,6 +1148,41 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Partners", (string)null);
+                });
+
+            modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.PersonalDataAccessLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AccessedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Detail")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid?>("EntityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccessedAtUtc");
+
+                    b.ToTable("PersonalDataAccessLogs", (string)null);
                 });
 
             modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.Popup", b =>
@@ -2713,9 +2767,101 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                                 .IsRequired();
                         });
 
+                    b.OwnsMany("GenclikMerkezi.Modules.Website.Domain.FormSubmissionFileDeletion", "PendingFileDeletions", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("FileKey")
+                                .IsRequired()
+                                .HasMaxLength(500)
+                                .HasColumnType("nvarchar(500)");
+
+                            b1.Property<Guid>("FormSubmissionId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("FormSubmissionId");
+
+                            b1.ToTable("FormSubmissionPendingFileDeletions", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("FormSubmissionId");
+                        });
+
+                    b.OwnsMany("GenclikMerkezi.Modules.Website.Domain.FormSubmissionInternalNote", "InternalNotes", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<Guid>("AuthorUserId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<DateTime>("CreatedAtUtc")
+                                .HasColumnType("datetime2");
+
+                            b1.Property<Guid>("FormSubmissionId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("Text")
+                                .IsRequired()
+                                .HasMaxLength(2000)
+                                .HasColumnType("nvarchar(2000)");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("FormSubmissionId");
+
+                            b1.ToTable("FormSubmissionInternalNotes", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("FormSubmissionId");
+                        });
+
+                    b.OwnsMany("GenclikMerkezi.Modules.Website.Domain.FormSubmissionStatusHistoryEntry", "StatusHistory", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<DateTime>("ChangedAtUtc")
+                                .HasColumnType("datetime2");
+
+                            b1.Property<Guid>("ChangedByUserId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<Guid>("FormSubmissionId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("FromStatus")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("nvarchar(20)");
+
+                            b1.Property<string>("ToStatus")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("nvarchar(20)");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("FormSubmissionId");
+
+                            b1.ToTable("FormSubmissionStatusHistory", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("FormSubmissionId");
+                        });
+
                     b.Navigation("AcceptedLegalVersions");
 
                     b.Navigation("FileAttachments");
+
+                    b.Navigation("InternalNotes");
+
+                    b.Navigation("PendingFileDeletions");
+
+                    b.Navigation("StatusHistory");
                 });
 
             modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.ImpactMetric", b =>

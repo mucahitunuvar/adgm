@@ -34,6 +34,14 @@ public sealed class HangfireJobSerializationTests
     public void PermanentlyDeleteExpiredTrashJob_round_trips_through_Hangfire_serialization() =>
         AssertRoundTrips<PermanentlyDeleteExpiredTrashJob>(job => job.ExecuteAsync(CancellationToken.None));
 
+    [Fact]
+    public void ArchiveClosedFormSubmissionsJob_round_trips_through_Hangfire_serialization() =>
+        AssertRoundTrips<ArchiveClosedFormSubmissionsJob>(job => job.ExecuteAsync(CancellationToken.None));
+
+    [Fact]
+    public void AnonymizeExpiredFormSubmissionsJob_round_trips_through_Hangfire_serialization() =>
+        AssertRoundTrips<AnonymizeExpiredFormSubmissionsJob>(job => job.ExecuteAsync(CancellationToken.None));
+
     // Mirrors what Hangfire.SqlServer actually persists/reads for a stored job: SerializeJob captures
     // Type/Method/ParameterTypes and serializes each argument; SerializePayload(excludeArguments: false)
     // is the JSON string written to storage; DeserializePayload + DeserializeJob is the read-back path
