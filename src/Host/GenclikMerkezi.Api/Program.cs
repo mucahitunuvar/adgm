@@ -37,6 +37,7 @@ using GenclikMerkezi.Modules.Website.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.Website.Infrastructure.Jobs;
 using Hangfire;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
@@ -296,6 +297,28 @@ app.UseStaticFiles(new StaticFileOptions
         context.Context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
         context.Context.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
     },
+});
+
+// ADR-024 §12.2 (Faz 3 Görev 4): the public form submission endpoint accepts up to 3 File fields x
+// 10 MB each plus the rest of the multipart form - comfortably past Kestrel's ~30 MB default
+// MaxRequestBodySize. Raised only for this one route ("İstek boyutu limiti yalnızca bu uçta
+// yükseltilir"), never globally, via IHttpMaxRequestBodySizeFeature - this must be set before the
+// request form is read, and a per-endpoint attribute cannot do that for Minimal APIs
+// (RequestSizeLimitAttribute only runs inside the MVC pipeline), so this runs as early middleware
+// instead, ahead of routing/endpoint dispatch.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api/v1/public/forms")
+        && context.Request.Path.Value?.EndsWith("/submissions", StringComparison.Ordinal) == true)
+    {
+        var maxRequestBodySizeFeature = context.Features.Get<IHttpMaxRequestBodySizeFeature>();
+        if (maxRequestBodySizeFeature is { IsReadOnly: false })
+        {
+            maxRequestBodySizeFeature.MaxRequestBodySize = 35 * 1024 * 1024;
+        }
+    }
+
+    await next(context);
 });
 
 app.UseRateLimiter();

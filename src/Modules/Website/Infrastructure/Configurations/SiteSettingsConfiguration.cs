@@ -106,6 +106,7 @@ public sealed class SiteSettingsConfiguration : IEntityTypeConfiguration<SiteSet
 
         builder.Property(s => s.MaintenanceModeEnabled).IsRequired();
         builder.Property(s => s.TurnstileSiteKey).HasMaxLength(200).IsRequired();
+        builder.Property(s => s.SubmissionReferencePrefix).HasMaxLength(6).IsRequired();
 
         builder.Property(s => s.UpdatedByUserId);
         builder.Property(s => s.UpdatedAtUtc);

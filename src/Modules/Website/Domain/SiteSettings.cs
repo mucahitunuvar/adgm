@@ -1,4 +1,6 @@
+using System.Text.RegularExpressions;
 using GenclikMerkezi.SharedKernel.Domain;
+using GenclikMerkezi.SharedKernel.Results;
 
 namespace GenclikMerkezi.Modules.Website.Domain;
 
@@ -16,9 +18,11 @@ namespace GenclikMerkezi.Modules.Website.Domain;
 // clobber each other. RowVersion is a plain application-managed token (Touch() regenerates it on
 // every mutation), not a database-generated rowversion/timestamp column: Website runs on both
 // SqlServer and Sqlite (ADR-012), and Sqlite has no equivalent auto-updating column type.
-public sealed class SiteSettings : AggregateRoot
+public sealed partial class SiteSettings : AggregateRoot
 {
     public static readonly Guid SingletonId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+    public const string DefaultSubmissionReferencePrefix = "GM";
 
     private readonly List<SocialLink> _socialLinks = [];
     private readonly List<BankAccount> _bankAccounts = [];
@@ -62,6 +66,11 @@ public sealed class SiteSettings : AggregateRoot
     // ADR-024 §13: the public (non-secret) Turnstile key the frontend widget embeds. The secret key
     // is never stored here - it lives only in the Website Infrastructure adapter's configuration.
     public string TurnstileSiteKey { get; private set; } = string.Empty;
+
+    // ADR-024 §12.2 (Faz 3 Görev 4): the reference-number prefix form submissions use
+    // ("{prefix}-{year}-{sequence}", e.g. "GM-2026-000123") - kept portable across projects/forks
+    // rather than hardcoded into FormSubmission itself.
+    public string SubmissionReferencePrefix { get; private set; } = DefaultSubmissionReferencePrefix;
 
     public byte[] RowVersion { get; private set; } = Guid.NewGuid().ToByteArray();
 
@@ -205,6 +214,21 @@ public sealed class SiteSettings : AggregateRoot
         Touch(updatedByUserId, updatedAtUtc);
     }
 
+    public Result UpdateSubmissionReferencePrefix(string? submissionReferencePrefix, Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        var normalized = (submissionReferencePrefix ?? string.Empty).Trim().ToUpperInvariant();
+        if (!SubmissionReferencePrefixPattern().IsMatch(normalized))
+        {
+            return Result.Failure(Error.Validation(
+                "SiteSettings.SubmissionReferencePrefixInvalid", "Submission reference prefix must be 2 to 6 uppercase letters."));
+        }
+
+        SubmissionReferencePrefix = normalized;
+        Touch(updatedByUserId, updatedAtUtc);
+
+        return Result.Success();
+    }
+
     // Global on/off switch only - the message itself is per-language (SetMaintenanceMessage), since a
     // maintenance banner must speak the visitor's language.
     public void SetMaintenanceMode(bool enabled, Guid updatedByUserId, DateTime updatedAtUtc)
@@ -219,4 +243,7 @@ public sealed class SiteSettings : AggregateRoot
         UpdatedAtUtc = updatedAtUtc;
         RowVersion = Guid.NewGuid().ToByteArray();
     }
+
+    [GeneratedRegex("^[A-Z]{2,6}$")]
+    private static partial Regex SubmissionReferencePrefixPattern();
 }

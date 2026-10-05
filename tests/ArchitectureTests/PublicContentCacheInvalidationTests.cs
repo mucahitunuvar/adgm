@@ -43,11 +43,16 @@ public class PublicContentCacheInvalidationTests
         "UpdateSiteSettingsMaintenanceCommandHandler",
         "UpdateSiteSettingsBotProtectionCommandHandler",
         "UpdateSiteSettingsBankAccountsCommandHandler",
+        "UpdateSiteSettingsSubmissionsCommandHandler",
 
         // Faz 2 Görev 1: Menu only feeds the public-site bootstrap response (GetPublicSite) - it never
         // touches the public-content list/detail/route-resolution cache, unlike ContentItem/ContentType/
         // ContentCategory mutations (see the InvalidateAllPublic wrapper those call instead).
         "ReplaceMenuItemsCommandHandler",
+
+        // Faz 3 Görev 4: a submission never changes any publicly cached response - the FormDefinition/
+        // ContentItem it was submitted against are unaffected by it, so there is nothing to invalidate.
+        "SubmitFormSubmissionCommandHandler",
     };
 
     [Fact]

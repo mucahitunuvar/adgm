@@ -46,4 +46,6 @@ public static class WebsiteCacheKeys
 
     public static string PublicLegalDocumentVersion(string key, int versionNumber, string languageCode) =>
         $"{PublicContentPrefix}legal-document-version:{key}:{versionNumber}:{languageCode}";
+
+    public static string PublicForm(string key, string languageCode) => $"{PublicContentPrefix}form:{key}:{languageCode}";
 }

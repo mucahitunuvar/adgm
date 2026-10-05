@@ -75,6 +75,8 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<ILegalDocumentUsageChecker, LegalDocumentUsageChecker>();
         services.AddScoped<IFormDefinitionRepository, FormDefinitionRepository>();
         services.AddScoped<IFormDefinitionUsageChecker, FormDefinitionUsageChecker>();
+        services.AddScoped<IFormSubmissionRepository, FormSubmissionRepository>();
+        services.AddScoped<IFormSubmissionSequenceRepository, FormSubmissionSequenceRepository>();
         services.AddScoped<PublicFormDefinitionResolver>();
         services.AddScoped<LinkTargetResolver>();
         services.AddScoped<SliderPublicQueryService>();

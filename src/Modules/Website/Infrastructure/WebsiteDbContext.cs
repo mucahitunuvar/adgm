@@ -44,6 +44,8 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
 
     public DbSet<LegalDocument> LegalDocuments => Set<LegalDocument>();
     public DbSet<FormDefinition> FormDefinitions => Set<FormDefinition>();
+    public DbSet<FormSubmission> FormSubmissions => Set<FormSubmission>();
+    public DbSet<FormSubmissionSequence> FormSubmissionSequences => Set<FormSubmissionSequence>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

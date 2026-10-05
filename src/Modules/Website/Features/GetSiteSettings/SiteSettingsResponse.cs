@@ -24,5 +24,6 @@ public sealed record SiteSettingsResponse(
     bool DonationPageEnabled,
     bool BotProtectionEnabled,
     string TurnstileSiteKey,
+    string SubmissionReferencePrefix,
     bool MaintenanceModeEnabled,
     DateTime? UpdatedAtUtc);

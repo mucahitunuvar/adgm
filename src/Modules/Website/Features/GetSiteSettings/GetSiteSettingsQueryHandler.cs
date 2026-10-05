@@ -42,7 +42,7 @@ public sealed class GetSiteSettingsQueryHandler(
             themeResponse, contactResponse, socialLinks, bankAccounts, translations,
             settings.GlobalSearchEnabled, settings.NewsletterEnabled, settings.PublicJobListingsEnabled,
             settings.DonationPageEnabled, settings.BotProtectionEnabled, settings.TurnstileSiteKey,
-            settings.MaintenanceModeEnabled, settings.UpdatedAtUtc));
+            settings.SubmissionReferencePrefix, settings.MaintenanceModeEnabled, settings.UpdatedAtUtc));
     }
 
     private async Task<string?> ResolveMediaUrlAsync(Guid? mediaAssetId, CancellationToken cancellationToken)

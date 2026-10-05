@@ -16,6 +16,7 @@ public class SiteSettingsTests
         Assert.False(settings.PublicJobListingsEnabled);
         Assert.False(settings.DonationPageEnabled);
         Assert.False(settings.MaintenanceModeEnabled);
+        Assert.Equal(SiteSettings.DefaultSubmissionReferencePrefix, settings.SubmissionReferencePrefix);
         Assert.Null(settings.LogoLightMediaAssetId);
         Assert.Empty(settings.SocialLinks);
         Assert.Empty(settings.BankAccounts);
@@ -188,5 +189,35 @@ public class SiteSettingsTests
         Assert.True(settings.NewsletterEnabled);
         Assert.True(settings.PublicJobListingsEnabled);
         Assert.True(settings.DonationPageEnabled);
+    }
+
+    [Theory]
+    [InlineData("gm", "GM")]
+    [InlineData("  genc  ", "GENC")]
+    public void UpdateSubmissionReferencePrefix_WithValidPrefix_NormalizesToUppercase(string input, string expected)
+    {
+        var settings = SiteSettings.CreateDefault();
+
+        var result = settings.UpdateSubmissionReferencePrefix(input, Guid.NewGuid(), DateTime.UtcNow);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(expected, settings.SubmissionReferencePrefix);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("G")]
+    [InlineData("TOOLONG1")]
+    [InlineData("GM1")]
+    public void UpdateSubmissionReferencePrefix_WithInvalidPrefix_Fails(string? input)
+    {
+        var settings = SiteSettings.CreateDefault();
+
+        var result = settings.UpdateSubmissionReferencePrefix(input, Guid.NewGuid(), DateTime.UtcNow);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("SiteSettings.SubmissionReferencePrefixInvalid", result.Error.Code);
+        Assert.Equal(SiteSettings.DefaultSubmissionReferencePrefix, settings.SubmissionReferencePrefix);
     }
 }

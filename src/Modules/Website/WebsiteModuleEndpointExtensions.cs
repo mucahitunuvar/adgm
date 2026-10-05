@@ -66,6 +66,7 @@ using GenclikMerkezi.Modules.Website.Features.GetContentPreview;
 using GenclikMerkezi.Modules.Website.Features.GetContentTrash;
 using GenclikMerkezi.Modules.Website.Features.GetPublicContentById;
 using GenclikMerkezi.Modules.Website.Features.GetPublicContents;
+using GenclikMerkezi.Modules.Website.Features.GetPublicForm;
 using GenclikMerkezi.Modules.Website.Features.GetPublicHome;
 using GenclikMerkezi.Modules.Website.Features.GetPublicLegalDocument;
 using GenclikMerkezi.Modules.Website.Features.GetPublicLegalDocumentVersion;
@@ -122,6 +123,7 @@ using GenclikMerkezi.Modules.Website.Features.SetContentItemTranslationTags;
 using GenclikMerkezi.Modules.Website.Features.SetContentItemVideos;
 using GenclikMerkezi.Modules.Website.Features.SetDefaultSiteLanguage;
 using GenclikMerkezi.Modules.Website.Features.SetFormFields;
+using GenclikMerkezi.Modules.Website.Features.SubmitFormSubmission;
 using GenclikMerkezi.Modules.Website.Features.UnarchiveContentItem;
 using GenclikMerkezi.Modules.Website.Features.UnpublishContentItem;
 using GenclikMerkezi.Modules.Website.Features.UpdateContentCategory;
@@ -152,6 +154,7 @@ using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsContact;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsFeatures;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsIdentity;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsMaintenance;
+using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsSubmissions;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsTheme;
 using GenclikMerkezi.Modules.Website.Features.UpdateTag;
 using GenclikMerkezi.Modules.Website.Features.UploadMediaAsset;
@@ -185,6 +188,7 @@ public static class WebsiteModuleEndpointExtensions
         UpdateSiteSettingsFeaturesEndpoint.Map(app);
         UpdateSiteSettingsMaintenanceEndpoint.Map(app);
         UpdateSiteSettingsBotProtectionEndpoint.Map(app);
+        UpdateSiteSettingsSubmissionsEndpoint.Map(app);
         GetPublicSiteEndpoint.Map(app);
 
         CreateContentTypeEndpoint.Map(app);
@@ -344,6 +348,8 @@ public static class WebsiteModuleEndpointExtensions
         DeleteFormDefinitionEndpoint.Map(app);
         GetFormDefinitionsEndpoint.Map(app);
         GetFormDefinitionByIdEndpoint.Map(app);
+        GetPublicFormEndpoint.Map(app);
+        SubmitFormSubmissionEndpoint.Map(app);
 
         return app;
     }
