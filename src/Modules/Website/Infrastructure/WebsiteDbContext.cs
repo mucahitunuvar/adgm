@@ -40,6 +40,8 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
 
     public DbSet<PageLayout> PageLayouts => Set<PageLayout>();
 
+    public DbSet<Popup> Popups => Set<Popup>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(WebsiteDbContext).Assembly);

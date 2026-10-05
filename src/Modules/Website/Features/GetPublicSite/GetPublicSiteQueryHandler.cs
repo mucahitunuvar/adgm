@@ -1,5 +1,6 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Application.LinkTargets;
+using GenclikMerkezi.Modules.Website.Application.Media;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Results;
@@ -19,6 +20,7 @@ public sealed class GetPublicSiteQueryHandler(
     IMenuRepository menuRepository,
     IContentItemRepository contentItemRepository,
     ISliderRepository sliderRepository,
+    IPopupRepository popupRepository,
     LinkTargetResolver linkTargetResolver,
     ICacheService cacheService,
     TimeProvider timeProvider)
@@ -37,13 +39,14 @@ public sealed class GetPublicSiteQueryHandler(
 
         var now = timeProvider.GetUtcNow().UtcDateTime;
 
-        // ADR-024 §17 (Faz 2 Görev 1 §1.3, extended by Görev 2 §2): shortened to the site-wide nearest
-        // future PublishAtUtc/UnpublishAtUtc among ALL content types (a menu link can point at any of
-        // them) and every slider's slides - designed to be extended further by Görev 6 with pop-up
-        // scheduling.
+        // ADR-024 §17 (Faz 2 Görev 1 §1.3, extended by Görev 2 §2 and now by Görev 6): shortened to the
+        // site-wide nearest future PublishAtUtc/UnpublishAtUtc among ALL content types (a menu link can
+        // point at any of them), every slider's slides and every active popup's own schedule.
         var earliestUpcomingContentTransition = await contentItemRepository.GetEarliestUpcomingTransitionAsync(now, cancellationToken);
         var earliestUpcomingSlideTransition = await sliderRepository.GetEarliestUpcomingSlideTransitionAsync(now, cancellationToken);
-        var ttl = ContentCacheTtlCalculator.Calculate(now, [earliestUpcomingContentTransition, earliestUpcomingSlideTransition]);
+        var earliestUpcomingPopupTransition = await popupRepository.GetEarliestUpcomingTransitionAsync(now, cancellationToken);
+        var ttl = ContentCacheTtlCalculator.Calculate(
+            now, [earliestUpcomingContentTransition, earliestUpcomingSlideTransition, earliestUpcomingPopupTransition]);
 
         var response = await cacheService.GetOrCreateAsync(
             WebsiteCacheKeys.PublicSite(resolvedLanguage.Code.Value),
@@ -89,6 +92,7 @@ public sealed class GetPublicSiteQueryHandler(
         var translation = settings.Translations.FirstOrDefault(t => t.LanguageCode == resolvedLanguage.Code);
 
         var menus = await BuildMenusAsync(resolvedLanguage.Code, defaultLanguage.Code, now, cancellationToken);
+        var popups = await BuildPopupsAsync(resolvedLanguage.Code, defaultLanguage.Code, now, cancellationToken);
 
         return new PublicSiteResponse(
             languageResponses, resolvedLanguage.Code.Value,
@@ -103,7 +107,7 @@ public sealed class GetPublicSiteQueryHandler(
             settings.GlobalSearchEnabled, settings.NewsletterEnabled, settings.PublicJobListingsEnabled, settings.DonationPageEnabled,
             settings.MaintenanceModeEnabled, translation?.MaintenanceMessage ?? string.Empty,
             settings.TurnstileSiteKey,
-            menus);
+            menus, popups);
     }
 
     private async Task<string?> ResolveMediaUrlAsync(Guid? mediaAssetId, CancellationToken cancellationToken)
@@ -176,5 +180,118 @@ public sealed class GetPublicSiteQueryHandler(
         }
 
         return results;
+    }
+
+    // Faz 2 Görev 6 master prompt §6: every currently visible (IsActive + publish window), translated
+    // popup, Priority descending - "Hangi pop-up'ın gösterileceğine frontend karar verir". Every
+    // popup's own LinkTarget and every Contents-targeting content item id are resolved in one batched
+    // LinkTargetResolver call (§1.1 "N+1 yok"), the same single-call-per-section shape BuildMenusAsync
+    // already uses for menu links.
+    private async Task<IReadOnlyList<PublicPopupResponse>> BuildPopupsAsync(
+        LanguageCode languageCode, LanguageCode defaultLanguageCode, DateTime now, CancellationToken cancellationToken)
+    {
+        var popups = await popupRepository.SearchVisibleAsync(languageCode, now, cancellationToken);
+        if (popups.Count == 0)
+        {
+            return [];
+        }
+
+        var allTargets = new List<LinkTarget>();
+        foreach (var popup in popups)
+        {
+            if (!popup.LinkTarget.IsEmpty)
+            {
+                allTargets.Add(popup.LinkTarget);
+            }
+
+            if (popup.Targeting.Kind == PopupTargetingKind.Contents)
+            {
+                allTargets.AddRange(popup.Targeting.ContentItemIds.Select(id => LinkTarget.ForContent(id).Value));
+            }
+        }
+
+        var resolutions = await linkTargetResolver.ResolveManyAsync(
+            allTargets.Distinct().ToList(), languageCode, defaultLanguageCode, now, cancellationToken);
+
+        var results = new List<PublicPopupResponse>();
+        foreach (var popup in popups.OrderByDescending(p => p.Priority))
+        {
+            // SearchVisibleAsync already filtered to popups with a translation in languageCode.
+            var translation = popup.Translations.First(t => t.LanguageCode == languageCode);
+
+            string? href = null;
+            string? buttonLabel = translation.ButtonLabel;
+            if (!popup.LinkTarget.IsEmpty && resolutions.TryGetValue(popup.LinkTarget, out var resolution) && resolution.IsResolved)
+            {
+                href = resolution.Href;
+            }
+            else
+            {
+                // §6 mirrors Slide's own "link unresolved -> hide button, keep the popup" rule.
+                buttonLabel = null;
+            }
+
+            var image = popup.ImageMediaId is { } imageMediaId ? await BuildPopupImageAsync(imageMediaId, cancellationToken) : null;
+            var targeting = BuildPopupTargetingResponse(popup.Targeting, resolutions);
+
+            results.Add(new PublicPopupResponse(
+                popup.Id, popup.DisplayMode.ToString(), translation.Title, translation.Body, buttonLabel, href, image,
+                popup.DeviceTarget.ToString(), targeting, popup.DelaySeconds, popup.Frequency.ToString(), popup.FrequencyDays,
+                popup.Dismissible, popup.Priority));
+        }
+
+        return results;
+    }
+
+    private static PublicPopupTargetingResponse BuildPopupTargetingResponse(
+        PopupTargeting targeting, IReadOnlyDictionary<LinkTarget, LinkTargetResolution> resolutions)
+    {
+        if (targeting.Kind != PopupTargetingKind.Contents)
+        {
+            return new PublicPopupTargetingResponse(targeting.Kind.ToString(), targeting.Paths);
+        }
+
+        // §6 "Contents hedeflemesi ... istenen dildeki yollara çevrilir; görünmeyen içerikler listeden
+        // çıkarılır".
+        var paths = targeting.ContentItemIds
+            .Select(id => LinkTarget.ForContent(id).Value)
+            .Where(target => resolutions.TryGetValue(target, out var resolution) && resolution.IsResolved)
+            .Select(target => resolutions[target].Href!)
+            .ToList();
+
+        return new PublicPopupTargetingResponse(targeting.Kind.ToString(), paths);
+    }
+
+    private async Task<PublicPopupImageResponse?> BuildPopupImageAsync(Guid imageMediaId, CancellationToken cancellationToken)
+    {
+        var mediaAsset = await mediaAssetRepository.GetByIdAsync(imageMediaId, cancellationToken);
+        if (mediaAsset is null)
+        {
+            return null;
+        }
+
+        var originalUrl = await fileStorageService.GetUrlAsync(mediaAsset.Original.FileKey, cancellationToken);
+        string? small = null;
+        string? medium = null;
+        string? large = null;
+
+        foreach (var variant in mediaAsset.Variants)
+        {
+            var url = await fileStorageService.GetUrlAsync(variant.File.FileKey, cancellationToken);
+            if (variant.VariantName == MediaAssetVariantNames.Small)
+            {
+                small = url;
+            }
+            else if (variant.VariantName == MediaAssetVariantNames.Medium)
+            {
+                medium = url;
+            }
+            else if (variant.VariantName == MediaAssetVariantNames.Large)
+            {
+                large = url;
+            }
+        }
+
+        return new PublicPopupImageResponse(small, medium, large, originalUrl);
     }
 }

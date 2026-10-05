@@ -26,4 +26,5 @@ public sealed record PublicSiteResponse(
     bool MaintenanceModeEnabled,
     string MaintenanceMessage,
     string TurnstileSiteKey,
-    PublicMenusResponse Menus);
+    PublicMenusResponse Menus,
+    IReadOnlyList<PublicPopupResponse> Popups);

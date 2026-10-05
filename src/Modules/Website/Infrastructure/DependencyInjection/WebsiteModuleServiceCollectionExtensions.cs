@@ -65,6 +65,7 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IPartnerRepository, PartnerRepository>();
         services.AddScoped<IImpactMetricRepository, ImpactMetricRepository>();
         services.AddScoped<IPageLayoutRepository, PageLayoutRepository>();
+        services.AddScoped<IPopupRepository, PopupRepository>();
         services.AddScoped<LinkTargetResolver>();
         services.AddScoped<SliderPublicQueryService>();
         services.AddScoped<PartnerPublicQueryService>();
@@ -88,6 +89,7 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IMediaUsageProvider, SliderMediaUsageProvider>();
         services.AddScoped<IMediaUsageProvider, PartnerMediaUsageProvider>();
         services.AddScoped<IMediaUsageProvider, LayoutMediaUsageProvider>();
+        services.AddScoped<IMediaUsageProvider, PopupMediaUsageProvider>();
         services.AddScoped<IVideoUsageChecker, VideoUsageChecker>();
         services.AddScoped<ISliderUsageChecker, SliderUsageChecker>();
         services.AddScoped<PageLayoutReferenceScanner>();
