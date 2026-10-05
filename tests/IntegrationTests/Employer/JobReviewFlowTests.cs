@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using GenclikMerkezi.IntegrationTests.Identity;
 using GenclikMerkezi.Modules.CareerAdvisor.Features.CreateCareerAdvisor;
 using GenclikMerkezi.Modules.Employer.Features.CreateJob;
+using GenclikMerkezi.Modules.Employer.Features.GetCompany;
 using GenclikMerkezi.Modules.Employer.Features.RegisterEmployer;
 using GenclikMerkezi.Modules.Identity.Features.Login;
 
@@ -13,6 +14,8 @@ namespace GenclikMerkezi.IntegrationTests.Employer;
 // Forbidden ile reddedildiğini doğrular (Görev 2, kullanıcıyla netleştirilen iş akışı).
 public class JobReviewFlowTests : IClassFixture<CustomWebApplicationFactory>
 {
+    private const string CareerAdvisorPassword = "Sifre123";
+
     private readonly CustomWebApplicationFactory _factory;
     private readonly HttpClient _client;
 
@@ -33,23 +36,43 @@ public class JobReviewFlowTests : IClassFixture<CustomWebApplicationFactory>
         return login!.AccessToken;
     }
 
-    private async Task<string> CreateCareerAdvisorAndLoginAsync(string adminAccessToken)
+    private async Task<(string AccessToken, Guid CareerAdvisorId)> CreateCareerAdvisorAndLoginAsync(string adminAccessToken)
     {
         var email = $"danisman-{Guid.NewGuid():N}@example.com";
-        const string password = "Sifre123";
 
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/admin/career-advisors")
         {
-            Content = JsonContent.Create(new { email, password, firstName = "Ayşe", lastName = "Kaya", phoneNumber = (string?)null }),
+            Content = JsonContent.Create(
+                new { email, password = CareerAdvisorPassword, firstName = "Ayşe", lastName = "Kaya", phoneNumber = (string?)null }),
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminAccessToken);
         var response = await _client.SendAsync(request);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        await response.Content.ReadFromJsonAsync<CreateCareerAdvisorResponse>();
+        var body = await response.Content.ReadFromJsonAsync<CreateCareerAdvisorResponse>();
 
-        var loginResponse = await _client.PostAsJsonAsync("/api/v1/auth/login", new { email, password });
+        var loginResponse = await _client.PostAsJsonAsync("/api/v1/auth/login", new { email, password = CareerAdvisorPassword });
+        var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+        return (login!.AccessToken, body!.CareerAdvisorId);
+    }
+
+    // Bu dosyadaki her danışman aynı sabit şifreyle (CareerAdvisorPassword) oluşturulduğu için, bir
+    // danışmanın kimliğini bilmek onunla giriş yapmaya yeter - e-postası SeedAdminUserAsync'in
+    // deseniyle aynı şekilde doğrudan repository'den okunur (hiçbir admin uç noktası CareerAdvisorId'den
+    // e-postaya gitmiyor).
+    private async Task<string> LoginAsCareerAdvisorByIdAsync(Guid careerAdvisorId)
+    {
+        var email = await _factory.GetCareerAdvisorEmailAsync(careerAdvisorId);
+        var loginResponse = await _client.PostAsJsonAsync("/api/v1/auth/login", new { email, password = CareerAdvisorPassword });
         var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
         return login!.AccessToken;
+    }
+
+    private async Task<GetCompanyResponse> GetCompanyAsync(Guid companyId, string adminAccessToken)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/admin/companies/{companyId}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminAccessToken);
+        var response = await _client.SendAsync(request);
+        return (await response.Content.ReadFromJsonAsync<GetCompanyResponse>())!;
     }
 
     private async Task<(string AccessToken, Guid CompanyId)> RegisterAndApproveEmployerAsync(string adminAccessToken)
@@ -92,6 +115,28 @@ public class JobReviewFlowTests : IClassFixture<CustomWebApplicationFactory>
         return (login!.AccessToken, registerBody.CompanyId);
     }
 
+    // Danışman firma kaydından ÖNCE oluşturulur (en-az-yüklü seçimin onu değerlendirebilmesi için
+    // kayıt anında var olması gerekir, ADR-023), ama "bu danışman atanacak" diye varsayılmaz: kayıttan
+    // sonra firmanın gerçekten atandığı danışman GET /admin/companies/{id} ile okunur. Diğer testlerden
+    // kalan, hiçbir firmaya atanmamış bir danışman (0 yüklü) varsa en-az-yüklü seçim onu tercih edebilir
+    // - bu durumda gerçek atanan danışmanla (LoginAsCareerAdvisorByIdAsync ile) giriş yapılır, kendi az
+    // önce oluşturduğumuz danışmanla değil.
+    private async Task<(string EmployerAccessToken, Guid CompanyId, string AssignedAdvisorAccessToken)>
+        RegisterEmployerWithAssignedAdvisorAsync(string adminAccessToken)
+    {
+        var (createdAdvisorAccessToken, createdAdvisorId) = await CreateCareerAdvisorAndLoginAsync(adminAccessToken);
+        var (employerAccessToken, companyId) = await RegisterAndApproveEmployerAsync(adminAccessToken);
+
+        var company = await GetCompanyAsync(companyId, adminAccessToken);
+        var assignedAdvisorId = company.CareerAdvisorId!.Value;
+
+        var assignedAdvisorAccessToken = assignedAdvisorId == createdAdvisorId
+            ? createdAdvisorAccessToken
+            : await LoginAsCareerAdvisorByIdAsync(assignedAdvisorId);
+
+        return (employerAccessToken, companyId, assignedAdvisorAccessToken);
+    }
+
     private static object ValidJobPayload() => new
     {
         title = "Kaynakçı",
@@ -131,8 +176,7 @@ public class JobReviewFlowTests : IClassFixture<CustomWebApplicationFactory>
     public async Task Approve_AsAssignedAdvisor_PublishesJob()
     {
         var adminAccessToken = await LoginAsAdminAsync();
-        var advisorAccessToken = await CreateCareerAdvisorAndLoginAsync(adminAccessToken);
-        var (employerAccessToken, _) = await RegisterAndApproveEmployerAsync(adminAccessToken);
+        var (employerAccessToken, _, advisorAccessToken) = await RegisterEmployerWithAssignedAdvisorAsync(adminAccessToken);
         var jobId = await CreateAndSubmitJobAsync(employerAccessToken);
 
         var approveRequest = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/career-advisor/jobs/{jobId}/approve");
@@ -147,8 +191,7 @@ public class JobReviewFlowTests : IClassFixture<CustomWebApplicationFactory>
     public async Task Reject_AsAssignedAdvisor_RejectsJob()
     {
         var adminAccessToken = await LoginAsAdminAsync();
-        var advisorAccessToken = await CreateCareerAdvisorAndLoginAsync(adminAccessToken);
-        var (employerAccessToken, _) = await RegisterAndApproveEmployerAsync(adminAccessToken);
+        var (employerAccessToken, _, advisorAccessToken) = await RegisterEmployerWithAssignedAdvisorAsync(adminAccessToken);
         var jobId = await CreateAndSubmitJobAsync(employerAccessToken);
 
         var rejectRequest = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/career-advisor/jobs/{jobId}/reject")
@@ -166,8 +209,7 @@ public class JobReviewFlowTests : IClassFixture<CustomWebApplicationFactory>
     public async Task RequestRevision_AsAssignedAdvisor_ThenResubmitAndApprove_PublishesJob()
     {
         var adminAccessToken = await LoginAsAdminAsync();
-        var advisorAccessToken = await CreateCareerAdvisorAndLoginAsync(adminAccessToken);
-        var (employerAccessToken, _) = await RegisterAndApproveEmployerAsync(adminAccessToken);
+        var (employerAccessToken, _, advisorAccessToken) = await RegisterEmployerWithAssignedAdvisorAsync(adminAccessToken);
         var jobId = await CreateAndSubmitJobAsync(employerAccessToken);
 
         var revisionRequest = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/career-advisor/jobs/{jobId}/request-revision")
@@ -194,21 +236,14 @@ public class JobReviewFlowTests : IClassFixture<CustomWebApplicationFactory>
     public async Task Approve_AsDifferentAdvisor_ReturnsForbidden()
     {
         var adminAccessToken = await LoginAsAdminAsync();
-
-        // En-az-yüklü danışman ataması global (bu test sınıfının paylaştığı tek CustomWebApplicationFactory
-        // üzerinde tüm testler arasında) olduğu için, hiçbir zaman bir firmaya atanmayan bir danışman
-        // sonraki testler için 0-yük "mayın" bırakır ve onların "kendi az önce yarattığı danışman
-        // atanacak" varsayımını bozabilir. Bu yüzden otherAdvisor'a da (kullanılmayacak olsa dahi) bir
-        // şirket atanarak yükü 1'e çıkarılıyor - testin kendisi hiçbir sızıntı bırakmıyor.
-        var otherAdvisorAccessToken = await CreateCareerAdvisorAndLoginAsync(adminAccessToken);
-        await RegisterAndApproveEmployerAsync(adminAccessToken);
-
-        // Şimdi yeni bir danışman yaratılıyor - otherAdvisor artık 1 yükte olduğu için (ve önceki
-        // testlerden kalan tüm danışmanlar da kendi firmalarına atanmış durumda), bu yeni danışman bu
-        // noktada tek 0-yüklü danışman ve gerçek firma ona atanacak.
-        await CreateCareerAdvisorAndLoginAsync(adminAccessToken);
         var (employerAccessToken, _) = await RegisterAndApproveEmployerAsync(adminAccessToken);
         var jobId = await CreateAndSubmitJobAsync(employerAccessToken);
+
+        // Danışman firma kaydından SONRA oluşturuluyor: atama kayıt anında yapıldığı için (ADR-023)
+        // bu danışman o firmaya hiçbir zaman atanmış olamaz - henüz var olmayan bir danışmana atama
+        // yapılamaz. Bu yüzden en-az-yüklü-danışman seçiminin o an kimi seçtiğiyle hiç ilgilenmeye
+        // gerek yok.
+        var (otherAdvisorAccessToken, _) = await CreateCareerAdvisorAndLoginAsync(adminAccessToken);
 
         // Firmaya atanan danışman değil, ayrı bir danışman review denemesi yapıyor.
         var approveRequest = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/career-advisor/jobs/{jobId}/approve");

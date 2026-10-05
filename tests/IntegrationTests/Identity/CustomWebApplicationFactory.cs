@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Candidate.Infrastructure;
+using GenclikMerkezi.Modules.CareerAdvisor.Application.Abstractions;
 using GenclikMerkezi.Modules.CareerAdvisor.Infrastructure;
 using GenclikMerkezi.Modules.CareerDevelopment.Infrastructure;
 using GenclikMerkezi.Modules.Employer.Infrastructure;
@@ -299,6 +300,21 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         return await dbContext.AdminAuditLogEntries.AsNoTracking().ToListAsync();
+    }
+
+    // En-az-yüklü danışman ataması (ADR-022 §2/ADR-023) global olarak bu factory'nin tüm aktif
+    // danışmanları üzerinden çalışır, bir test sınıfının kendi az önce oluşturduğu danışmana değil.
+    // Employer/CareerAdvisor flow testleri (JobReviewFlowTests, PersonnelNeedPoolFlowTests) bu yüzden
+    // bir firmanın gerçekten atandığı danışmanı asla varsaymaz, GET /admin/companies/{id} ile okur ve
+    // -eğer kendi oluşturdukları danışman değilse- o danışmanla giriş yapar; ama hiçbir admin uç noktası
+    // bir CareerAdvisorId'den e-postaya gitmiyor, bu yüzden SeedAdminUserAsync'in doğrudan-repository
+    // deseniyle aynı şekilde burada okunuyor.
+    public async Task<string> GetCareerAdvisorEmailAsync(Guid careerAdvisorId)
+    {
+        using var scope = Services.CreateScope();
+        var careerAdvisorRepository = scope.ServiceProvider.GetRequiredService<ICareerAdvisorRepository>();
+        var careerAdvisor = await careerAdvisorRepository.GetByIdAsync(careerAdvisorId);
+        return careerAdvisor!.Email;
     }
 
     protected override void Dispose(bool disposing)

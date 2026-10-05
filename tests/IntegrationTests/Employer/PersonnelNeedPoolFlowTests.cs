@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using GenclikMerkezi.IntegrationTests.Identity;
 using GenclikMerkezi.Modules.CareerAdvisor.Features.CreateCareerAdvisor;
 using GenclikMerkezi.Modules.Employer.Features.CreatePersonnelNeed;
+using GenclikMerkezi.Modules.Employer.Features.GetCompany;
 using GenclikMerkezi.Modules.Employer.Features.RegisterEmployer;
 using GenclikMerkezi.Modules.Identity.Features.Login;
 
@@ -13,6 +14,8 @@ namespace GenclikMerkezi.IntegrationTests.Employer;
 // doğrular (Görev 3, JobReviewFlowTests deseniyle aynı).
 public class PersonnelNeedPoolFlowTests : IClassFixture<CustomWebApplicationFactory>
 {
+    private const string CareerAdvisorPassword = "Sifre123";
+
     private readonly CustomWebApplicationFactory _factory;
     private readonly HttpClient _client;
 
@@ -33,26 +36,46 @@ public class PersonnelNeedPoolFlowTests : IClassFixture<CustomWebApplicationFact
         return login!.AccessToken;
     }
 
-    private async Task<string> CreateCareerAdvisorAndLoginAsync(string adminAccessToken)
+    private async Task<(string AccessToken, Guid CareerAdvisorId)> CreateCareerAdvisorAndLoginAsync(string adminAccessToken)
     {
         var email = $"danisman-{Guid.NewGuid():N}@example.com";
-        const string password = "Sifre123";
 
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/admin/career-advisors")
         {
-            Content = JsonContent.Create(new { email, password, firstName = "Ayşe", lastName = "Kaya", phoneNumber = (string?)null }),
+            Content = JsonContent.Create(
+                new { email, password = CareerAdvisorPassword, firstName = "Ayşe", lastName = "Kaya", phoneNumber = (string?)null }),
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminAccessToken);
         var response = await _client.SendAsync(request);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        await response.Content.ReadFromJsonAsync<CreateCareerAdvisorResponse>();
+        var body = await response.Content.ReadFromJsonAsync<CreateCareerAdvisorResponse>();
 
-        var loginResponse = await _client.PostAsJsonAsync("/api/v1/auth/login", new { email, password });
+        var loginResponse = await _client.PostAsJsonAsync("/api/v1/auth/login", new { email, password = CareerAdvisorPassword });
+        var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+        return (login!.AccessToken, body!.CareerAdvisorId);
+    }
+
+    // Bu dosyadaki her danışman aynı sabit şifreyle (CareerAdvisorPassword) oluşturulduğu için, bir
+    // danışmanın kimliğini bilmek onunla giriş yapmaya yeter - e-postası SeedAdminUserAsync'in
+    // deseniyle aynı şekilde doğrudan repository'den okunur (hiçbir admin uç noktası CareerAdvisorId'den
+    // e-postaya gitmiyor).
+    private async Task<string> LoginAsCareerAdvisorByIdAsync(Guid careerAdvisorId)
+    {
+        var email = await _factory.GetCareerAdvisorEmailAsync(careerAdvisorId);
+        var loginResponse = await _client.PostAsJsonAsync("/api/v1/auth/login", new { email, password = CareerAdvisorPassword });
         var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
         return login!.AccessToken;
     }
 
-    private async Task<string> RegisterAndApproveEmployerAsync(string adminAccessToken)
+    private async Task<GetCompanyResponse> GetCompanyAsync(Guid companyId, string adminAccessToken)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/admin/companies/{companyId}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminAccessToken);
+        var response = await _client.SendAsync(request);
+        return (await response.Content.ReadFromJsonAsync<GetCompanyResponse>())!;
+    }
+
+    private async Task<(string AccessToken, Guid CompanyId)> RegisterAndApproveEmployerAsync(string adminAccessToken)
     {
         var email = $"firma-{Guid.NewGuid():N}@example.com";
         const string password = "Sifre123";
@@ -88,7 +111,30 @@ public class PersonnelNeedPoolFlowTests : IClassFixture<CustomWebApplicationFact
 
         var loginResponse = await _client.PostAsJsonAsync("/api/v1/auth/login", new { email, password });
         var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
-        return login!.AccessToken;
+
+        return (login!.AccessToken, registerBody.CompanyId);
+    }
+
+    // Danışman firma kaydından ÖNCE oluşturulur (en-az-yüklü seçimin onu değerlendirebilmesi için
+    // kayıt anında var olması gerekir, ADR-023), ama "bu danışman atanacak" diye varsayılmaz: kayıttan
+    // sonra firmanın gerçekten atandığı danışman GET /admin/companies/{id} ile okunur. Diğer testlerden
+    // kalan, hiçbir firmaya atanmamış bir danışman (0 yüklü) varsa en-az-yüklü seçim onu tercih edebilir
+    // - bu durumda gerçek atanan danışmanla (LoginAsCareerAdvisorByIdAsync ile) giriş yapılır, kendi az
+    // önce oluşturduğumuz danışmanla değil.
+    private async Task<(string EmployerAccessToken, string AssignedAdvisorAccessToken)> RegisterEmployerWithAssignedAdvisorAsync(
+        string adminAccessToken)
+    {
+        var (createdAdvisorAccessToken, createdAdvisorId) = await CreateCareerAdvisorAndLoginAsync(adminAccessToken);
+        var (employerAccessToken, companyId) = await RegisterAndApproveEmployerAsync(adminAccessToken);
+
+        var company = await GetCompanyAsync(companyId, adminAccessToken);
+        var assignedAdvisorId = company.CareerAdvisorId!.Value;
+
+        var assignedAdvisorAccessToken = assignedAdvisorId == createdAdvisorId
+            ? createdAdvisorAccessToken
+            : await LoginAsCareerAdvisorByIdAsync(assignedAdvisorId);
+
+        return (employerAccessToken, assignedAdvisorAccessToken);
     }
 
     private static object ValidPersonnelNeedPayload() => new
@@ -129,8 +175,7 @@ public class PersonnelNeedPoolFlowTests : IClassFixture<CustomWebApplicationFact
     public async Task Pool_AsAssignedAdvisor_MovesToGenelHavuzda()
     {
         var adminAccessToken = await LoginAsAdminAsync();
-        var advisorAccessToken = await CreateCareerAdvisorAndLoginAsync(adminAccessToken);
-        var employerAccessToken = await RegisterAndApproveEmployerAsync(adminAccessToken);
+        var (employerAccessToken, advisorAccessToken) = await RegisterEmployerWithAssignedAdvisorAsync(adminAccessToken);
         var personnelNeedId = await CreateAndSubmitPersonnelNeedAsync(employerAccessToken);
 
         var poolRequest = new HttpRequestMessage(
@@ -146,16 +191,14 @@ public class PersonnelNeedPoolFlowTests : IClassFixture<CustomWebApplicationFact
     public async Task Pool_AsDifferentAdvisor_ReturnsForbidden()
     {
         var adminAccessToken = await LoginAsAdminAsync();
-
-        // JobReviewFlowTests.Approve_AsDifferentAdvisor_ReturnsForbidden'daki en-az-yüklü-danışman
-        // "mayın" önleme deseniyle aynı: otherAdvisor'a da bir şirket atanarak yükü 1'e çıkarılıyor,
-        // böylece sonraki gerçek firma kaydı garanti şekilde yeni (0 yüklü) danışmana gidiyor.
-        var otherAdvisorAccessToken = await CreateCareerAdvisorAndLoginAsync(adminAccessToken);
-        await RegisterAndApproveEmployerAsync(adminAccessToken);
-
-        await CreateCareerAdvisorAndLoginAsync(adminAccessToken);
-        var employerAccessToken = await RegisterAndApproveEmployerAsync(adminAccessToken);
+        var (employerAccessToken, _) = await RegisterAndApproveEmployerAsync(adminAccessToken);
         var personnelNeedId = await CreateAndSubmitPersonnelNeedAsync(employerAccessToken);
+
+        // Danışman firma kaydından SONRA oluşturuluyor: atama kayıt anında yapıldığı için (ADR-023)
+        // bu danışman o firmaya hiçbir zaman atanmış olamaz - henüz var olmayan bir danışmana atama
+        // yapılamaz. Bu yüzden en-az-yüklü-danışman seçiminin o an kimi seçtiğiyle hiç ilgilenmeye
+        // gerek yok.
+        var (otherAdvisorAccessToken, _) = await CreateCareerAdvisorAndLoginAsync(adminAccessToken);
 
         var poolRequest = new HttpRequestMessage(
             HttpMethod.Post, $"/api/v1/career-advisor/personnel-needs/{personnelNeedId}/pool");
