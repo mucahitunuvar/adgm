@@ -70,7 +70,7 @@ public class AddCandidateNoteCommandHandlerTests
         var advisorUserId = Guid.NewGuid();
         SeedCareerAdvisor(advisorUserId);
         var candidateUserId = Guid.NewGuid();
-        _identityService.UserProfileResult = new IdentityUserProfile(candidateUserId, "aday@example.com", "Ahmet", "Yılmaz", null);
+        _identityService.UserProfileResult = new IdentityUserProfile(candidateUserId, "aday@example.com", "Ahmet", "Yılmaz", null, true);
         var command = new AddCandidateNoteCommand(Guid.NewGuid(), candidateUserId, nameof(NoteType.IsGorusmesi), "X firmasıyla 10:00'da görüşme");
 
         var result = await CreateHandler(advisorUserId).Handle(command, CancellationToken.None);

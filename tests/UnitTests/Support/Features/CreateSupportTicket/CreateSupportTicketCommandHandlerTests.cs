@@ -128,7 +128,7 @@ public class CreateSupportTicketCommandHandlerTests
         var candidateCvId = Guid.NewGuid();
         _candidateModuleContract.Seed(
             new CandidateCvSummary(candidateCvId, "Ahmet", "Yılmaz", null, candidateUserId, "aday@example.com"));
-        _identityService.UserProfileResult = new IdentityUserProfile(candidateUserId, "aday@example.com", "Ahmet", "Yılmaz", null);
+        _identityService.UserProfileResult = new IdentityUserProfile(candidateUserId, "aday@example.com", "Ahmet", "Yılmaz", null, true);
 
         var result = await CreateHandler(candidateUserId).Handle(
             new CreateSupportTicketCommand("Konu", nameof(SupportTicketPriority.Orta)), CancellationToken.None);

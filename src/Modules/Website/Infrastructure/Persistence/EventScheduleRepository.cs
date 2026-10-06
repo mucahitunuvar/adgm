@@ -151,4 +151,7 @@ public sealed class EventScheduleRepository(WebsiteDbContext dbContext) : IEvent
     public void Add(EventSchedule eventSchedule) => dbContext.EventSchedules.Add(eventSchedule);
 
     public void Remove(EventSchedule eventSchedule) => dbContext.EventSchedules.Remove(eventSchedule);
+
+    public Task ReloadAsync(EventSchedule eventSchedule, CancellationToken cancellationToken = default) =>
+        dbContext.Entry(eventSchedule).ReloadAsync(cancellationToken);
 }

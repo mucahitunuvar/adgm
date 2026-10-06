@@ -11,6 +11,7 @@ using GenclikMerkezi.Modules.Website.Features.AddFormSubmissionNote;
 using GenclikMerkezi.Modules.Website.Features.ArchiveContentItem;
 using GenclikMerkezi.Modules.Website.Features.ArchiveFormSubmission;
 using GenclikMerkezi.Modules.Website.Features.AssignFormSubmission;
+using GenclikMerkezi.Modules.Website.Features.CancelEventRegistration;
 using GenclikMerkezi.Modules.Website.Features.CancelEventSchedule;
 using GenclikMerkezi.Modules.Website.Features.ChangeFormSubmissionStatus;
 using GenclikMerkezi.Modules.Website.Features.ConfirmNewsletterSubscription;
@@ -20,6 +21,7 @@ using GenclikMerkezi.Modules.Website.Features.CreateContentCategory;
 using GenclikMerkezi.Modules.Website.Features.CreateContentItem;
 using GenclikMerkezi.Modules.Website.Features.CreateContentPreviewLink;
 using GenclikMerkezi.Modules.Website.Features.CreateContentType;
+using GenclikMerkezi.Modules.Website.Features.CreateEventRegistration;
 using GenclikMerkezi.Modules.Website.Features.CreateRedirect;
 using GenclikMerkezi.Modules.Website.Features.CreateSiteLanguage;
 using GenclikMerkezi.Modules.Website.Features.CreateFormDefinition;
@@ -137,6 +139,7 @@ using GenclikMerkezi.Modules.Website.Features.ReplaceContentDraftBlocks;
 using GenclikMerkezi.Modules.Website.Features.ReplaceHomeDraftBlocks;
 using GenclikMerkezi.Modules.Website.Features.ReplaceMenuItems;
 using GenclikMerkezi.Modules.Website.Features.ReplaceSlides;
+using GenclikMerkezi.Modules.Website.Features.ResendEventRegistrationVerification;
 using GenclikMerkezi.Modules.Website.Features.ResolveRoute;
 using GenclikMerkezi.Modules.Website.Features.RestoreContentItem;
 using GenclikMerkezi.Modules.Website.Features.ScheduleContentItem;
@@ -184,6 +187,7 @@ using GenclikMerkezi.Modules.Website.Features.UpdateVideoTranslation;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsBankAccounts;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsBotProtection;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsContact;
+using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsEvents;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsFeatures;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsIdentity;
 using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsMaintenance;
@@ -193,6 +197,7 @@ using GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsTheme;
 using GenclikMerkezi.Modules.Website.Features.UpdateTag;
 using GenclikMerkezi.Modules.Website.Features.UploadMediaAsset;
 using GenclikMerkezi.Modules.Website.Features.UpsertEventSchedule;
+using GenclikMerkezi.Modules.Website.Features.VerifyEventRegistration;
 using Microsoft.AspNetCore.Routing;
 
 namespace GenclikMerkezi.Modules.Website;
@@ -226,6 +231,7 @@ public static class WebsiteModuleEndpointExtensions
         UpdateSiteSettingsSubmissionsEndpoint.Map(app);
         UpdateSiteSettingsNewsletterEndpoint.Map(app);
         UpdateSiteSettingsCookieConsentEndpoint.Map(app);
+        UpdateSiteSettingsEventsEndpoint.Map(app);
         GetPublicSiteEndpoint.Map(app);
 
         CreateContentTypeEndpoint.Map(app);
@@ -269,6 +275,13 @@ public static class WebsiteModuleEndpointExtensions
         // ADR-024 §17/§11 (Faz 4 Görev 2): the public events feed and its per-event .ics export.
         GetPublicEventsEndpoint.Map(app);
         GetPublicEventCalendarEndpoint.Map(app);
+
+        // ADR-024 §11.2 (Faz 4 Görev 3): event registration - creation, verification, resend and the
+        // participant's own cancellation link.
+        CreateEventRegistrationEndpoint.Map(app);
+        VerifyEventRegistrationEndpoint.Map(app);
+        ResendEventRegistrationVerificationEndpoint.Map(app);
+        CancelEventRegistrationEndpoint.Map(app);
 
         CreateRedirectEndpoint.Map(app);
         UpdateRedirectEndpoint.Map(app);

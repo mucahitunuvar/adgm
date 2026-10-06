@@ -33,7 +33,7 @@ public class TransferSupportTicketCommandHandlerTests
         var newAssigneeUserId = Guid.NewGuid();
         var ticket = SeedTicket(currentAssigneeUserId);
         _identityService.UserProfilesById[newAssigneeUserId] =
-            new IdentityUserProfile(newAssigneeUserId, "yeni-danisman@example.com", "Mehmet", "Demir", null);
+            new IdentityUserProfile(newAssigneeUserId, "yeni-danisman@example.com", "Mehmet", "Demir", null, true);
 
         var result = await CreateHandler(currentAssigneeUserId).Handle(
             new TransferSupportTicketCommand(ticket.Id, newAssigneeUserId), CancellationToken.None);

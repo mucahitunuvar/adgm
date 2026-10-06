@@ -335,6 +335,43 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         return (subscriber!.UnsubscribeToken, subscriber.Status);
     }
 
+    // ADR-024 §11.2 (Faz 4 Görev 3): no admin listing endpoint for EventRegistration exists yet
+    // (Görev 4) and CancelToken is never returned by any HTTP response until it is embedded in an
+    // email - the same bypass-the-HTTP-surface pattern GetNewsletterSubscriberStateAsync already uses
+    // above. Reads directly via WebsiteDbContext (not the repository) since the duplicate/cancelled
+    // lookups a test needs here are not all covered by IEventRegistrationRepository's own (status-
+    // filtered) query shapes.
+    public async Task<EventRegistrationSnapshot?> GetEventRegistrationSnapshotAsync(Guid contentItemId, string email)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<WebsiteDbContext>();
+        var normalizedEmail = EventRegistration.NormalizeEmail(email).Value;
+        var registration = await dbContext.EventRegistrations.AsNoTracking()
+            .FirstOrDefaultAsync(r => r.ContentItemId == contentItemId && r.Email == normalizedEmail);
+
+        return registration is null
+            ? null
+            : new EventRegistrationSnapshot(registration.Id, registration.Status, registration.CancelToken, registration.UserId);
+    }
+
+    public async Task<(int ConfirmedCount, int WaitlistedCount)> GetEventScheduleCountersAsync(Guid contentItemId)
+    {
+        using var scope = Services.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<IEventScheduleRepository>();
+        var schedule = await repository.GetByContentItemIdAsync(contentItemId);
+        return (schedule!.ConfirmedCount, schedule.WaitlistedCount);
+    }
+
+    public async Task<IReadOnlyList<EventRegistrationStatus>> GetEventRegistrationStatusesAsync(Guid contentItemId)
+    {
+        using var scope = Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<WebsiteDbContext>();
+        return await dbContext.EventRegistrations.AsNoTracking()
+            .Where(r => r.ContentItemId == contentItemId)
+            .Select(r => r.Status)
+            .ToListAsync();
+    }
+
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
@@ -388,3 +425,5 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         }
     }
 }
+
+public sealed record EventRegistrationSnapshot(Guid Id, EventRegistrationStatus Status, string CancelToken, Guid? UserId);

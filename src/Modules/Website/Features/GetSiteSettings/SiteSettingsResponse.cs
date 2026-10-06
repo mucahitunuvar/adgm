@@ -27,5 +27,6 @@ public sealed record SiteSettingsResponse(
     string SubmissionReferencePrefix,
     string? NewsletterPrivacyNoticeKey,
     string? CookiePolicyKey,
+    string? EventPrivacyNoticeKey,
     bool MaintenanceModeEnabled,
     DateTime? UpdatedAtUtc);

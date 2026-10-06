@@ -53,7 +53,7 @@ public class CloseOverdueSupportTicketsJobTests
         var openerUserId = Guid.NewGuid();
         var ticket = SeedOpenTicket(openerUserId, DateTime.UtcNow.AddHours(-25));
         _identityService.UserProfilesById[openerUserId] =
-            new IdentityUserProfile(openerUserId, "aday@example.com", "Ahmet", "Yılmaz", null);
+            new IdentityUserProfile(openerUserId, "aday@example.com", "Ahmet", "Yılmaz", null, true);
 
         await CreateJob(slaHours: 24).ExecuteAsync(CancellationToken.None);
 

@@ -92,7 +92,7 @@ public class AddSupportTicketMessageCommandHandlerTests
         var assigneeUserId = Guid.NewGuid();
         var ticket = SeedTicket(_supportTicketRepository, openerUserId, assigneeUserId);
         _careerAdvisorModuleContract.AdvisorIdForCurrentUser = Guid.NewGuid();
-        _identityService.UserProfilesById[openerUserId] = new IdentityUserProfile(openerUserId, "aday@example.com", "Ahmet", "Yılmaz", null);
+        _identityService.UserProfilesById[openerUserId] = new IdentityUserProfile(openerUserId, "aday@example.com", "Ahmet", "Yılmaz", null, true);
 
         var result = await CreateHandler(assigneeUserId).Handle(
             new AddSupportTicketMessageCommand(ticket.Id, "Yanıt"), CancellationToken.None);
@@ -128,7 +128,7 @@ public class AddSupportTicketMessageCommandHandlerTests
         var assigneeUserId = Guid.NewGuid();
         var ticket = SeedTicket(_supportTicketRepository, openerUserId, assigneeUserId, SupportTicketStatus.Cevaplandi);
         _identityService.UserProfilesById[assigneeUserId] =
-            new IdentityUserProfile(assigneeUserId, "danisman@example.com", "Ayşe", "Kaya", null);
+            new IdentityUserProfile(assigneeUserId, "danisman@example.com", "Ayşe", "Kaya", null, true);
 
         var result = await CreateHandler(openerUserId).Handle(
             new AddSupportTicketMessageCommand(ticket.Id, "Ek bilgi"), CancellationToken.None);

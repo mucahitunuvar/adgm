@@ -261,4 +261,95 @@ public class EventScheduleTests
         Assert.Null(schedule.CancelledAtUtc);
         Assert.Null(schedule.CancellationReason);
     }
+
+    // ADR-024 §11.2 (Faz 4 Görev 3) - the "kontenjan kararı" table: AutoConfirm x boş/dolu kontenjan x
+    // WaitlistEnabled.
+    [Theory]
+    [InlineData(true, 10, 0, true, EventCapacityDecision.Confirmed, 1, 0)]
+    [InlineData(false, 10, 0, true, EventCapacityDecision.Applied, 0, 0)]
+    [InlineData(true, 1, 1, true, EventCapacityDecision.Waitlisted, 1, 1)]
+    [InlineData(true, 1, 1, false, null, 1, 0)]
+    [InlineData(true, null, 0, true, EventCapacityDecision.Confirmed, 1, 0)]
+    public void ReserveCapacity_CapacityDecisionTable_MatchesExpectedOutcome(
+        bool autoConfirm, int? capacity, int currentConfirmedCount, bool waitlistEnabled, EventCapacityDecision? expectedDecision,
+        int expectedConfirmedCount, int expectedWaitlistedCount)
+    {
+        var schedule = EventSchedule.Create(
+            ContentItemId, Now.AddDays(10), Now.AddDays(10).AddHours(2), EventFormat.InPerson, null, capacity, registrationEnabled: true,
+            registrationOpensAtUtc: null, registrationClosesAtUtc: null, minAge: null, maxAge: null, autoConfirm, waitlistEnabled, Tr,
+            "Salon", "Adres", "Ücretsiz", "Eğitmen", "<p/>", "Not", UserId, Now).Value;
+
+        for (var i = 0; i < currentConfirmedCount; i++)
+        {
+            schedule.ReserveCapacity();
+        }
+
+        var result = schedule.ReserveCapacity();
+
+        if (expectedDecision is null)
+        {
+            Assert.True(result.IsFailure);
+            Assert.Equal("Event.CapacityFull", result.Error.Code);
+        }
+        else
+        {
+            Assert.True(result.IsSuccess);
+            Assert.Equal(expectedDecision.Value, result.Value);
+        }
+
+        Assert.Equal(expectedConfirmedCount, schedule.ConfirmedCount);
+        Assert.Equal(expectedWaitlistedCount, schedule.WaitlistedCount);
+    }
+
+    [Fact]
+    public void ReserveCapacity_WhenApplied_DoesNotChangeRowVersion()
+    {
+        var scheduleWithoutAutoConfirm = EventSchedule.Create(
+            ContentItemId, Now.AddDays(10), Now.AddDays(10).AddHours(2), EventFormat.InPerson, null, 10, registrationEnabled: true,
+            registrationOpensAtUtc: null, registrationClosesAtUtc: null, minAge: null, maxAge: null, autoConfirm: false,
+            waitlistEnabled: true, Tr, "Salon", "Adres", "Ücretsiz", "Eğitmen", "<p/>", "Not", UserId, Now).Value;
+        var rowVersionBefore = scheduleWithoutAutoConfirm.RowVersion;
+
+        var result = scheduleWithoutAutoConfirm.ReserveCapacity();
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(EventCapacityDecision.Applied, result.Value);
+        Assert.Equal(rowVersionBefore, scheduleWithoutAutoConfirm.RowVersion);
+    }
+
+    [Fact]
+    public void ReleaseConfirmedSlot_DecrementsConfirmedCount()
+    {
+        var schedule = CreateSchedule(capacity: 10).Value;
+        schedule.ReserveCapacity();
+
+        schedule.ReleaseConfirmedSlot();
+
+        Assert.Equal(0, schedule.ConfirmedCount);
+    }
+
+    [Fact]
+    public void ReleaseConfirmedSlot_WhenAlreadyZero_DoesNotGoNegative()
+    {
+        var schedule = CreateSchedule(capacity: 10).Value;
+
+        schedule.ReleaseConfirmedSlot();
+
+        Assert.Equal(0, schedule.ConfirmedCount);
+    }
+
+    [Fact]
+    public void ReleaseWaitlistSlot_DecrementsWaitlistedCount()
+    {
+        var schedule = EventSchedule.Create(
+            ContentItemId, Now.AddDays(10), Now.AddDays(10).AddHours(2), EventFormat.InPerson, null, 1, registrationEnabled: true,
+            registrationOpensAtUtc: null, registrationClosesAtUtc: null, minAge: null, maxAge: null, autoConfirm: true,
+            waitlistEnabled: true, Tr, "Salon", "Adres", "Ücretsiz", "Eğitmen", "<p/>", "Not", UserId, Now).Value;
+        schedule.ReserveCapacity();
+        schedule.ReserveCapacity();
+
+        schedule.ReleaseWaitlistSlot();
+
+        Assert.Equal(0, schedule.WaitlistedCount);
+    }
 }

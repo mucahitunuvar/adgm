@@ -67,7 +67,7 @@ public class RejectMeetingRequestCommandHandlerTests
         var meetingRequest = GenclikMerkezi.Modules.CareerAdvisor.Domain.MeetingRequest.Create(
             Guid.NewGuid(), candidateUserId, careerAdvisor.Id, DateTime.UtcNow);
         _meetingRequestRepository.Add(meetingRequest);
-        _identityService.UserProfileResult = new IdentityUserProfile(candidateUserId, "aday@example.com", "Ahmet", "Yılmaz", null);
+        _identityService.UserProfileResult = new IdentityUserProfile(candidateUserId, "aday@example.com", "Ahmet", "Yılmaz", null, true);
 
         var result = await CreateHandler(advisorUserId).Handle(
             new RejectMeetingRequestCommand(meetingRequest.Id), CancellationToken.None);

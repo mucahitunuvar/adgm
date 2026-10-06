@@ -26,7 +26,7 @@ public sealed class IdentityService(
 
         return user is null
             ? null
-            : new IdentityUserProfile(user.Id, user.Email.Value, user.FirstName, user.LastName, user.PhoneNumber);
+            : new IdentityUserProfile(user.Id, user.Email.Value, user.FirstName, user.LastName, user.PhoneNumber, user.EmailConfirmed);
     }
 
     public async Task<Result<Guid>> CreateUserAsync(

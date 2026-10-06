@@ -17,9 +17,9 @@ public class SendBulkNotificationCommandHandlerTests
         var candidate1UserId = Guid.NewGuid();
         var candidate2UserId = Guid.NewGuid();
         _identityService.UserProfilesById[candidate1UserId] =
-            new IdentityUserProfile(candidate1UserId, "aday1@example.com", "Ahmet", "Yılmaz", null);
+            new IdentityUserProfile(candidate1UserId, "aday1@example.com", "Ahmet", "Yılmaz", null, true);
         _identityService.UserProfilesById[candidate2UserId] =
-            new IdentityUserProfile(candidate2UserId, "aday2@example.com", "Mehmet", "Demir", null);
+            new IdentityUserProfile(candidate2UserId, "aday2@example.com", "Mehmet", "Demir", null, true);
 
         var result = await CreateHandler().Handle(
             new SendBulkNotificationCommand([candidate1UserId, candidate2UserId], "Duyuru", "Merhaba"),
@@ -40,7 +40,7 @@ public class SendBulkNotificationCommandHandlerTests
         var resolvableUserId = Guid.NewGuid();
         var unresolvableUserId = Guid.NewGuid();
         _identityService.UserProfilesById[resolvableUserId] =
-            new IdentityUserProfile(resolvableUserId, "aday@example.com", "Ahmet", "Yılmaz", null);
+            new IdentityUserProfile(resolvableUserId, "aday@example.com", "Ahmet", "Yılmaz", null, true);
 
         var result = await CreateHandler().Handle(
             new SendBulkNotificationCommand([resolvableUserId, unresolvableUserId], "Duyuru", "Merhaba"),

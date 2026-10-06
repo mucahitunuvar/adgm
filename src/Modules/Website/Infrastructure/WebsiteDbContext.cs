@@ -52,6 +52,7 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
     public DbSet<NewsletterSubscriber> NewsletterSubscribers => Set<NewsletterSubscriber>();
     public DbSet<ThirdPartyScript> ThirdPartyScripts => Set<ThirdPartyScript>();
     public DbSet<CookieConsentRecord> CookieConsentRecords => Set<CookieConsentRecord>();
+    public DbSet<EventRegistration> EventRegistrations => Set<EventRegistration>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

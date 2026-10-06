@@ -94,10 +94,15 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<RelatedContentResolutionService>();
         services.AddScoped<ContentItemPermanentDeletionService>();
 
-        // ADR-024 §11.1 (Faz 4 Görev 1): both ports are wired with placeholder implementations - see
-        // their own remarks for why (EventRegistration does not exist until Görev 3).
+        // ADR-024 §11.1 (Faz 4 Görev 1): IEventCancellationNotifier stays a placeholder until Görev 4
+        // wires the real cancellation fan-out.
         services.AddScoped<IEventCancellationNotifier, NoOpEventCancellationNotifier>();
-        services.AddScoped<IEventRegistrationUsageChecker, NoOpEventRegistrationUsageChecker>();
+
+        // ADR-024 §11.2 (Faz 4 Görev 3): EventRegistration's own persistence/services.
+        services.AddScoped<IEventRegistrationRepository, EventRegistrationRepository>();
+        services.AddScoped<IEventRegistrationUsageChecker, EventRegistrationUsageChecker>();
+        services.AddScoped<EventCapacityConcurrencyRetryExecutor>();
+        services.AddScoped<EventRegistrationNotifier>();
         services.AddScoped<RouteResolutionService>();
         // CleanupStaleNotFoundLogsJob only takes singleton-safe dependencies (IServiceScopeFactory), so
         // it is registered Transient here and resolved by Program.cs's RecurringJob.AddOrUpdate<T>() -

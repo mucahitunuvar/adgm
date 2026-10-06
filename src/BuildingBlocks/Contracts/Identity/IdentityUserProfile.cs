@@ -7,4 +7,5 @@ public sealed record IdentityUserProfile(
     string Email,
     string FirstName,
     string LastName,
-    string? PhoneNumber);
+    string? PhoneNumber,
+    bool EmailConfirmed);

@@ -6,9 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GenclikMerkezi.Modules.Website.Features.DeleteEventSchedule;
 
-// ADR-024 §11.1/§11.2 (Faz 4 Görev 1): "yalnızca kayıt yoksa" - IEventRegistrationUsageChecker is a
-// no-op until Görev 3 adds EventRegistration, so this never blocks anything yet; the guard is wired
-// now so Görev 3 only has to replace the checker's implementation, not this handler.
+// ADR-024 §11.1/§11.2 (Faz 4 Görev 1, real check wired in Görev 3): "yalnızca kayıt yoksa" -
+// IEventRegistrationUsageChecker's real implementation (EventRegistrationUsageChecker) now backs
+// this guard, so a content item with any EventRegistration row (any status) blocks the delete.
 public sealed class DeleteEventScheduleCommandHandler(
     IEventScheduleRepository eventScheduleRepository,
     IEventRegistrationUsageChecker eventRegistrationUsageChecker,

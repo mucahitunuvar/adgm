@@ -83,6 +83,13 @@ public sealed partial class SiteSettings : AggregateRoot
     // NewsletterPrivacyNoticeKey's own "not yet configured" shape.
     public LegalDocumentKey? CookiePolicyKey { get; private set; }
 
+    // ADR-024 §11.2 (Faz 4 Görev 3): which LegalDocument (Kind = PrivacyNotice) the event registration
+    // form presents - null until an admin configures it via UpdateSiteSettingsEvents, mirroring
+    // NewsletterPrivacyNoticeKey/CookiePolicyKey's own "not yet configured" shape exactly
+    // (CreateEventRegistration then treats registration as not yet available, the same 404 pattern
+    // SubscribeToNewsletter already uses).
+    public LegalDocumentKey? EventPrivacyNoticeKey { get; private set; }
+
     public byte[] RowVersion { get; private set; } = Guid.NewGuid().ToByteArray();
 
     public Guid? UpdatedByUserId { get; private set; }
@@ -249,6 +256,12 @@ public sealed partial class SiteSettings : AggregateRoot
     public void UpdateCookiePolicyKey(LegalDocumentKey? cookiePolicyKey, Guid updatedByUserId, DateTime updatedAtUtc)
     {
         CookiePolicyKey = cookiePolicyKey;
+        Touch(updatedByUserId, updatedAtUtc);
+    }
+
+    public void UpdateEventPrivacyNoticeKey(LegalDocumentKey? eventPrivacyNoticeKey, Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        EventPrivacyNoticeKey = eventPrivacyNoticeKey;
         Touch(updatedByUserId, updatedAtUtc);
     }
 

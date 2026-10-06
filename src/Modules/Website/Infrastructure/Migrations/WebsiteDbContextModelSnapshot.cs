@@ -703,6 +703,119 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                     b.ToTable("CookieConsentRecords", (string)null);
                 });
 
+            modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.EventRegistration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AcceptedPrivacyNoticeKey")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("AcceptedPrivacyNoticeKey");
+
+                    b.Property<int>("AcceptedPrivacyNoticeVersion")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("AnonymizedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CancelToken")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("CancelledAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CancelledBy")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("ContentItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid>("EventScheduleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("LanguageCode")
+                        .IsRequired()
+                        .HasMaxLength(35)
+                        .HasColumnType("nvarchar(35)")
+                        .HasColumnName("LanguageCode");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("LastVerificationEmailSentAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("StatusChangedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("VerificationTokenExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VerificationTokenHash")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("VerifiedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("WaitlistedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CancelToken")
+                        .IsUnique();
+
+                    b.HasIndex("ContentItemId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("VerificationTokenHash")
+                        .IsUnique()
+                        .HasFilter("[VerificationTokenHash] IS NOT NULL");
+
+                    b.HasIndex("ContentItemId", "Email");
+
+                    b.ToTable("EventRegistrations", (string)null);
+                });
+
             modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.EventSchedule", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1590,6 +1703,11 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
 
                     b.Property<bool>("DonationPageEnabled")
                         .HasColumnType("bit");
+
+                    b.Property<string>("EventPrivacyNoticeKey")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("EventPrivacyNoticeKey");
 
                     b.Property<Guid?>("FaviconMediaAssetId")
                         .HasColumnType("uniqueidentifier");
@@ -2671,6 +2789,46 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                         });
 
                     b.Navigation("Translations");
+                });
+
+            modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.EventRegistration", b =>
+                {
+                    b.OwnsMany("GenclikMerkezi.Modules.Website.Domain.EventRegistrationStatusHistoryEntry", "StatusHistory", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("ChangedBy")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)");
+
+                            b1.Property<Guid>("EventRegistrationId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("NewStatus")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("nvarchar(20)");
+
+                            b1.Property<DateTime>("OccurredAtUtc")
+                                .HasColumnType("datetime2");
+
+                            b1.Property<string>("PreviousStatus")
+                                .HasMaxLength(20)
+                                .HasColumnType("nvarchar(20)");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("EventRegistrationId");
+
+                            b1.ToTable("EventRegistrationStatusHistory", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("EventRegistrationId");
+                        });
+
+                    b.Navigation("StatusHistory");
                 });
 
             modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.EventSchedule", b =>

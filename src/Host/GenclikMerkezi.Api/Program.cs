@@ -98,6 +98,11 @@ builder.Services.AddWebsiteModule(builder.Configuration);
 // §50.1).
 builder.Services.AddScoped<IWebsiteEmailSender, NotificationWebsiteEmailSender>();
 
+// ADR-024 §11.2 (Faz 4 Görev 3): CreateEventRegistrationCommandHandler's "logged-in + email-confirmed
+// registrant skips verification" check, wired the same way as IWebsiteEmailSender above - Website
+// never references IIdentityService directly (WebsiteContractsBoundaryTests).
+builder.Services.AddScoped<IPlatformUserEmailConfirmationLookup, IdentityPlatformUserEmailConfirmationLookup>();
+
 // ADR-024 §4.5 (Faz 1b Görev 6): signed, time-limited content preview link tokens use ASP.NET Core
 // Data Protection. Keys are persisted under App_Data (never under webuploads' public static-file
 // root) so an IIS application pool recycle does not invalidate every outstanding preview link - the

@@ -42,4 +42,12 @@ public interface IEventScheduleRepository
     void Add(EventSchedule eventSchedule);
 
     void Remove(EventSchedule eventSchedule);
+
+    // ADR-024 §11.2 (Faz 4 Görev 3): discards eventSchedule's in-memory, not-yet-saved changes
+    // (ReserveCapacity/ReleaseConfirmedSlot/ReleaseWaitlistSlot, bumped RowVersion included) and
+    // refreshes it from the database - used by EventCapacityConcurrencyRetryExecutor between retry
+    // attempts after a RowVersion conflict, so the next attempt's capacity decision is made against
+    // the row's current ConfirmedCount/WaitlistedCount/RowVersion, not the stale values the failed
+    // attempt started from.
+    Task ReloadAsync(EventSchedule eventSchedule, CancellationToken cancellationToken = default);
 }

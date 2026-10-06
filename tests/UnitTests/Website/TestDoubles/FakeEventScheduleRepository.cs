@@ -49,6 +49,11 @@ public sealed class FakeEventScheduleRepository : IEventScheduleRepository
 
     public void Remove(EventSchedule eventSchedule) => _eventSchedules.Remove(eventSchedule);
 
+    // Nothing to reload against - this fake has no separate backing store distinct from the seeded
+    // instance itself (see EventCapacityConcurrencyRetryExecutorTests for how conflict/retry is
+    // exercised instead, against a FakeUnitOfWork that throws DbUpdateConcurrencyException once).
+    public Task ReloadAsync(EventSchedule eventSchedule, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
     private static EventRegistrationStateInputs ToInputs(EventSchedule es) =>
         new(es.IsCancelled, es.RegistrationEnabled, es.RegistrationOpensAtUtc, es.RegistrationClosesAtUtc, es.StartsAtUtc, es.Capacity,
             es.ConfirmedCount, es.WaitlistEnabled);

@@ -92,6 +92,22 @@ public class PublicContentCacheInvalidationTests
         // cached response - nothing in GetPublicSite's output depends on CookieConsentRecord rows
         // (mirrors SubmitFormSubmissionCommandHandler's own remarks).
         "CreateCookieConsentRecordCommandHandler",
+
+        // Faz 4 Görev 3 (§1 "Kayıt işlemleri çağırmaz" - deliberate exception to the "every mutation
+        // invalidates" rule this test otherwise enforces): registration/verification/resend/
+        // cancellation never touch anything the public content/list/detail cache reads - capacity and
+        // registrationState are never cached (recomputed per request, see EventRegistrationStateInputs'
+        // own remarks), so invalidating here would only ever clear unrelated public cache entries for
+        // no benefit.
+        "CreateEventRegistrationCommandHandler",
+        "VerifyEventRegistrationCommandHandler",
+        "ResendEventRegistrationVerificationCommandHandler",
+        "CancelEventRegistrationCommandHandler",
+
+        // Faz 4 Görev 3: EventPrivacyNoticeKey never feeds a public content/list/detail/SEO response -
+        // same bucket as UpdateSiteSettingsCookieConsentCommandHandler above (calls InvalidatePublicSite
+        // directly, which this test does not count as InvalidatePublicContent/InvalidateAllPublic).
+        "UpdateSiteSettingsEventsCommandHandler",
     };
 
     [Fact]

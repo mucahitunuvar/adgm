@@ -132,6 +132,13 @@ public sealed class SiteSettingsConfiguration : IEntityTypeConfiguration<SiteSet
             .HasColumnName("CookiePolicyKey")
             .HasMaxLength(LegalDocumentKey.MaxLength);
 
+        // ADR-024 §11.2 (Faz 4 Görev 3): same nullable value-object column shape as
+        // NewsletterPrivacyNoticeKey/CookiePolicyKey above.
+        builder.Property(s => s.EventPrivacyNoticeKey)
+            .HasConversion(key => key!.Value, value => LegalDocumentKey.Create(value).Value)
+            .HasColumnName("EventPrivacyNoticeKey")
+            .HasMaxLength(LegalDocumentKey.MaxLength);
+
         builder.Property(s => s.UpdatedByUserId);
         builder.Property(s => s.UpdatedAtUtc);
     }

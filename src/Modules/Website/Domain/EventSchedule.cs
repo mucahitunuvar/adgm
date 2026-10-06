@@ -301,6 +301,63 @@ public sealed class EventSchedule : AggregateRoot
         return Result.Success();
     }
 
+    // ADR-024 §11.2 (Faz 4 Görev 3): the single place the "kontenjan kararı" counter math happens -
+    // EventRegistrationStateResolver only decides whether registration is open/waitlisted/full at all
+    // (Görev 2), this decides what a registration that passed that gate actually becomes. Mutates
+    // ConfirmedCount/WaitlistedCount only on the branches that hold capacity (AutoConfirm -> Confirmed,
+    // waitlist -> Waitlisted); an Applied outcome leaves both untouched, so a call that resolves to
+    // Applied produces no EF change at all on this aggregate. Callers (CreateEventRegistration/
+    // VerifyEventRegistration, via EventCapacityConcurrencyRetryExecutor) must re-invoke this against a
+    // freshly reloaded instance on a RowVersion conflict - it is not itself retry-safe across stale
+    // counters.
+    public Result<EventCapacityDecision> ReserveCapacity()
+    {
+        var hasRoom = Capacity is null || ConfirmedCount < Capacity.Value;
+        if (hasRoom)
+        {
+            if (!AutoConfirm)
+            {
+                return Result.Success(EventCapacityDecision.Applied);
+            }
+
+            ConfirmedCount++;
+            BumpRowVersion();
+            return Result.Success(EventCapacityDecision.Confirmed);
+        }
+
+        if (WaitlistEnabled)
+        {
+            WaitlistedCount++;
+            BumpRowVersion();
+            return Result.Success(EventCapacityDecision.Waitlisted);
+        }
+
+        return Result.Failure<EventCapacityDecision>(Error.Conflict(
+            "Event.CapacityFull", "This event has reached its capacity and waitlisting is not enabled."));
+    }
+
+    // The counter-releasing counterpart to ReserveCapacity, called when a Confirmed/Waitlisted
+    // registration is cancelled (participant link in this Görev, admin actions in Görev 4). Guarded
+    // against going negative defensively - every real caller only ever releases a slot its own prior
+    // ReserveCapacity call actually reserved.
+    public void ReleaseConfirmedSlot()
+    {
+        if (ConfirmedCount > 0)
+        {
+            ConfirmedCount--;
+            BumpRowVersion();
+        }
+    }
+
+    public void ReleaseWaitlistSlot()
+    {
+        if (WaitlistedCount > 0)
+        {
+            WaitlistedCount--;
+            BumpRowVersion();
+        }
+    }
+
     private static Result ValidateScheduleFields(
         DateTime startsAtUtc,
         DateTime endsAtUtc,
@@ -388,6 +445,12 @@ public sealed class EventSchedule : AggregateRoot
     {
         UpdatedByUserId = updatedByUserId;
         UpdatedAtUtc = updatedAtUtc;
-        RowVersion = Guid.NewGuid().ToByteArray();
+        BumpRowVersion();
     }
+
+    // Registration-driven counter mutations (ReserveCapacity/ReleaseConfirmedSlot/ReleaseWaitlistSlot)
+    // bump RowVersion without going through Touch: UpdatedByUserId/UpdatedAtUtc represent an editor's
+    // last manual PUT, not registration churn a visitor triggers, mirroring NewsletterSubscriber's own
+    // BumpRowVersion split from its admin-facing mutations.
+    private void BumpRowVersion() => RowVersion = Guid.NewGuid().ToByteArray();
 }
