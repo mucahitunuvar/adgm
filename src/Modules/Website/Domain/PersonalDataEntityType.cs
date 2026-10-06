@@ -7,4 +7,7 @@ public enum PersonalDataEntityType
 {
     FormSubmission,
     NewsletterSubscriber,
+
+    // Faz 4 Görev 4: the admin-side registration list/detail endpoints.
+    EventRegistration,
 }

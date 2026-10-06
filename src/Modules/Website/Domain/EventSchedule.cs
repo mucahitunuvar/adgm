@@ -358,6 +358,37 @@ public sealed class EventSchedule : AggregateRoot
         }
     }
 
+    // ADR-024 §11.2 (Faz 4 Görev 4): the admin "confirm" decision - covers both Applied -> Confirmed
+    // (releaseWaitlistSlot: false) and a waitlist promotion, Waitlisted -> Confirmed
+    // (releaseWaitlistSlot: true, "-1 Waitlisted, +1 Confirmed" in the same Unit of Work). Re-invoked by
+    // EventCapacityConcurrencyRetryExecutor across retries exactly like ReserveCapacity, so it must stay
+    // safe to call again against a freshly reloaded instance.
+    public Result ConfirmRegistration(bool releaseWaitlistSlot)
+    {
+        var hasRoom = Capacity is null || ConfirmedCount < Capacity.Value;
+        if (!hasRoom)
+        {
+            return Result.Failure(Error.Conflict("Event.CapacityFull", "This event has reached its capacity."));
+        }
+
+        ConfirmedCount++;
+        if (releaseWaitlistSlot && WaitlistedCount > 0)
+        {
+            WaitlistedCount--;
+        }
+
+        BumpRowVersion();
+        return Result.Success();
+    }
+
+    // The admin "move to waitlist" decision (Applied -> Waitlisted) - unlike ReserveCapacity's own
+    // waitlist branch, there is no capacity ceiling to check here (the waitlist itself is unbounded).
+    public void AddToWaitlist()
+    {
+        WaitlistedCount++;
+        BumpRowVersion();
+    }
+
     private static Result ValidateScheduleFields(
         DateTime startsAtUtc,
         DateTime endsAtUtc,

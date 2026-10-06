@@ -10,10 +10,12 @@ using GenclikMerkezi.Modules.Website.Features.ActivateVideo;
 using GenclikMerkezi.Modules.Website.Features.AddFormSubmissionNote;
 using GenclikMerkezi.Modules.Website.Features.ArchiveContentItem;
 using GenclikMerkezi.Modules.Website.Features.ArchiveFormSubmission;
+using GenclikMerkezi.Modules.Website.Features.AdminCancelEventRegistration;
 using GenclikMerkezi.Modules.Website.Features.AssignFormSubmission;
 using GenclikMerkezi.Modules.Website.Features.CancelEventRegistration;
 using GenclikMerkezi.Modules.Website.Features.CancelEventSchedule;
 using GenclikMerkezi.Modules.Website.Features.ChangeFormSubmissionStatus;
+using GenclikMerkezi.Modules.Website.Features.ConfirmEventRegistration;
 using GenclikMerkezi.Modules.Website.Features.ConfirmNewsletterSubscription;
 using GenclikMerkezi.Modules.Website.Features.ConvertNotFoundPathToRedirect;
 using GenclikMerkezi.Modules.Website.Features.CreateCookieConsentRecord;
@@ -76,6 +78,8 @@ using GenclikMerkezi.Modules.Website.Features.ExportNewsletterSubscribers;
 using GenclikMerkezi.Modules.Website.Features.GetBlockTypes;
 using GenclikMerkezi.Modules.Website.Features.GetContentCategoriesByType;
 using GenclikMerkezi.Modules.Website.Features.GetCookieConsentSummary;
+using GenclikMerkezi.Modules.Website.Features.GetEventRegistrationById;
+using GenclikMerkezi.Modules.Website.Features.GetEventRegistrations;
 using GenclikMerkezi.Modules.Website.Features.GetEventScheduleByContentItemId;
 using GenclikMerkezi.Modules.Website.Features.GetFormDefinitionById;
 using GenclikMerkezi.Modules.Website.Features.GetFormDefinitions;
@@ -128,6 +132,8 @@ using GenclikMerkezi.Modules.Website.Features.GetThirdPartyScriptById;
 using GenclikMerkezi.Modules.Website.Features.GetThirdPartyScripts;
 using GenclikMerkezi.Modules.Website.Features.GetVideoById;
 using GenclikMerkezi.Modules.Website.Features.GetVideos;
+using GenclikMerkezi.Modules.Website.Features.MarkEventRegistrationAttended;
+using GenclikMerkezi.Modules.Website.Features.MarkEventRegistrationNoShow;
 using GenclikMerkezi.Modules.Website.Features.MergeTag;
 using GenclikMerkezi.Modules.Website.Features.PermanentlyDeleteContentItem;
 using GenclikMerkezi.Modules.Website.Features.PublishContentItem;
@@ -135,6 +141,7 @@ using GenclikMerkezi.Modules.Website.Features.PublishLegalDocumentDraft;
 using GenclikMerkezi.Modules.Website.Features.PublishContentLayout;
 using GenclikMerkezi.Modules.Website.Features.PublishHomeLayout;
 using GenclikMerkezi.Modules.Website.Features.ReactivateEventSchedule;
+using GenclikMerkezi.Modules.Website.Features.RejectEventRegistration;
 using GenclikMerkezi.Modules.Website.Features.ReplaceContentDraftBlocks;
 using GenclikMerkezi.Modules.Website.Features.ReplaceHomeDraftBlocks;
 using GenclikMerkezi.Modules.Website.Features.ReplaceMenuItems;
@@ -198,6 +205,7 @@ using GenclikMerkezi.Modules.Website.Features.UpdateTag;
 using GenclikMerkezi.Modules.Website.Features.UploadMediaAsset;
 using GenclikMerkezi.Modules.Website.Features.UpsertEventSchedule;
 using GenclikMerkezi.Modules.Website.Features.VerifyEventRegistration;
+using GenclikMerkezi.Modules.Website.Features.WaitlistEventRegistration;
 using Microsoft.AspNetCore.Routing;
 
 namespace GenclikMerkezi.Modules.Website;
@@ -282,6 +290,17 @@ public static class WebsiteModuleEndpointExtensions
         VerifyEventRegistrationEndpoint.Map(app);
         ResendEventRegistrationVerificationEndpoint.Map(app);
         CancelEventRegistrationEndpoint.Map(app);
+
+        // ADR-024 §11.2 (Faz 4 Görev 4): admin registration management - list/detail, confirm (incl.
+        // waitlist promotion), waitlist, reject, admin cancellation, attendance marking.
+        GetEventRegistrationsEndpoint.Map(app);
+        GetEventRegistrationByIdEndpoint.Map(app);
+        ConfirmEventRegistrationEndpoint.Map(app);
+        WaitlistEventRegistrationEndpoint.Map(app);
+        RejectEventRegistrationEndpoint.Map(app);
+        AdminCancelEventRegistrationEndpoint.Map(app);
+        MarkEventRegistrationAttendedEndpoint.Map(app);
+        MarkEventRegistrationNoShowEndpoint.Map(app);
 
         CreateRedirectEndpoint.Map(app);
         UpdateRedirectEndpoint.Map(app);

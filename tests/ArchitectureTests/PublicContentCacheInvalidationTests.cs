@@ -104,6 +104,16 @@ public class PublicContentCacheInvalidationTests
         "ResendEventRegistrationVerificationCommandHandler",
         "CancelEventRegistrationCommandHandler",
 
+        // Faz 4 Görev 4: admin registration management (confirm/waitlist/reject/admin-cancel/attended/
+        // no-show) - same reasoning as the Görev 3 handlers directly above (capacity/registrationState
+        // are never cached).
+        "ConfirmEventRegistrationCommandHandler",
+        "WaitlistEventRegistrationCommandHandler",
+        "RejectEventRegistrationCommandHandler",
+        "AdminCancelEventRegistrationCommandHandler",
+        "MarkEventRegistrationAttendedCommandHandler",
+        "MarkEventRegistrationNoShowCommandHandler",
+
         // Faz 4 Görev 3: EventPrivacyNoticeKey never feeds a public content/list/detail/SEO response -
         // same bucket as UpdateSiteSettingsCookieConsentCommandHandler above (calls InvalidatePublicSite
         // directly, which this test does not count as InvalidatePublicContent/InvalidateAllPublic).

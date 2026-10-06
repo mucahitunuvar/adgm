@@ -24,6 +24,14 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <!-- ADR-024 §11.2 (Faz 4 Görev 4): HangfireEventCancellationBatchScheduler (Infrastructure) is this
+         module's first code needing IBackgroundJobClient.Enqueue itself - every earlier job is purely
+         RecurringJob.AddOrUpdate<T>()-scheduled from Program.cs, which never required this module to
+         reference Hangfire. Core only (no storage/AspNetCore) - version pinned to match the Host's own
+         Hangfire.Core reference so NuGet never needs to resolve a version conflict between them. MIT
+         license, already vetted for this repository (AGENTS.md §47-48; see Program.cs's own Hangfire
+         registration). -->
+    <PackageReference Include="Hangfire.Core" Version="1.8.15" />
   </ItemGroup>
 
   <ItemGroup>

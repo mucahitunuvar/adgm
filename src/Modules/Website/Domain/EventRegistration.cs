@@ -321,6 +321,123 @@ public sealed partial class EventRegistration : AggregateRoot
         return Result.Success(outcome);
     }
 
+    // ADR-024 §11.2 (Faz 4 Görev 4): the admin "confirm" decision - valid from Applied (plain approval)
+    // or Waitlisted (promotion). Mirrors ApplyCapacityDecision's own retry-safety (same
+    // _uncommittedDecisionEntry field, finalized by the same ConfirmCapacityDecisionCommitted()) since
+    // EventCapacityConcurrencyRetryExecutor re-invokes this once per attempt alongside
+    // EventSchedule.ConfirmRegistration. Left independent of ApplyCapacityDecision itself (which only
+    // ever reverts to PendingVerification) to avoid touching that already-committed Görev 3 method.
+    public Result AdminConfirm(string changedBy, DateTime now)
+    {
+        if (_uncommittedDecisionEntry is not null)
+        {
+            var previous = _uncommittedDecisionEntry;
+            _statusHistory.Remove(previous);
+            _uncommittedDecisionEntry = null;
+            Status = previous.PreviousStatus!.Value;
+        }
+
+        if (Status is not (EventRegistrationStatus.Applied or EventRegistrationStatus.Waitlisted))
+        {
+            return Result.Failure(Error.Conflict(
+                "EventRegistration.InvalidStatusTransition", "This registration cannot be confirmed from its current status."));
+        }
+
+        var entry = EventRegistrationStatusHistoryEntry.Create(Status, EventRegistrationStatus.Confirmed, changedBy, now);
+        Status = EventRegistrationStatus.Confirmed;
+        StatusChangedAtUtc = now;
+        _statusHistory.Add(entry);
+        _uncommittedDecisionEntry = entry;
+        BumpRowVersion();
+
+        return Result.Success();
+    }
+
+    // The admin "move to waitlist" decision - valid only from Applied. Same retry-safe shape as
+    // AdminConfirm, paired with EventSchedule.AddToWaitlist() inside the same retry-executor mutate().
+    public Result AdminWaitlist(string changedBy, DateTime now)
+    {
+        if (_uncommittedDecisionEntry is not null)
+        {
+            var previous = _uncommittedDecisionEntry;
+            _statusHistory.Remove(previous);
+            _uncommittedDecisionEntry = null;
+            Status = previous.PreviousStatus!.Value;
+            WaitlistedAtUtc = null;
+        }
+
+        if (Status != EventRegistrationStatus.Applied)
+        {
+            return Result.Failure(Error.Conflict(
+                "EventRegistration.InvalidStatusTransition", "This registration cannot be moved to the waitlist from its current status."));
+        }
+
+        var entry = EventRegistrationStatusHistoryEntry.Create(Status, EventRegistrationStatus.Waitlisted, changedBy, now);
+        Status = EventRegistrationStatus.Waitlisted;
+        WaitlistedAtUtc = now;
+        StatusChangedAtUtc = now;
+        _statusHistory.Add(entry);
+        _uncommittedDecisionEntry = entry;
+        BumpRowVersion();
+
+        return Result.Success();
+    }
+
+    // The admin "reject" decision - valid from Applied or Waitlisted (a Confirmed registration is
+    // withdrawn via admin Cancel instead, not Reject). Runs once, outside any retry loop, exactly like
+    // Cancel: its outcome depends only on this registration's own current status, not on a fresh
+    // EventSchedule read, so there is nothing to redo on a RowVersion conflict - only the counter
+    // release itself (when the outcome calls for one) goes through EventCapacityConcurrencyRetryExecutor.
+    // Reuses EventRegistrationCancelOutcome (Cancel's own outcome type) rather than adding a near-
+    // identical enum purely for Reject - it already expresses exactly the "which counter, if any, must
+    // be released" question this needs, regardless of which transition produced it.
+    public Result<EventRegistrationCancelOutcome> Reject(string changedBy, DateTime now)
+    {
+        if (Status is not (EventRegistrationStatus.Applied or EventRegistrationStatus.Waitlisted))
+        {
+            return Result.Failure<EventRegistrationCancelOutcome>(Error.Conflict(
+                "EventRegistration.InvalidStatusTransition", "This registration cannot be rejected from its current status."));
+        }
+
+        var outcome = Status == EventRegistrationStatus.Waitlisted
+            ? EventRegistrationCancelOutcome.ReleasedWaitlistSlot
+            : EventRegistrationCancelOutcome.ReleasedNoSlot;
+
+        var entry = EventRegistrationStatusHistoryEntry.Create(Status, EventRegistrationStatus.Rejected, changedBy, now);
+        Status = EventRegistrationStatus.Rejected;
+        StatusChangedAtUtc = now;
+        _statusHistory.Add(entry);
+        BumpRowVersion();
+
+        return Result.Success(outcome);
+    }
+
+    // §1 "QR giriş, yoklama ekranı... yoktur... Attended/NoShow yalnızca admin listesinde elle
+    // işaretlenir" - both only ever leave a Confirmed registration (never touch EventSchedule's
+    // counters, which already count Confirmed/Attended/NoShow identically).
+    public Result MarkAttended(string changedBy, DateTime now) =>
+        TransitionFromConfirmed(EventRegistrationStatus.Attended, changedBy, now);
+
+    public Result MarkNoShow(string changedBy, DateTime now) =>
+        TransitionFromConfirmed(EventRegistrationStatus.NoShow, changedBy, now);
+
+    private Result TransitionFromConfirmed(EventRegistrationStatus newStatus, string changedBy, DateTime now)
+    {
+        if (Status != EventRegistrationStatus.Confirmed)
+        {
+            return Result.Failure(Error.Conflict(
+                "EventRegistration.InvalidStatusTransition", "This registration must be Confirmed to record attendance."));
+        }
+
+        var entry = EventRegistrationStatusHistoryEntry.Create(Status, newStatus, changedBy, now);
+        Status = newStatus;
+        StatusChangedAtUtc = now;
+        _statusHistory.Add(entry);
+        BumpRowVersion();
+
+        return Result.Success();
+    }
+
     private static Result<string> NormalizeRequiredText(string? value, int maxLength, string fieldName)
     {
         var trimmed = (value ?? string.Empty).Trim();

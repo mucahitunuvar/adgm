@@ -352,4 +352,58 @@ public class EventScheduleTests
 
         Assert.Equal(0, schedule.WaitlistedCount);
     }
+
+    // Faz 4 Görev 4: ConfirmRegistration covers both a plain Applied -> Confirmed approval
+    // (releaseWaitlistSlot: false) and a waitlist promotion (releaseWaitlistSlot: true,
+    // "-1 Waitlisted, +1 Confirmed").
+    [Theory]
+    [InlineData(10, 0, false, 1, 0)]
+    [InlineData(10, 0, true, 1, 0)] // no waitlisted slot to release - guarded against negative
+    [InlineData(5, 3, true, 1, 2)]
+    [InlineData(null, 0, false, 1, 0)] // unlimited capacity
+    public void ConfirmRegistration_WithRoom_SucceedsAndUpdatesCounters(
+        int? capacity, int startingWaitlistedCount, bool releaseWaitlistSlot, int expectedConfirmedCount, int expectedWaitlistedCount)
+    {
+        var schedule = EventSchedule.Create(
+            ContentItemId, Now.AddDays(10), Now.AddDays(10).AddHours(2), EventFormat.InPerson, null, capacity, registrationEnabled: true,
+            registrationOpensAtUtc: null, registrationClosesAtUtc: null, minAge: null, maxAge: null, autoConfirm: false,
+            waitlistEnabled: true, Tr, "Salon", "Adres", "Ücretsiz", "Eğitmen", "<p/>", "Not", UserId, Now).Value;
+
+        for (var i = 0; i < startingWaitlistedCount; i++)
+        {
+            schedule.AddToWaitlist();
+        }
+
+        var result = schedule.ConfirmRegistration(releaseWaitlistSlot);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(expectedConfirmedCount, schedule.ConfirmedCount);
+        Assert.Equal(expectedWaitlistedCount, schedule.WaitlistedCount);
+    }
+
+    [Fact]
+    public void ConfirmRegistration_WhenCapacityFull_FailsAndLeavesCountersUnchanged()
+    {
+        var schedule = CreateSchedule(capacity: 1).Value;
+        schedule.AddToWaitlist();
+        schedule.ConfirmRegistration(releaseWaitlistSlot: false);
+
+        var result = schedule.ConfirmRegistration(releaseWaitlistSlot: false);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Event.CapacityFull", result.Error.Code);
+        Assert.Equal(1, schedule.ConfirmedCount);
+        Assert.Equal(1, schedule.WaitlistedCount);
+    }
+
+    [Fact]
+    public void AddToWaitlist_IncrementsWaitlistedCountWithNoCapacityCeiling()
+    {
+        var schedule = CreateSchedule(capacity: 1).Value;
+
+        schedule.AddToWaitlist();
+        schedule.AddToWaitlist();
+
+        Assert.Equal(2, schedule.WaitlistedCount);
+    }
 }

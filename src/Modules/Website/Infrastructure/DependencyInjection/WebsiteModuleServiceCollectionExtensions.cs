@@ -94,9 +94,13 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<RelatedContentResolutionService>();
         services.AddScoped<ContentItemPermanentDeletionService>();
 
-        // ADR-024 §11.1 (Faz 4 Görev 1): IEventCancellationNotifier stays a placeholder until Görev 4
-        // wires the real cancellation fan-out.
-        services.AddScoped<IEventCancellationNotifier, NoOpEventCancellationNotifier>();
+        // ADR-024 §11.2 (Faz 4 Görev 4): the real cancellation fan-out, replacing Görev 1's placeholder.
+        // Registered under its own concrete type too (not just the interface) since
+        // ProcessEventCancellationNotificationsJob resolves it directly to call ProcessBatchAsync, a
+        // method IEventCancellationNotifier itself does not expose.
+        services.AddScoped<EventCancellationNotifier>();
+        services.AddScoped<IEventCancellationNotifier>(sp => sp.GetRequiredService<EventCancellationNotifier>());
+        services.AddScoped<IEventCancellationBatchScheduler, HangfireEventCancellationBatchScheduler>();
 
         // ADR-024 §11.2 (Faz 4 Görev 3): EventRegistration's own persistence/services.
         services.AddScoped<IEventRegistrationRepository, EventRegistrationRepository>();
@@ -114,6 +118,7 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddTransient<AnonymizeExpiredFormSubmissionsJob>();
         services.AddTransient<CleanupExpiredNewsletterSubscribersJob>();
         services.AddTransient<CleanupExpiredCookieConsentRecordsJob>();
+        services.AddTransient<ProcessEventCancellationNotificationsJob>();
         services.AddSingleton<IImageProcessor, SkiaSharpImageProcessor>();
         services.AddScoped<IMediaUsageChecker, CompositeMediaUsageChecker>();
         services.AddScoped<IMediaUsageProvider, SiteSettingsMediaUsageProvider>();

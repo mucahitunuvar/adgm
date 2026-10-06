@@ -117,6 +117,55 @@ public sealed class EventRegistrationNotifier(IWebsiteEmailSender websiteEmailSe
         return (subject, body);
     }
 
+    // Faz 4 Görev 4: admin "reject" - §1 "reason opsiyonel, kişiye iletilmez", so the rejection reason
+    // never appears here, only the fact itself.
+    public Task SendRejectionNoticeAsync(EventRegistration registration, string eventTitle, CancellationToken cancellationToken)
+    {
+        var isTurkish = IsTurkish(registration.LanguageCode);
+
+        var subject = isTurkish ? $"Başvurunuz kabul edilmedi: {eventTitle}" : $"Your application was not accepted: {eventTitle}";
+        var body = isTurkish
+            ? $"<p>'{Encode(eventTitle)}' etkinliğine başvurunuz kabul edilmedi.</p>"
+            : $"<p>Your application for '{Encode(eventTitle)}' was not accepted.</p>";
+
+        return websiteEmailSender.SendEmailAsync(registration.Email, subject, body, cancellationToken);
+    }
+
+    // Faz 4 Görev 4: admin-initiated cancellation (CancelledBy = Admin) - a Confirmed/Waitlisted/Applied
+    // registration the admin withdrew, distinct from the participant's own one-click cancellation (which
+    // needs no notice, since the participant already knows they triggered it).
+    public Task SendAdminCancellationNoticeAsync(EventRegistration registration, string eventTitle, CancellationToken cancellationToken)
+    {
+        var isTurkish = IsTurkish(registration.LanguageCode);
+
+        var subject = isTurkish ? $"Kaydınız iptal edildi: {eventTitle}" : $"Your registration was cancelled: {eventTitle}";
+        var body = isTurkish
+            ? $"<p>'{Encode(eventTitle)}' etkinliğine kaydınız yönetici tarafından iptal edildi.</p>"
+            : $"<p>Your registration for '{Encode(eventTitle)}' was cancelled by the organizer.</p>";
+
+        return websiteEmailSender.SendEmailAsync(registration.Email, subject, body, cancellationToken);
+    }
+
+    // Faz 4 Görev 4: the event-cancellation fan-out (IEventCancellationNotifier's real implementation) -
+    // takes a raw email/language rather than an EventRegistration since it is driven by
+    // EventRegistrationCancellationRecipient, a lightweight projection over a potentially large
+    // recipient set (§1 "sebep metni dahil; kişiye özel veri yok").
+    public Task SendEventCancellationNoticeAsync(
+        string email, LanguageCode languageCode, string eventTitle, string? reason, CancellationToken cancellationToken)
+    {
+        var isTurkish = IsTurkish(languageCode);
+        var reasonHtml = string.IsNullOrWhiteSpace(reason)
+            ? string.Empty
+            : isTurkish ? $"<p>Sebep: {Encode(reason)}</p>" : $"<p>Reason: {Encode(reason)}</p>";
+
+        var subject = isTurkish ? $"Etkinlik iptal edildi: {eventTitle}" : $"Event cancelled: {eventTitle}";
+        var body = isTurkish
+            ? $"<p>'{Encode(eventTitle)}' etkinliği iptal edildi.</p>{reasonHtml}"
+            : $"<p>'{Encode(eventTitle)}' has been cancelled.</p>{reasonHtml}";
+
+        return websiteEmailSender.SendEmailAsync(email, subject, body, cancellationToken);
+    }
+
     private static bool IsTurkish(LanguageCode languageCode) => string.Equals(languageCode.Value, "tr", StringComparison.Ordinal);
 
     private static string Encode(string value) => WebUtility.HtmlEncode(value);
