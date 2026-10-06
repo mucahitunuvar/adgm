@@ -9,6 +9,7 @@ namespace GenclikMerkezi.Modules.Website.Features.UpdateContentType;
 
 public sealed class UpdateContentTypeCommandHandler(
     IContentTypeRepository contentTypeRepository,
+    IEventScheduleRepository eventScheduleRepository,
     ICurrentUserContext currentUserContext,
     ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
@@ -45,6 +46,21 @@ public sealed class UpdateContentTypeCommandHandler(
         // not enforced here: it depends on ContentItem, which does not exist until Görev 3. Nothing can
         // violate it yet, since no content exists - Görev 3 adds the real check against
         // IContentItemRepository once that repository exists.
+        //
+        // SupportsEvent is the one flag this already guards (ADR-024 §11.1, Faz 4 Görev 1): once a
+        // content item of this type has an EventSchedule, the flag cannot be turned off - the calendar
+        // would otherwise be orphaned from a type that claims not to support events.
+        if (contentType.SupportsEvent && !request.SupportsEvent)
+        {
+            var hasEventSchedule = await eventScheduleRepository.ExistsForContentTypeIdAsync(contentType.Id, cancellationToken);
+            if (hasEventSchedule)
+            {
+                return Result.Failure(Error.Conflict(
+                    "ContentType.SupportsEventCannotBeDisabled",
+                    "SupportsEvent cannot be disabled while a content item of this type still has an event schedule."));
+            }
+        }
+
         var updateResult = contentType.Update(
             request.ListTemplate, request.DetailTemplate, sortMode, request.SortOrder, flags,
             currentUserContext.UserId!.Value, DateTime.UtcNow);

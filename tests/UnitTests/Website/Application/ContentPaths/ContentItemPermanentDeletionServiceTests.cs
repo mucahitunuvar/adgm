@@ -17,11 +17,13 @@ public class ContentItemPermanentDeletionServiceTests
     private readonly FakeRedirectRepository _redirectRepository = new();
     private readonly FakeMenuRepository _menuRepository = new();
     private readonly FakePageLayoutRepository _pageLayoutRepository = new();
+    private readonly FakeEventScheduleRepository _eventScheduleRepository = new();
+    private readonly FakeEventRegistrationUsageChecker _eventRegistrationUsageChecker = new();
 
     private ContentItemPermanentDeletionService CreateService() =>
         new(
-            _contentItemRepository, _redirectRepository, _menuRepository, _pageLayoutRepository,
-            NullLogger<ContentItemPermanentDeletionService>.Instance);
+            _contentItemRepository, _redirectRepository, _menuRepository, _pageLayoutRepository, _eventScheduleRepository,
+            _eventRegistrationUsageChecker, NullLogger<ContentItemPermanentDeletionService>.Instance);
 
     private static ContentItem CreateItem(Guid? parentId = null, string slug = "haber") =>
         ContentItem.Create(
@@ -112,5 +114,33 @@ public class ContentItemPermanentDeletionServiceTests
         await CreateService().DeleteAsync(item, UserId, Now, CancellationToken.None);
 
         Assert.Null(await _pageLayoutRepository.GetByContentItemIdAsync(item.Id));
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WithRegistrations_Fails()
+    {
+        var item = CreateItem(slug: "silinecek");
+        _contentItemRepository.Seed(item);
+        _eventRegistrationUsageChecker.HasRegistrationsResult = true;
+
+        var result = await CreateService().DeleteAsync(item, UserId, Now, CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Event.HasRegistrations", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_RemovesTheEventScheduleForTheItem()
+    {
+        var item = CreateItem(slug: "silinecek");
+        _contentItemRepository.Seed(item);
+        var schedule = EventSchedule.Create(
+            item.Id, Now.AddDays(10), Now.AddDays(10).AddHours(2), EventFormat.InPerson, null, null, false, null, null, null, null,
+            true, false, Tr, "Salon", "Adres", null, null, null, null, UserId, Now).Value;
+        _eventScheduleRepository.Seed(schedule);
+
+        await CreateService().DeleteAsync(item, UserId, Now, CancellationToken.None);
+
+        Assert.Null(await _eventScheduleRepository.GetByContentItemIdAsync(item.Id));
     }
 }

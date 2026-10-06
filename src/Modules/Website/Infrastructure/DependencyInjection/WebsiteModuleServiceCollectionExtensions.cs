@@ -3,6 +3,7 @@ using GenclikMerkezi.Modules.Website.Application.BlockTypes;
 using GenclikMerkezi.Modules.Website.Application.BlockTypes.Definitions;
 using GenclikMerkezi.Modules.Website.Application.BlockTypes.PublicResolution;
 using GenclikMerkezi.Modules.Website.Application.ContentPaths;
+using GenclikMerkezi.Modules.Website.Application.Events;
 using GenclikMerkezi.Modules.Website.Application.ImpactMetrics;
 using GenclikMerkezi.Modules.Website.Application.Forms;
 using GenclikMerkezi.Modules.Website.Application.Forms.PublicResolution;
@@ -61,6 +62,7 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<ISiteSettingsRepository, SiteSettingsRepository>();
         services.AddScoped<IContentTypeRepository, ContentTypeRepository>();
         services.AddScoped<IContentItemRepository, ContentItemRepository>();
+        services.AddScoped<IEventScheduleRepository, EventScheduleRepository>();
         services.AddScoped<IRedirectRepository, RedirectRepository>();
         services.AddScoped<INotFoundLogRepository, NotFoundLogRepository>();
         services.AddScoped<IVideoRepository, VideoRepository>();
@@ -91,6 +93,11 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<ContentPathCascadeService>();
         services.AddScoped<RelatedContentResolutionService>();
         services.AddScoped<ContentItemPermanentDeletionService>();
+
+        // ADR-024 §11.1 (Faz 4 Görev 1): both ports are wired with placeholder implementations - see
+        // their own remarks for why (EventRegistration does not exist until Görev 3).
+        services.AddScoped<IEventCancellationNotifier, NoOpEventCancellationNotifier>();
+        services.AddScoped<IEventRegistrationUsageChecker, NoOpEventRegistrationUsageChecker>();
         services.AddScoped<RouteResolutionService>();
         // CleanupStaleNotFoundLogsJob only takes singleton-safe dependencies (IServiceScopeFactory), so
         // it is registered Transient here and resolved by Program.cs's RecurringJob.AddOrUpdate<T>() -

@@ -19,6 +19,8 @@ public sealed class ContentItemPermanentDeletionService(
     IRedirectRepository redirectRepository,
     IMenuRepository menuRepository,
     IPageLayoutRepository pageLayoutRepository,
+    IEventScheduleRepository eventScheduleRepository,
+    IEventRegistrationUsageChecker eventRegistrationUsageChecker,
     ILogger<ContentItemPermanentDeletionService> logger)
 {
     public async Task<Result> DeleteAsync(ContentItem contentItem, Guid actingUserId, DateTime now, CancellationToken cancellationToken)
@@ -29,6 +31,25 @@ public sealed class ContentItemPermanentDeletionService(
             return Result.Failure(Error.Conflict(
                 "ContentItem.HasChildren",
                 $"Cannot permanently delete: {children.Count} child content item(s) still exist (in any status)."));
+        }
+
+        // ADR-024 §11.1/§11.2 (Faz 4 Görev 1): a content item whose event has registrations cannot be
+        // permanently deleted - the usage checker is a no-op until Görev 3 adds EventRegistration, so
+        // this never blocks anything yet, but the wiring is in place for when it does.
+        var hasRegistrations = await eventRegistrationUsageChecker.HasRegistrationsAsync(contentItem.Id, cancellationToken);
+        if (hasRegistrations)
+        {
+            return Result.Failure(Error.Conflict(
+                "Event.HasRegistrations", "Cannot permanently delete: this event still has registrations."));
+        }
+
+        var eventSchedule = await eventScheduleRepository.GetByContentItemIdAsync(contentItem.Id, cancellationToken);
+        if (eventSchedule is not null)
+        {
+            eventScheduleRepository.Remove(eventSchedule);
+            logger.LogInformation(
+                "Deleting event schedule {EventScheduleId} for permanently deleted content item {ContentItemId}.",
+                eventSchedule.Id, contentItem.Id);
         }
 
         var redirects = await redirectRepository.GetByTargetContentItemIdAsync(contentItem.Id, cancellationToken);

@@ -20,6 +20,8 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
 
     public DbSet<ContentItem> ContentItems => Set<ContentItem>();
 
+    public DbSet<EventSchedule> EventSchedules => Set<EventSchedule>();
+
     public DbSet<Redirect> Redirects => Set<Redirect>();
 
     public DbSet<NotFoundLog> NotFoundLogs => Set<NotFoundLog>();

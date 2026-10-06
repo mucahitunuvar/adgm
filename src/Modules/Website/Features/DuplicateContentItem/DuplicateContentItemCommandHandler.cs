@@ -17,6 +17,7 @@ public sealed class DuplicateContentItemCommandHandler(
     IContentItemRepository contentItemRepository,
     IContentTypeRepository contentTypeRepository,
     ISiteLanguageRepository siteLanguageRepository,
+    IEventScheduleRepository eventScheduleRepository,
     ContentPathCascadeService contentPathCascadeService,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
@@ -171,6 +172,23 @@ public sealed class DuplicateContentItemCommandHandler(
         newItem.SetAttachments(attachments, userId, now);
 
         contentItemRepository.Add(newItem);
+
+        // ADR-024 §11.1 (Faz 4 Görev 1): "İçerik kopyalama takvimi de kopyalar" - counters reset to 0,
+        // IsCancelled false (EventSchedule.Create's own defaults) and RegistrationEnabled forced off
+        // regardless of the source's value, so a copy never silently starts accepting registrations for
+        // dates that were only ever meant for the original event.
+        var sourceSchedule = await eventScheduleRepository.GetByContentItemIdAsync(source.Id, cancellationToken);
+        if (sourceSchedule is not null)
+        {
+            var copyResult = CopyEventSchedule(sourceSchedule, newItem.Id, defaultLanguage.Code, userId, now);
+            if (copyResult.IsFailure)
+            {
+                return Result.Failure<DuplicateContentItemResponse>(copyResult.Error);
+            }
+
+            eventScheduleRepository.Add(copyResult.Value);
+        }
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 
@@ -179,6 +197,38 @@ public sealed class DuplicateContentItemCommandHandler(
 
     private static string BuildCandidateSlug(string originalSlug, string suffixWord, int attempt) =>
         attempt == 1 ? $"{originalSlug}-{suffixWord}" : $"{originalSlug}-{suffixWord}-{attempt}";
+
+    private static Result<EventSchedule> CopyEventSchedule(
+        EventSchedule source, Guid newContentItemId, LanguageCode defaultLanguageCode, Guid userId, DateTime now)
+    {
+        var defaultTranslation = source.Translations.FirstOrDefault(t => t.LanguageCode == defaultLanguageCode)
+            ?? source.Translations[0];
+
+        var createResult = EventSchedule.Create(
+            newContentItemId, source.StartsAtUtc, source.EndsAtUtc, source.Format, source.OnlineLink, source.Capacity,
+            registrationEnabled: false, source.RegistrationOpensAtUtc, source.RegistrationClosesAtUtc, source.MinAge, source.MaxAge,
+            source.AutoConfirm, source.WaitlistEnabled, defaultTranslation.LanguageCode, defaultTranslation.VenueName,
+            defaultTranslation.VenueAddress, defaultTranslation.FeeInfo, defaultTranslation.Instructors, defaultTranslation.ProgramFlow,
+            defaultTranslation.AccessibilityNote, userId, now);
+        if (createResult.IsFailure)
+        {
+            return createResult;
+        }
+
+        var newSchedule = createResult.Value;
+        foreach (var translation in source.Translations.Where(t => t.LanguageCode != defaultTranslation.LanguageCode))
+        {
+            var setResult = newSchedule.SetTranslation(
+                translation.LanguageCode, translation.VenueName, translation.VenueAddress, translation.FeeInfo, translation.Instructors,
+                translation.ProgramFlow, translation.AccessibilityNote, userId, now);
+            if (setResult.IsFailure)
+            {
+                return Result.Failure<EventSchedule>(setResult.Error);
+            }
+        }
+
+        return Result.Success(newSchedule);
+    }
 
     // SeoMetadata is an owned type keyed by its owning ContentItemTranslation's id - reusing the
     // source translation's own SeoMetadata instance on the NEW translation makes EF Core's change
