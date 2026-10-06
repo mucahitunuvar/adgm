@@ -73,6 +73,25 @@ public class PublicContentCacheInvalidationTests
         "ConfirmNewsletterSubscriptionCommandHandler",
         "UnsubscribeFromNewsletterCommandHandler",
         "DeleteNewsletterSubscriberCommandHandler",
+
+        // Faz 3 Görev 7: ThirdPartyScript/cookie-consent settings only ever feed the public-site
+        // bootstrap response (GetPublicSite's scripts/cookieConsent fields) - never the public-content
+        // list/detail/route-resolution cache - so each of these calls InvalidatePublicSite directly
+        // instead of InvalidatePublicContent/InvalidateAllPublic, the same shape every SiteSettings
+        // section above that only feeds GetPublicSite already uses.
+        "CreateThirdPartyScriptCommandHandler",
+        "UpdateThirdPartyScriptCommandHandler",
+        "UpdateThirdPartyScriptTranslationCommandHandler",
+        "DeleteThirdPartyScriptTranslationCommandHandler",
+        "ActivateThirdPartyScriptCommandHandler",
+        "DeactivateThirdPartyScriptCommandHandler",
+        "DeleteThirdPartyScriptCommandHandler",
+        "UpdateSiteSettingsCookieConsentCommandHandler",
+
+        // Faz 3 Görev 7: recording a visitor's cookie-banner decision never changes any publicly
+        // cached response - nothing in GetPublicSite's output depends on CookieConsentRecord rows
+        // (mirrors SubmitFormSubmissionCommandHandler's own remarks).
+        "CreateCookieConsentRecordCommandHandler",
     };
 
     [Fact]

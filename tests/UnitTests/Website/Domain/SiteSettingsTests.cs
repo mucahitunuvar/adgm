@@ -220,4 +220,73 @@ public class SiteSettingsTests
         Assert.Equal("SiteSettings.SubmissionReferencePrefixInvalid", result.Error.Code);
         Assert.Equal(SiteSettings.DefaultSubmissionReferencePrefix, settings.SubmissionReferencePrefix);
     }
+
+    [Fact]
+    public void UpdateCookiePolicyKey_SetsTheKey()
+    {
+        var settings = SiteSettings.CreateDefault();
+        var key = LegalDocumentKey.Create("cookie-policy").Value;
+
+        settings.UpdateCookiePolicyKey(key, Guid.NewGuid(), DateTime.UtcNow);
+
+        Assert.Equal(key, settings.CookiePolicyKey);
+    }
+
+    [Fact]
+    public void UpdateCookiePolicyKey_WithNull_ClearsTheKey()
+    {
+        var settings = SiteSettings.CreateDefault();
+        settings.UpdateCookiePolicyKey(LegalDocumentKey.Create("cookie-policy").Value, Guid.NewGuid(), DateTime.UtcNow);
+
+        settings.UpdateCookiePolicyKey(null, Guid.NewGuid(), DateTime.UtcNow);
+
+        Assert.Null(settings.CookiePolicyKey);
+    }
+
+    [Fact]
+    public void SetCookieConsentTranslation_WithNewLanguage_AddsTranslation_WithoutTouchingIdentityOrMaintenanceFields()
+    {
+        var settings = SiteSettings.CreateDefault();
+        var tr = LanguageCode.Create("tr").Value;
+
+        settings.SetCookieConsentTranslation(
+            tr, "Çerez Onayı", "Bu site çerez kullanır.", "Gerekli çerezler", "Analitik çerezler", "Pazarlama çerezleri", Guid.NewGuid(),
+            DateTime.UtcNow);
+
+        var translation = Assert.Single(settings.Translations);
+        Assert.Equal("Çerez Onayı", translation.CookieBannerTitle);
+        Assert.Equal("Bu site çerez kullanır.", translation.CookieBannerText);
+        Assert.Equal("Gerekli çerezler", translation.CookieCategoryNecessaryDescription);
+        Assert.Equal("Analitik çerezler", translation.CookieCategoryAnalyticsDescription);
+        Assert.Equal("Pazarlama çerezleri", translation.CookieCategoryMarketingDescription);
+        Assert.Equal(string.Empty, translation.SiteName);
+        Assert.Equal(string.Empty, translation.MaintenanceMessage);
+    }
+
+    [Fact]
+    public void SetCookieConsentTranslation_CalledTwiceForSameLanguage_UpdatesInPlaceRatherThanDuplicating()
+    {
+        var settings = SiteSettings.CreateDefault();
+        var tr = LanguageCode.Create("tr").Value;
+        settings.SetCookieConsentTranslation(tr, "İlk Başlık", null, null, null, null, Guid.NewGuid(), DateTime.UtcNow);
+
+        settings.SetCookieConsentTranslation(tr, "Güncel Başlık", null, null, null, null, Guid.NewGuid(), DateTime.UtcNow);
+
+        var translation = Assert.Single(settings.Translations);
+        Assert.Equal("Güncel Başlık", translation.CookieBannerTitle);
+    }
+
+    [Fact]
+    public void SetCookieConsentTranslation_DoesNotOverwriteAnAlreadySetIdentitySiteName()
+    {
+        var settings = SiteSettings.CreateDefault();
+        var tr = LanguageCode.Create("tr").Value;
+        settings.SetIdentityTranslation(tr, "Gençlik Merkezi", null, null, null, null, Guid.NewGuid(), DateTime.UtcNow);
+
+        settings.SetCookieConsentTranslation(tr, "Çerez Onayı", null, null, null, null, Guid.NewGuid(), DateTime.UtcNow);
+
+        var translation = Assert.Single(settings.Translations);
+        Assert.Equal("Gençlik Merkezi", translation.SiteName);
+        Assert.Equal("Çerez Onayı", translation.CookieBannerTitle);
+    }
 }

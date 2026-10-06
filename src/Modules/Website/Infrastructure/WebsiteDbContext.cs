@@ -48,6 +48,8 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
     public DbSet<FormSubmissionSequence> FormSubmissionSequences => Set<FormSubmissionSequence>();
     public DbSet<PersonalDataAccessLog> PersonalDataAccessLogs => Set<PersonalDataAccessLog>();
     public DbSet<NewsletterSubscriber> NewsletterSubscribers => Set<NewsletterSubscriber>();
+    public DbSet<ThirdPartyScript> ThirdPartyScripts => Set<ThirdPartyScript>();
+    public DbSet<CookieConsentRecord> CookieConsentRecords => Set<CookieConsentRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -166,6 +166,10 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("Jwt:AccessTokenExpirationMinutes", "15");
         builder.UseSetting("Jwt:RefreshTokenExpirationDays", "7");
 
+        // ADR-024 §13 (Faz 3 Görev 7): ThirdPartyScriptFlowTests' own ExternalScript cases need at
+        // least one host on the allow-list to exercise the "accepted" path, not just "rejected".
+        builder.UseSetting("Website:Scripts:AllowedScriptHosts:0", "www.googletagmanager.com");
+
         // Absolute paths - LocalDiskFileStorageService/Program.cs's Data Protection setup both use a
         // configured path as-is (Path.IsPathRooted) instead of resolving it against the Host
         // project's ContentRootPath whenever it is already rooted.

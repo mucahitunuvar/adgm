@@ -30,7 +30,9 @@ public sealed class GetSiteSettingsQueryHandler(
 
         var translations = settings.Translations
             .Select(t => new SiteSettingsTranslationResponse(
-                t.LanguageCode.Value, t.SiteName, t.Tagline, t.DefaultMetaTitle, t.DefaultMetaDescription, t.FooterText, t.MaintenanceMessage))
+                t.LanguageCode.Value, t.SiteName, t.Tagline, t.DefaultMetaTitle, t.DefaultMetaDescription, t.FooterText, t.MaintenanceMessage,
+                t.CookieBannerTitle, t.CookieBannerText, t.CookieCategoryNecessaryDescription, t.CookieCategoryAnalyticsDescription,
+                t.CookieCategoryMarketingDescription))
             .ToList();
 
         return Result.Success(new SiteSettingsResponse(
@@ -42,8 +44,8 @@ public sealed class GetSiteSettingsQueryHandler(
             themeResponse, contactResponse, socialLinks, bankAccounts, translations,
             settings.GlobalSearchEnabled, settings.NewsletterEnabled, settings.PublicJobListingsEnabled,
             settings.DonationPageEnabled, settings.BotProtectionEnabled, settings.TurnstileSiteKey,
-            settings.SubmissionReferencePrefix, settings.NewsletterPrivacyNoticeKey?.Value, settings.MaintenanceModeEnabled,
-            settings.UpdatedAtUtc));
+            settings.SubmissionReferencePrefix, settings.NewsletterPrivacyNoticeKey?.Value, settings.CookiePolicyKey?.Value,
+            settings.MaintenanceModeEnabled, settings.UpdatedAtUtc));
     }
 
     private async Task<string?> ResolveMediaUrlAsync(Guid? mediaAssetId, CancellationToken cancellationToken)

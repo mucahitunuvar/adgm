@@ -95,6 +95,15 @@ public sealed class SiteSettingsConfiguration : IEntityTypeConfiguration<SiteSet
             translation.Property(t => t.DefaultMetaDescription).HasMaxLength(SiteSettingsTranslation.MaxMetaDescriptionLength).IsRequired();
             translation.Property(t => t.FooterText).HasMaxLength(SiteSettingsTranslation.MaxFooterTextLength).IsRequired();
             translation.Property(t => t.MaintenanceMessage).HasMaxLength(SiteSettingsTranslation.MaxMaintenanceMessageLength).IsRequired();
+
+            translation.Property(t => t.CookieBannerTitle).HasMaxLength(SiteSettingsTranslation.MaxCookieBannerTitleLength).IsRequired();
+            translation.Property(t => t.CookieBannerText).HasMaxLength(SiteSettingsTranslation.MaxCookieBannerTextLength).IsRequired();
+            translation.Property(t => t.CookieCategoryNecessaryDescription)
+                .HasMaxLength(SiteSettingsTranslation.MaxCookieCategoryDescriptionLength).IsRequired();
+            translation.Property(t => t.CookieCategoryAnalyticsDescription)
+                .HasMaxLength(SiteSettingsTranslation.MaxCookieCategoryDescriptionLength).IsRequired();
+            translation.Property(t => t.CookieCategoryMarketingDescription)
+                .HasMaxLength(SiteSettingsTranslation.MaxCookieCategoryDescriptionLength).IsRequired();
         });
         builder.Navigation(s => s.Translations).UsePropertyAccessMode(PropertyAccessMode.Field);
 
@@ -115,6 +124,12 @@ public sealed class SiteSettingsConfiguration : IEntityTypeConfiguration<SiteSet
         builder.Property(s => s.NewsletterPrivacyNoticeKey)
             .HasConversion(key => key!.Value, value => LegalDocumentKey.Create(value).Value)
             .HasColumnName("NewsletterPrivacyNoticeKey")
+            .HasMaxLength(LegalDocumentKey.MaxLength);
+
+        // ADR-024 §13 (Faz 3 Görev 7): same nullable value-object column shape as NewsletterPrivacyNoticeKey above.
+        builder.Property(s => s.CookiePolicyKey)
+            .HasConversion(key => key!.Value, value => LegalDocumentKey.Create(value).Value)
+            .HasColumnName("CookiePolicyKey")
             .HasMaxLength(LegalDocumentKey.MaxLength);
 
         builder.Property(s => s.UpdatedByUserId);

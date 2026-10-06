@@ -21,6 +21,8 @@ public sealed class GetPublicSiteQueryHandler(
     IContentItemRepository contentItemRepository,
     ISliderRepository sliderRepository,
     IPopupRepository popupRepository,
+    IThirdPartyScriptRepository thirdPartyScriptRepository,
+    ILegalDocumentRepository legalDocumentRepository,
     LinkTargetResolver linkTargetResolver,
     ICacheService cacheService,
     TimeProvider timeProvider)
@@ -93,6 +95,9 @@ public sealed class GetPublicSiteQueryHandler(
 
         var menus = await BuildMenusAsync(resolvedLanguage.Code, defaultLanguage.Code, now, cancellationToken);
         var popups = await BuildPopupsAsync(resolvedLanguage.Code, defaultLanguage.Code, now, cancellationToken);
+        var activeScripts = await thirdPartyScriptRepository.SearchActiveAsync(resolvedLanguage.Code, cancellationToken);
+        var scripts = BuildScripts(activeScripts);
+        var cookieConsent = await BuildCookieConsentAsync(settings, translation, activeScripts, resolvedLanguage.Code, now, cancellationToken);
 
         return new PublicSiteResponse(
             languageResponses, resolvedLanguage.Code.Value,
@@ -107,7 +112,7 @@ public sealed class GetPublicSiteQueryHandler(
             settings.GlobalSearchEnabled, settings.NewsletterEnabled, settings.PublicJobListingsEnabled, settings.DonationPageEnabled,
             settings.MaintenanceModeEnabled, translation?.MaintenanceMessage ?? string.Empty,
             settings.TurnstileSiteKey,
-            menus, popups);
+            menus, popups, cookieConsent, scripts);
     }
 
     private async Task<string?> ResolveMediaUrlAsync(Guid? mediaAssetId, CancellationToken cancellationToken)
@@ -293,5 +298,62 @@ public sealed class GetPublicSiteQueryHandler(
         }
 
         return new PublicPopupImageResponse(small, medium, large, originalUrl);
+    }
+
+    // ADR-024 §13 (Faz 3 Görev 7): every active script's full typed definition - the frontend only
+    // ever loads the ones whose Category the visitor has consented to.
+    private static IReadOnlyList<PublicSiteScriptResponse> BuildScripts(IReadOnlyList<ThirdPartyScript> activeScripts) =>
+        activeScripts
+            .Select(s => new PublicSiteScriptResponse(
+                s.Id, s.Provider.Kind.ToString(), s.Category.ToString(), s.Placement.ToString(), s.Provider.MeasurementId,
+                s.Provider.ContainerId, s.Provider.PixelId, s.Provider.Src, s.Provider.Async, s.Provider.Defer))
+            .ToList();
+
+    // ADR-024 §13 (Faz 3 Görev 7): banner text plus, per category, its visitor-facing description and
+    // the active scripts that belong to it (name/purpose only - BuildScripts above carries the full
+    // typed definitions). PolicyVersion is null when CookiePolicyKey is unset or has no effective
+    // version - see PublicSiteCookieConsentResponse's own remarks for what that means to the frontend.
+    private async Task<PublicSiteCookieConsentResponse> BuildCookieConsentAsync(
+        SiteSettings settings, SiteSettingsTranslation? translation, IReadOnlyList<ThirdPartyScript> activeScripts, LanguageCode languageCode,
+        DateTime now, CancellationToken cancellationToken)
+    {
+        string? policyKey = null;
+        int? policyVersion = null;
+        if (settings.CookiePolicyKey is not null)
+        {
+            var document = await legalDocumentRepository.GetByKeyAsync(settings.CookiePolicyKey, cancellationToken);
+            var effective = document is null ? null : LegalDocumentEffectiveVersionResolver.Resolve(document.Versions, now);
+            if (effective is not null)
+            {
+                policyKey = settings.CookiePolicyKey.Value;
+                policyVersion = effective.VersionNumber;
+            }
+        }
+
+        var categories = new List<PublicSiteCookieCategoryResponse>
+        {
+            BuildCookieCategory(
+                ThirdPartyScriptCategory.Necessary, translation?.CookieCategoryNecessaryDescription ?? string.Empty, activeScripts, languageCode),
+            BuildCookieCategory(
+                ThirdPartyScriptCategory.Analytics, translation?.CookieCategoryAnalyticsDescription ?? string.Empty, activeScripts, languageCode),
+            BuildCookieCategory(
+                ThirdPartyScriptCategory.Marketing, translation?.CookieCategoryMarketingDescription ?? string.Empty, activeScripts, languageCode),
+        };
+
+        return new PublicSiteCookieConsentResponse(
+            translation?.CookieBannerTitle ?? string.Empty, translation?.CookieBannerText ?? string.Empty, categories, policyKey, policyVersion);
+    }
+
+    private static PublicSiteCookieCategoryResponse BuildCookieCategory(
+        ThirdPartyScriptCategory category, string description, IReadOnlyList<ThirdPartyScript> scripts, LanguageCode languageCode)
+    {
+        var categoryScripts = scripts
+            .Where(s => s.Category == category)
+            .Select(s => s.Translations.FirstOrDefault(t => t.LanguageCode == languageCode))
+            .Where(t => t is not null)
+            .Select(t => new PublicSiteCookieCategoryScriptResponse(t!.Name, t.Purpose))
+            .ToList();
+
+        return new PublicSiteCookieCategoryResponse(category.ToString(), description, categoryScripts);
     }
 }

@@ -368,6 +368,8 @@ if (!isTestingEnvironment)
         "website-anonymize-expired-form-submissions", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
     RecurringJob.AddOrUpdate<CleanupExpiredNewsletterSubscribersJob>(
         "website-cleanup-expired-newsletter-subscribers", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
+    RecurringJob.AddOrUpdate<CleanupExpiredCookieConsentRecordsJob>(
+        "website-cleanup-expired-cookie-consent-records", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
 }
 
 app.Run();

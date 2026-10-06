@@ -80,6 +80,8 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<IFormSubmissionSequenceRepository, FormSubmissionSequenceRepository>();
         services.AddScoped<IPersonalDataAccessLogRepository, PersonalDataAccessLogRepository>();
         services.AddScoped<INewsletterSubscriberRepository, NewsletterSubscriberRepository>();
+        services.AddScoped<IThirdPartyScriptRepository, ThirdPartyScriptRepository>();
+        services.AddScoped<ICookieConsentRecordRepository, CookieConsentRecordRepository>();
         services.AddScoped<PublicFormDefinitionResolver>();
         services.AddScoped<LinkTargetResolver>();
         services.AddScoped<SliderPublicQueryService>();
@@ -99,6 +101,7 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddTransient<ArchiveClosedFormSubmissionsJob>();
         services.AddTransient<AnonymizeExpiredFormSubmissionsJob>();
         services.AddTransient<CleanupExpiredNewsletterSubscribersJob>();
+        services.AddTransient<CleanupExpiredCookieConsentRecordsJob>();
         services.AddSingleton<IImageProcessor, SkiaSharpImageProcessor>();
         services.AddScoped<IMediaUsageChecker, CompositeMediaUsageChecker>();
         services.AddScoped<IMediaUsageProvider, SiteSettingsMediaUsageProvider>();
@@ -155,6 +158,11 @@ public static class WebsiteModuleServiceCollectionExtensions
         // ADR-024 §14 (Faz 3 Görev 6): the newsletter double opt-in confirmation link - same Data
         // Protection backing as ISubmissionTokenGenerator/IContentPreviewLinkGenerator above.
         services.AddSingleton<INewsletterConfirmationLinkGenerator, DataProtectionNewsletterConfirmationLinkGenerator>();
+
+        // ADR-024 §13 (Faz 3 Görev 7): the ExternalScript host allow-list - read as plain configuration
+        // data and handed to ThirdPartyScriptProvider.CreateExternalScript by the Create/Update command
+        // handlers, keeping the Domain layer itself free of any IConfiguration dependency.
+        services.Configure<WebsiteScriptSettings>(configuration.GetSection(WebsiteScriptSettings.SectionName));
 
         // ADR-024 §2: named policies, all resolving to the literal Admin role for now. Only this
         // block changes when a real permission system arrives - endpoints stay untouched.

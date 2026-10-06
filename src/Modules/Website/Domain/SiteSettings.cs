@@ -78,6 +78,11 @@ public sealed partial class SiteSettings : AggregateRoot
     // being off), rather than guessing a document.
     public LegalDocumentKey? NewsletterPrivacyNoticeKey { get; private set; }
 
+    // ADR-024 §13 (Faz 3 Görev 7): which LegalDocument (Kind = CookiePolicy) the cookie-consent banner
+    // links to - null until an admin configures it via UpdateSiteSettingsCookieConsent, mirroring
+    // NewsletterPrivacyNoticeKey's own "not yet configured" shape.
+    public LegalDocumentKey? CookiePolicyKey { get; private set; }
+
     public byte[] RowVersion { get; private set; } = Guid.NewGuid().ToByteArray();
 
     public Guid? UpdatedByUserId { get; private set; }
@@ -238,6 +243,42 @@ public sealed partial class SiteSettings : AggregateRoot
     public void UpdateNewsletterPrivacyNoticeKey(LegalDocumentKey? newsletterPrivacyNoticeKey, Guid updatedByUserId, DateTime updatedAtUtc)
     {
         NewsletterPrivacyNoticeKey = newsletterPrivacyNoticeKey;
+        Touch(updatedByUserId, updatedAtUtc);
+    }
+
+    public void UpdateCookiePolicyKey(LegalDocumentKey? cookiePolicyKey, Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        CookiePolicyKey = cookiePolicyKey;
+        Touch(updatedByUserId, updatedAtUtc);
+    }
+
+    // Upserts the cookie-banner text fields for languageCode without touching that language's other
+    // groups (SetIdentityTranslation/SetMaintenanceMessage's job) - one call per language the caller
+    // wants to set, same split as those two.
+    public void SetCookieConsentTranslation(
+        LanguageCode languageCode,
+        string? cookieBannerTitle,
+        string? cookieBannerText,
+        string? cookieCategoryNecessaryDescription,
+        string? cookieCategoryAnalyticsDescription,
+        string? cookieCategoryMarketingDescription,
+        Guid updatedByUserId,
+        DateTime updatedAtUtc)
+    {
+        var existing = _translations.FirstOrDefault(t => t.LanguageCode == languageCode);
+        if (existing is not null)
+        {
+            existing.UpdateCookieConsentFields(
+                cookieBannerTitle, cookieBannerText, cookieCategoryNecessaryDescription, cookieCategoryAnalyticsDescription,
+                cookieCategoryMarketingDescription);
+        }
+        else
+        {
+            _translations.Add(SiteSettingsTranslation.Create(
+                languageCode, null, null, null, null, null, null, cookieBannerTitle, cookieBannerText,
+                cookieCategoryNecessaryDescription, cookieCategoryAnalyticsDescription, cookieCategoryMarketingDescription));
+        }
+
         Touch(updatedByUserId, updatedAtUtc);
     }
 

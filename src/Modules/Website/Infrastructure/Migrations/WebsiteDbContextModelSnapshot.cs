@@ -664,6 +664,45 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.CookieConsentRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.PrimitiveCollection<string>("Categories")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("Categories");
+
+                    b.Property<Guid>("ConsentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PolicyKey")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("PolicyKey");
+
+                    b.Property<int>("PolicyVersion")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConsentId");
+
+                    b.HasIndex("RecordedAtUtc");
+
+                    b.ToTable("CookieConsentRecords", (string)null);
+                });
+
             modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.FormDefinition", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1453,6 +1492,11 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                     b.Property<bool>("BotProtectionEnabled")
                         .HasColumnType("bit");
 
+                    b.Property<string>("CookiePolicyKey")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("CookiePolicyKey");
+
                     b.Property<Guid?>("DefaultOgImageMediaId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1545,6 +1589,49 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Sliders", (string)null);
+                });
+
+            modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.ThirdPartyScript", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Placement")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ThirdPartyScripts", (string)null);
                 });
 
             modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.Video", b =>
@@ -3763,6 +3850,31 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                             b1.Property<Guid>("Id")
                                 .HasColumnType("uniqueidentifier");
 
+                            b1.Property<string>("CookieBannerText")
+                                .IsRequired()
+                                .HasMaxLength(1000)
+                                .HasColumnType("nvarchar(1000)");
+
+                            b1.Property<string>("CookieBannerTitle")
+                                .IsRequired()
+                                .HasMaxLength(200)
+                                .HasColumnType("nvarchar(200)");
+
+                            b1.Property<string>("CookieCategoryAnalyticsDescription")
+                                .IsRequired()
+                                .HasMaxLength(500)
+                                .HasColumnType("nvarchar(500)");
+
+                            b1.Property<string>("CookieCategoryMarketingDescription")
+                                .IsRequired()
+                                .HasMaxLength(500)
+                                .HasColumnType("nvarchar(500)");
+
+                            b1.Property<string>("CookieCategoryNecessaryDescription")
+                                .IsRequired()
+                                .HasMaxLength(500)
+                                .HasColumnType("nvarchar(500)");
+
                             b1.Property<string>("DefaultMetaDescription")
                                 .IsRequired()
                                 .HasMaxLength(500)
@@ -4045,6 +4157,96 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Migrations
                         });
 
                     b.Navigation("Slides");
+
+                    b.Navigation("Translations");
+                });
+
+            modelBuilder.Entity("GenclikMerkezi.Modules.Website.Domain.ThirdPartyScript", b =>
+                {
+                    b.OwnsOne("GenclikMerkezi.Modules.Website.Domain.ThirdPartyScriptProvider", "Provider", b1 =>
+                        {
+                            b1.Property<Guid>("ThirdPartyScriptId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<bool>("Async")
+                                .HasColumnType("bit")
+                                .HasColumnName("Async");
+
+                            b1.Property<string>("ContainerId")
+                                .HasMaxLength(20)
+                                .HasColumnType("nvarchar(20)")
+                                .HasColumnName("ContainerId");
+
+                            b1.Property<bool>("Defer")
+                                .HasColumnType("bit")
+                                .HasColumnName("Defer");
+
+                            b1.Property<string>("Kind")
+                                .IsRequired()
+                                .HasMaxLength(30)
+                                .HasColumnType("nvarchar(30)")
+                                .HasColumnName("ProviderKind");
+
+                            b1.Property<string>("MeasurementId")
+                                .HasMaxLength(20)
+                                .HasColumnType("nvarchar(20)")
+                                .HasColumnName("MeasurementId");
+
+                            b1.Property<string>("PixelId")
+                                .HasMaxLength(20)
+                                .HasColumnType("nvarchar(20)")
+                                .HasColumnName("PixelId");
+
+                            b1.Property<string>("Src")
+                                .HasMaxLength(1000)
+                                .HasColumnType("nvarchar(1000)")
+                                .HasColumnName("Src");
+
+                            b1.HasKey("ThirdPartyScriptId");
+
+                            b1.ToTable("ThirdPartyScripts", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("ThirdPartyScriptId");
+                        });
+
+                    b.OwnsMany("GenclikMerkezi.Modules.Website.Domain.ThirdPartyScriptTranslation", "Translations", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("LanguageCode")
+                                .IsRequired()
+                                .HasMaxLength(35)
+                                .HasColumnType("nvarchar(35)")
+                                .HasColumnName("LanguageCode");
+
+                            b1.Property<string>("Name")
+                                .IsRequired()
+                                .HasMaxLength(150)
+                                .HasColumnType("nvarchar(150)");
+
+                            b1.Property<string>("Purpose")
+                                .IsRequired()
+                                .HasMaxLength(300)
+                                .HasColumnType("nvarchar(300)");
+
+                            b1.Property<Guid>("ThirdPartyScriptId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("ThirdPartyScriptId", "LanguageCode")
+                                .IsUnique();
+
+                            b1.ToTable("ThirdPartyScriptTranslations", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("ThirdPartyScriptId");
+                        });
+
+                    b.Navigation("Provider")
+                        .IsRequired();
 
                     b.Navigation("Translations");
                 });

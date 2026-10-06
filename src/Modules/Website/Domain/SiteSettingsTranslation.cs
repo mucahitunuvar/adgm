@@ -15,6 +15,9 @@ public sealed class SiteSettingsTranslation : Entity
     public const int MaxMetaDescriptionLength = 500;
     public const int MaxFooterTextLength = 2000;
     public const int MaxMaintenanceMessageLength = 500;
+    public const int MaxCookieBannerTitleLength = 200;
+    public const int MaxCookieBannerTextLength = 1000;
+    public const int MaxCookieCategoryDescriptionLength = 500;
 
     public LanguageCode LanguageCode { get; private set; } = null!;
 
@@ -30,6 +33,19 @@ public sealed class SiteSettingsTranslation : Entity
 
     public string MaintenanceMessage { get; private set; } = string.Empty;
 
+    // ADR-024 §13 (Faz 3 Görev 7): the cookie-consent banner's own per-language text - split from
+    // identity/maintenance for the same reason those two are split from each other (UpdateIdentityFields/
+    // UpdateMaintenanceMessage/UpdateCookieConsentFields are three independent grouped endpoints).
+    public string CookieBannerTitle { get; private set; } = string.Empty;
+
+    public string CookieBannerText { get; private set; } = string.Empty;
+
+    public string CookieCategoryNecessaryDescription { get; private set; } = string.Empty;
+
+    public string CookieCategoryAnalyticsDescription { get; private set; } = string.Empty;
+
+    public string CookieCategoryMarketingDescription { get; private set; } = string.Empty;
+
     private SiteSettingsTranslation(
         Guid id,
         LanguageCode languageCode,
@@ -38,7 +54,12 @@ public sealed class SiteSettingsTranslation : Entity
         string defaultMetaTitle,
         string defaultMetaDescription,
         string footerText,
-        string maintenanceMessage)
+        string maintenanceMessage,
+        string cookieBannerTitle,
+        string cookieBannerText,
+        string cookieCategoryNecessaryDescription,
+        string cookieCategoryAnalyticsDescription,
+        string cookieCategoryMarketingDescription)
         : base(id)
     {
         LanguageCode = languageCode;
@@ -48,6 +69,11 @@ public sealed class SiteSettingsTranslation : Entity
         DefaultMetaDescription = defaultMetaDescription;
         FooterText = footerText;
         MaintenanceMessage = maintenanceMessage;
+        CookieBannerTitle = cookieBannerTitle;
+        CookieBannerText = cookieBannerText;
+        CookieCategoryNecessaryDescription = cookieCategoryNecessaryDescription;
+        CookieCategoryAnalyticsDescription = cookieCategoryAnalyticsDescription;
+        CookieCategoryMarketingDescription = cookieCategoryMarketingDescription;
     }
 
     private SiteSettingsTranslation()
@@ -61,11 +87,19 @@ public sealed class SiteSettingsTranslation : Entity
         string? defaultMetaTitle,
         string? defaultMetaDescription,
         string? footerText,
-        string? maintenanceMessage) =>
+        string? maintenanceMessage,
+        string? cookieBannerTitle = null,
+        string? cookieBannerText = null,
+        string? cookieCategoryNecessaryDescription = null,
+        string? cookieCategoryAnalyticsDescription = null,
+        string? cookieCategoryMarketingDescription = null) =>
         new(
             Guid.NewGuid(), languageCode, (siteName ?? string.Empty).Trim(), (tagline ?? string.Empty).Trim(),
             (defaultMetaTitle ?? string.Empty).Trim(), (defaultMetaDescription ?? string.Empty).Trim(),
-            (footerText ?? string.Empty).Trim(), (maintenanceMessage ?? string.Empty).Trim());
+            (footerText ?? string.Empty).Trim(), (maintenanceMessage ?? string.Empty).Trim(),
+            (cookieBannerTitle ?? string.Empty).Trim(), (cookieBannerText ?? string.Empty).Trim(),
+            (cookieCategoryNecessaryDescription ?? string.Empty).Trim(), (cookieCategoryAnalyticsDescription ?? string.Empty).Trim(),
+            (cookieCategoryMarketingDescription ?? string.Empty).Trim());
 
     internal void UpdateIdentityFields(string? siteName, string? tagline, string? defaultMetaTitle, string? defaultMetaDescription, string? footerText)
     {
@@ -79,5 +113,19 @@ public sealed class SiteSettingsTranslation : Entity
     internal void UpdateMaintenanceMessage(string? maintenanceMessage)
     {
         MaintenanceMessage = (maintenanceMessage ?? string.Empty).Trim();
+    }
+
+    internal void UpdateCookieConsentFields(
+        string? cookieBannerTitle,
+        string? cookieBannerText,
+        string? cookieCategoryNecessaryDescription,
+        string? cookieCategoryAnalyticsDescription,
+        string? cookieCategoryMarketingDescription)
+    {
+        CookieBannerTitle = (cookieBannerTitle ?? string.Empty).Trim();
+        CookieBannerText = (cookieBannerText ?? string.Empty).Trim();
+        CookieCategoryNecessaryDescription = (cookieCategoryNecessaryDescription ?? string.Empty).Trim();
+        CookieCategoryAnalyticsDescription = (cookieCategoryAnalyticsDescription ?? string.Empty).Trim();
+        CookieCategoryMarketingDescription = (cookieCategoryMarketingDescription ?? string.Empty).Trim();
     }
 }

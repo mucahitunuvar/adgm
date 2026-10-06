@@ -27,4 +27,6 @@ public sealed record PublicSiteResponse(
     string MaintenanceMessage,
     string TurnstileSiteKey,
     PublicMenusResponse Menus,
-    IReadOnlyList<PublicPopupResponse> Popups);
+    IReadOnlyList<PublicPopupResponse> Popups,
+    PublicSiteCookieConsentResponse CookieConsent,
+    IReadOnlyList<PublicSiteScriptResponse> Scripts);

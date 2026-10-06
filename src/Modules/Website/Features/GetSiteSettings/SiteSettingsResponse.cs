@@ -26,5 +26,6 @@ public sealed record SiteSettingsResponse(
     string TurnstileSiteKey,
     string SubmissionReferencePrefix,
     string? NewsletterPrivacyNoticeKey,
+    string? CookiePolicyKey,
     bool MaintenanceModeEnabled,
     DateTime? UpdatedAtUtc);
