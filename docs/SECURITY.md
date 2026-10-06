@@ -480,6 +480,39 @@ kaydı/bülten uçlarını koruyan **Cloudflare Turnstile** (bkz.
   hiçbir veri o servise gönderilmemelidir (Website'de bu,
   `SiteSettings.BotProtectionEnabled` bayrağıyla sağlanır).
 
+## 12.3 Website Başvuruları: Saklama, Arşiv, Anonimleştirme ve Bildirimler
+
+Website modülünün form başvuruları (`FormSubmission`, ADR-024 §12.2) ve bülten aboneleri
+(`NewsletterSubscriber`, ADR-024 §14) kişisel veri taşır; saklama süreleri ve bildirim akışı
+KVKK'nın data minimization ve purpose limitation ilkelerini uygulayacak şekilde tasarlanmıştır:
+
+* **İki aşamalı saklama (başvurular):** `Completed`/`Rejected` durumuna geçişten **30 gün** sonra
+  başvuru otomatik arşivlenir (içerik korunur, yalnızca ana listeden gizlenir) - bu, aktif yönetim
+  ekranlarında gereksiz kişisel veri birikmesini önler. Form bazında tanımlı saklama süresi
+  (`FormDefinition.RetentionDays`, **varsayılan 730 gün**, saklama süresi durumdan bağımsız işler)
+  dolduğunda yanıtlar, iç not metinleri ve başvuran kimliği kalıcı olarak anonimleştirilir; yalnızca
+  referans numarası, form, dil, tarih ve durum (istatistik için) kalır. Dosyalar, veritabanı
+  transaction'ı commit edildikten **sonra** depolamadan silinir.
+* **Varsayılan saklama süresi (730 gün) teyit edilmelidir:** Bu değer ürün/mühendislik kararıdır;
+  prod'a çıkmadan önce **hukuk danışmanınca** KVKK madde 7/Kanun'un ilgili saklama süresi
+  gerekçeleriyle teyit edilmelidir. Form bazında farklı bir süre gerekiyorsa (ör. üyelik başvurusu
+  vs. iletişim formu), `RetentionDays` form bazında ayarlanabilir.
+* **Bülten saklama:** `PendingConfirmation` durumunda 7 gün içinde onaylanmayan ve `Unsubscribed`
+  durumunda 30 gün'ü geçen abonelik kayıtları kalıcı olarak silinir - onay bekleyen veya aboneliği
+  sona eren bir e-posta adresinin süresiz saklanmasını önler.
+* **Kişisel veri erişim kaydı:** Bu veriye yapılan her görüntüleme, dosya indirme ve dışa aktarım
+  işlemi auditlenir - bkz. §22.1.
+* **Bildirim e-postaları kişisel veri/başvuru içeriği taşımaz:** Başvuranın onay e-postası dışında
+  (bkz. ADR-024 §12.2), formun yetkililerine gönderilen bildirim e-postası yalnızca form adı,
+  referans numarası ve admin paneline bağlantı içerir - başvurunun yanıtları veya başvuranın
+  kişisel bilgileri **e-posta gövdesine hiçbir koşulda yazılmaz**. Böylece e-posta sunucusu/gelen
+  kutusu, başvuru verisi için ayrı bir sızıntı yüzeyi haline gelmez.
+* **Anonim çerez onay kaydı (`CookieConsentRecord`, ADR-024 §13):** IP adresi, User-Agent ve
+  kullanıcı kimliği hiçbir koşulda saklanmaz; yalnızca istemcinin ürettiği rastgele `ConsentId`,
+  onaylanan kategoriler, politika sürümü ve eylem (`AcceptAll`/`RejectAll`/`Custom`) tutulur. Kayıt,
+  kimliklendirilebilir bir ziyaretçi profiliyle eşleştirilemeyecek şekilde tasarlanmıştır ve 3 yıl
+  sonra günlük bir job ile silinir.
+
 ---
 
 # 13. Sensitive Data
@@ -612,6 +645,17 @@ Website modülünün `IHtmlContentSanitizer` portu ve `HtmlSanitizerContentSanit
   edilemez (o zaman `script`/`style` içeriği de açılır ve sayfada görünmez ama devre dışı düz metin
   olarak kalır); bunun yerine yalnızca zararsız sarmalayıcı etiketler için seçici bir unwrap uygulanır.
 
+## 16.2 CSV Enjeksiyonu
+
+Kullanıcı/ziyaretçi girdisinden türeyen veri (ör. bülten abonesinin e-postası) CSV olarak dışa
+aktarılırken, Excel/Google Sheets gibi tabloma uygulamalarının bir hücreyi formül olarak
+yorumlamasını (CSV/Formula Injection) önlemek için `=`, `+`, `-`, `@` karakterleriyle **başlayan**
+her hücre, başına tek bir tırnak (`'`) eklenerek kaçışlanır (bkz. `NewsletterSubscriberCsvFormatter`,
+ADR-024 §14). Bu kaçışlama, CSV'nin kendi alan ayracı/tırnaklama kurallarına (virgül veya tırnak
+içeren değerlerin RFC 4180 çift tırnaklaması) **ek olarak** uygulanır, onun yerine geçmez. Dosya
+UTF-8 BOM ile başlar (Excel'in Türkçe karakterleri doğru göstermesi için) - bu BOM, kaçışlama
+kuralını etkilemez.
+
 ---
 
 # 17. File Upload Security
@@ -641,6 +685,18 @@ Kullanıcı tarafından gönderilen filename doğrudan filesystem path olarak ku
 ```
 
 gibi path traversal girişimleri engellenmelidir.
+
+## 17.1 Website Form Ekleri
+
+Public form gönderimindeki (`POST /api/v1/public/forms/{key}/submissions`, ADR-024 §12.2) dosya
+alanları yukarıdaki tüm kontrollere (uzantı, MIME, **dosya imzası** - `FileSignatureValidator`,
+boyut) tabidir; alan başına tek dosya, en fazla 10 MB, form tanımında admin tarafından seçilmiş bir
+alt kümeyle (`Pdf`/`Docx`/`Jpg`/`Png`) sınırlıdır. Dosyalar, Website'in **public** medya kökünden
+tamamen ayrı, özel bir kategoriye (`FileCategory.WebsiteFormAttachment`, §18'deki private kategori
+listesine dahildir) yazılır - hiçbir HTTP yolu bu dosyalara anonim erişim vermez, yalnızca
+`Website.Submissions.View` yetkisiyle akış (stream) olarak indirilebilir. Dosyalar veritabanı
+kaydından **önce** diske yazılır; başvuru kaydı başarısız olursa az önce yazılan dosyalar hemen
+silinir (yarım kalmış, veritabanında karşılığı olmayan dosya biriktirilmez).
 
 ---
 
@@ -774,6 +830,23 @@ Result
 bilgilerini içermelidir.
 
 Audit kayıtları normal application loglarından ayrı düşünülmelidir.
+
+## 22.1 Website Kişisel Veri Erişim Kaydı (`PersonalDataAccessLog`)
+
+Identity'deki merkezi audit log diğer modüllerce kullanılamadığı için (bkz. AGENTS.md §9 - modüller
+arası doğrudan veritabanı/tablo erişimi yasak), Website modülü kişisel veri içeren kayıtlara erişimi
+kendi `PersonalDataAccessLog` tablosunda tutar (ADR-024 §12.2): `UserId`, `AccessedAtUtc`,
+`EntityType` (`FormSubmission`, `NewsletterSubscriber`), `EntityId` (dışa aktarmada `null`), `Action`
+(`View`, `DownloadFile`, `Export`), opsiyonel `Detail`.
+
+* Kişisel veri içeren **her okuma ucu** (başvuru detayı, dosya indirme, abone listesi, CSV dışa
+  aktarım) bu kaydı yazar; kişisel veri **içermeyen** liste uçları (ör. başvuru özet listesi -
+  referans numarası, form, durum, tarih; kişisel veri yok) erişim kaydı yazmaz.
+* Yazma işlemi, sorgunun kendisi değil **ayrı bir komuttur** - AGENTS.md §13 ("bir sorgu yazmaz")
+  gereği, okuma isteğini işleyen handler sonucu döndürdükten sonra bu komutu ayrıca gönderir.
+* Kayıt yönetim ucu (`GET /api/v1/admin/website/personal-data-access-log`) `Website.Settings.Manage`
+  policy'siyle sınırlıdır - erişim kaydının kendisi de hassas bir veridir (kimin hangi kişisel veriye
+  ne zaman eriştiğini gösterir).
 
 ---
 
