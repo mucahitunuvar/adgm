@@ -48,4 +48,13 @@ public static class WebsiteCacheKeys
         $"{PublicContentPrefix}legal-document-version:{key}:{versionNumber}:{languageCode}";
 
     public static string PublicForm(string key, string languageCode) => $"{PublicContentPrefix}form:{key}:{languageCode}";
+
+    // ADR-024 §17 (Faz 4 Görev 2): GetPublicEvents' cached candidate page - under the same
+    // PublicContentPrefix, so every EventSchedule-mutating handler's existing InvalidateAllPublic call
+    // (Görev 1) already clears this too. contentTypeKeyOrWildcard is "*" when no typeKey filter was
+    // given (every active SupportsEvent type).
+    public static string PublicEventList(
+        string contentTypeKeyOrWildcard, string languageCode, string? format, string window, string? from, string? to, int page,
+        int pageSize) =>
+        $"{PublicContentPrefix}events:{contentTypeKeyOrWildcard}:{languageCode}:{format}:{window}:{from}:{to}:{page}:{pageSize}";
 }

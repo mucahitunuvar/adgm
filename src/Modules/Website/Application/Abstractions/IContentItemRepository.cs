@@ -105,7 +105,8 @@ public interface IContentItemRepository
     // excluded exactly like the detail endpoint and related-content resolution already do), translated
     // in languageCode; categoryIds (already expanded to include a selected parent category's children)
     // and tagId narrow further when given. Sort mirrors ContentType.SortMode: Manual -> SortOrder then
-    // Title; PublishDateDesc/EventDateAsc (until Faz 4) -> effective publish date descending.
+    // Title; PublishDateDesc -> effective publish date descending; EventDateAsc (Faz 4 Görev 2) ->
+    // linked EventSchedule.StartsAtUtc ascending, items with no schedule yet last.
     Task<PagedResult<PublicContentListItemCandidate>> SearchPublicListAsync(
         Guid contentTypeId,
         LanguageCode languageCode,

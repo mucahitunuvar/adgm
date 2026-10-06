@@ -1,5 +1,6 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
+using GenclikMerkezi.SharedKernel.Results;
 
 namespace GenclikMerkezi.UnitTests.Website.TestDoubles;
 
@@ -20,7 +21,35 @@ public sealed class FakeEventScheduleRepository : IEventScheduleRepository
     public Task<bool> ExistsForContentTypeIdAsync(Guid contentTypeId, CancellationToken cancellationToken = default) =>
         Task.FromResult(ExistsForContentTypeResult);
 
+    // SearchPublicAsync's real implementation joins through ContentItem/ContentType (title, path,
+    // cover image, type flags), which this fake has no access to - GetPublicEventsQueryHandler is
+    // covered by integration tests against the real repository instead.
+    public Task<PagedResult<PublicEventListItemCandidate>> SearchPublicAsync(
+        Guid? contentTypeId, EventFormat? format, DateTime? from, DateTime? to, EventTimeWindow window, DateTime now,
+        LanguageCode languageCode, PagedRequest pagedRequest, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Not modeled by this fake - covered by integration tests against the real repository.");
+
+    public Task<EventRegistrationStateInputs?> GetRegistrationStateInputsByContentItemIdAsync(
+        Guid contentItemId, CancellationToken cancellationToken = default)
+    {
+        var eventSchedule = _eventSchedules.FirstOrDefault(es => es.ContentItemId == contentItemId);
+        return Task.FromResult(eventSchedule is null ? null : ToInputs(eventSchedule));
+    }
+
+    public Task<IReadOnlyDictionary<Guid, EventRegistrationStateInputs>> GetRegistrationStateInputsByContentItemIdsAsync(
+        IReadOnlyList<Guid> contentItemIds, CancellationToken cancellationToken = default)
+    {
+        IReadOnlyDictionary<Guid, EventRegistrationStateInputs> result = _eventSchedules
+            .Where(es => contentItemIds.Contains(es.ContentItemId))
+            .ToDictionary(es => es.ContentItemId, ToInputs);
+        return Task.FromResult(result);
+    }
+
     public void Add(EventSchedule eventSchedule) => _eventSchedules.Add(eventSchedule);
 
     public void Remove(EventSchedule eventSchedule) => _eventSchedules.Remove(eventSchedule);
+
+    private static EventRegistrationStateInputs ToInputs(EventSchedule es) =>
+        new(es.IsCancelled, es.RegistrationEnabled, es.RegistrationOpensAtUtc, es.RegistrationClosesAtUtc, es.StartsAtUtc, es.Capacity,
+            es.ConfirmedCount, es.WaitlistEnabled);
 }

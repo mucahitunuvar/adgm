@@ -307,11 +307,24 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
             effectivePublishDateQuery = effectivePublishDateQuery.Where(x => x.EffectivePublishDate <= to.Value);
         }
 
-        effectivePublishDateQuery = sortMode == ContentTypeSortMode.Manual
-            ? effectivePublishDateQuery.OrderBy(x => x.SortOrder).ThenBy(x => x.Title)
-            : effectivePublishDateQuery.OrderByDescending(x => x.EffectivePublishDate);
+        // Faz 4 Görev 2: EventDateAsc is a real sort now, not PublishDateDesc's stand-in - a left join
+        // to EventSchedule (GroupJoin + SelectMany + DefaultIfEmpty, EF Core's standard LEFT JOIN
+        // shape) so an item with no schedule yet still appears, just sorted after every item that has
+        // one (StartsAtUtc == null sorts first under OrderBy(... == null), so it is used as the primary
+        // key to push nulls to the end rather than throwing them in among real dates).
+        var orderedQuery = sortMode switch
+        {
+            ContentTypeSortMode.Manual => effectivePublishDateQuery.OrderBy(x => x.SortOrder).ThenBy(x => x.Title),
+            ContentTypeSortMode.EventDateAsc => effectivePublishDateQuery
+                .GroupJoin(dbContext.EventSchedules, x => x.Id, es => es.ContentItemId, (x, es) => new { x, es })
+                .SelectMany(g => g.es.DefaultIfEmpty(), (g, es) => new { g.x, StartsAtUtc = es == null ? (DateTime?)null : es.StartsAtUtc })
+                .OrderBy(g => g.StartsAtUtc == null)
+                .ThenBy(g => g.StartsAtUtc)
+                .Select(g => g.x),
+            _ => effectivePublishDateQuery.OrderByDescending(x => x.EffectivePublishDate),
+        };
 
-        var paged = await effectivePublishDateQuery.ToPagedResultAsync(pagedRequest, cancellationToken);
+        var paged = await orderedQuery.ToPagedResultAsync(pagedRequest, cancellationToken);
 
         var items = paged.Items
             .Select(x => new PublicContentListItemCandidate(

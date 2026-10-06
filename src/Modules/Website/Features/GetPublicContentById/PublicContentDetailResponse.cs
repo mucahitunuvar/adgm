@@ -26,4 +26,5 @@ public sealed record PublicContentDetailResponse(
     IReadOnlyList<PublicContentDetailAlternateResponse> Alternates,
     PublicContentDetailSeoResponse Seo,
     IReadOnlyList<PublicLayoutBlockResponse>? Blocks,
-    PublicFormDefinitionResponse? Form);
+    PublicFormDefinitionResponse? Form,
+    PublicContentDetailEventResponse? Event);

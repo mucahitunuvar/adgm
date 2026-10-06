@@ -31,6 +31,7 @@ public sealed class GetPublicContentByIdQueryHandler(
     ISliderRepository sliderRepository,
     IFormDefinitionRepository formDefinitionRepository,
     PublicFormDefinitionResolver publicFormDefinitionResolver,
+    IEventScheduleRepository eventScheduleRepository,
     ICacheService cacheService,
     TimeProvider timeProvider)
     : IRequestHandler<GetPublicContentByIdQuery, Result<PublicContentDetailResponse>>
@@ -98,7 +99,32 @@ public sealed class GetPublicContentByIdQueryHandler(
             ttl,
             cancellationToken);
 
+        if (response.Event is not null)
+        {
+            response = response with { Event = await ResolveLiveEventFieldsAsync(response.Event, contentItem.Id, now, cancellationToken) };
+        }
+
         return Result.Success(response);
+    }
+
+    // ADR-024 §17 (Faz 4 Görev 2): §1 "kontenjan/durum alanları cache'lenmez" - RegistrationState and
+    // RemainingSpots are never read from the cached response above; they are recomputed here, every
+    // request, from an uncached lightweight projection (GetRegistrationStateInputsByContentItemIdAsync).
+    private async Task<PublicContentDetailEventResponse> ResolveLiveEventFieldsAsync(
+        PublicContentDetailEventResponse cachedEvent, Guid contentItemId, DateTime now, CancellationToken cancellationToken)
+    {
+        var inputs = await eventScheduleRepository.GetRegistrationStateInputsByContentItemIdAsync(contentItemId, cancellationToken);
+        if (inputs is null)
+        {
+            return cachedEvent;
+        }
+
+        var state = EventRegistrationStateResolver.Resolve(
+            inputs.IsCancelled, inputs.RegistrationEnabled, inputs.RegistrationOpensAtUtc, inputs.RegistrationClosesAtUtc, inputs.StartsAtUtc,
+            inputs.Capacity, inputs.ConfirmedCount, inputs.WaitlistEnabled, now);
+        var remainingSpots = inputs.Capacity is { } capacity ? Math.Max(0, capacity - inputs.ConfirmedCount) : (int?)null;
+
+        return cachedEvent with { RegistrationState = state.ToString(), RemainingSpots = remainingSpots };
     }
 
     private async Task<PublicContentDetailResponse> BuildResponseAsync(
@@ -150,6 +176,25 @@ public sealed class GetPublicContentByIdQueryHandler(
             }
         }
 
+        // ADR-024 §11/§17 (Faz 4 Görev 2): RegistrationState/RemainingSpots are placeholders here -
+        // this whole response is about to be cached, and those two fields are overwritten by the outer
+        // Handle method on every request (cache hit or miss), never served from the cache itself.
+        PublicContentDetailEventResponse? eventResponse = null;
+        if (contentType.SupportsEvent)
+        {
+            var eventSchedule = await eventScheduleRepository.GetByContentItemIdAsync(contentItem.Id, cancellationToken);
+            if (eventSchedule is not null)
+            {
+                var scheduleTranslation = eventSchedule.Translations.FirstOrDefault(t => t.LanguageCode == languageCode);
+                eventResponse = new PublicContentDetailEventResponse(
+                    eventSchedule.StartsAtUtc, eventSchedule.EndsAtUtc, eventSchedule.Format.ToString(), scheduleTranslation?.VenueName ?? string.Empty,
+                    eventSchedule.IsCancelled, string.Empty, null, scheduleTranslation?.VenueAddress ?? string.Empty,
+                    scheduleTranslation?.FeeInfo ?? string.Empty, scheduleTranslation?.Instructors ?? string.Empty,
+                    scheduleTranslation?.ProgramFlow ?? string.Empty, scheduleTranslation?.AccessibilityNote ?? string.Empty, eventSchedule.MinAge,
+                    eventSchedule.MaxAge, eventSchedule.RegistrationOpensAtUtc, eventSchedule.RegistrationClosesAtUtc);
+            }
+        }
+
         var breadcrumb = BuildBreadcrumb(contentItem, contentType, translation, ancestorChain, resolvedLanguage, defaultLanguage);
         var alternates = BuildAlternates(contentItem, ancestorChain, resolvedLanguage.Code.Value, defaultLanguage.Code.Value, activeLanguages);
 
@@ -166,7 +211,7 @@ public sealed class GetPublicContentByIdQueryHandler(
         return new PublicContentDetailResponse(
             contentItem.Id, contentType.Key.Value, contentType.DetailTemplate, translation.Title, translation.Summary, translation.Body, path,
             contentItem.PublishAtUtc ?? contentItem.PublishedAtUtc ?? now, contentItem.UpdatedAtUtc, coverImage, detailImage, gallery, videos,
-            attachments, categories, tags, children, related, breadcrumb, alternates, seo, blocks, form);
+            attachments, categories, tags, children, related, breadcrumb, alternates, seo, blocks, form, eventResponse);
     }
 
     private async Task<IReadOnlyList<ContentItem>> GetAncestorChainAsync(ContentItem item, CancellationToken cancellationToken)

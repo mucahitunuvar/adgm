@@ -87,6 +87,8 @@ using GenclikMerkezi.Modules.Website.Features.GetContentTrash;
 using GenclikMerkezi.Modules.Website.Features.GetPersonalDataAccessLog;
 using GenclikMerkezi.Modules.Website.Features.GetPublicContentById;
 using GenclikMerkezi.Modules.Website.Features.GetPublicContents;
+using GenclikMerkezi.Modules.Website.Features.GetPublicEventCalendar;
+using GenclikMerkezi.Modules.Website.Features.GetPublicEvents;
 using GenclikMerkezi.Modules.Website.Features.GetPublicForm;
 using GenclikMerkezi.Modules.Website.Features.GetPublicHome;
 using GenclikMerkezi.Modules.Website.Features.GetPublicLegalDocument;
@@ -263,6 +265,10 @@ public static class WebsiteModuleEndpointExtensions
         CancelEventScheduleEndpoint.Map(app);
         ReactivateEventScheduleEndpoint.Map(app);
         DeleteEventScheduleEndpoint.Map(app);
+
+        // ADR-024 §17/§11 (Faz 4 Görev 2): the public events feed and its per-event .ics export.
+        GetPublicEventsEndpoint.Map(app);
+        GetPublicEventCalendarEndpoint.Map(app);
 
         CreateRedirectEndpoint.Map(app);
         UpdateRedirectEndpoint.Map(app);
