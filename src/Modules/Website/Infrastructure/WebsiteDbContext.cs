@@ -53,6 +53,8 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
     public DbSet<ThirdPartyScript> ThirdPartyScripts => Set<ThirdPartyScript>();
     public DbSet<CookieConsentRecord> CookieConsentRecords => Set<CookieConsentRecord>();
     public DbSet<EventRegistration> EventRegistrations => Set<EventRegistration>();
+    public DbSet<SearchDocument> SearchDocuments => Set<SearchDocument>();
+    public DbSet<SearchSourceState> SearchSourceStates => Set<SearchSourceState>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

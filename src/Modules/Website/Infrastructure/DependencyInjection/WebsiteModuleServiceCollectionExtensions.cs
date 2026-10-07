@@ -84,6 +84,9 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<INewsletterSubscriberRepository, NewsletterSubscriberRepository>();
         services.AddScoped<IThirdPartyScriptRepository, ThirdPartyScriptRepository>();
         services.AddScoped<ICookieConsentRecordRepository, CookieConsentRecordRepository>();
+        // ADR-024 §10 (Faz 5 Görev 1): the search read-model repository - no IExternalSearchSource is
+        // registered yet (Görev 4 is where the Host project adds its first one).
+        services.AddScoped<ISearchDocumentRepository, SearchDocumentRepository>();
         services.AddScoped<PublicFormDefinitionResolver>();
         services.AddScoped<LinkTargetResolver>();
         services.AddScoped<SliderPublicQueryService>();
