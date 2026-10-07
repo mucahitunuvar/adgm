@@ -513,6 +513,39 @@ KVKK'nın data minimization ve purpose limitation ilkelerini uygulayacak şekild
   kimliklendirilebilir bir ziyaretçi profiliyle eşleştirilemeyecek şekilde tasarlanmıştır ve 3 yıl
   sonra günlük bir job ile silinir.
 
+## 12.4 Website Etkinlik Kayıtları (`EventRegistration`)
+
+Etkinlik kayıtları (`EventRegistration`, ADR-024 §11.2) kişisel veri taşır; saklama ve erişim
+kuralları §12.3'teki başvuru/bülten ilkeleriyle aynı yaklaşımı izler:
+
+* **Kişisel veri erişim kaydı:** `PersonalDataAccessLog.EntityType` değerine `EventRegistration`
+  eklenmiştir. Kayıt içeren her okuma ucu (admin liste, detay, katılımcı CSV dışa aktarımı)
+  erişimi `View`/`Export` olarak auditler; kişisel veri içermeyen sayaç/özet uçları (ör.
+  `remainingSpots`, kontenjan özeti) erişim kaydı yazmaz.
+* **Saklama/anonimleştirme süresi (365 gün, teyit edilmelidir):** Etkinlik bitiminden **365 gün**
+  sonra günlük bir job kayıttaki `FirstName`, `LastName`, `Email`, `Phone`, `UserId` alanlarını
+  temizler (`AnonymizedAtUtc`); durum, tarihler ve durum geçmişi istatistik amacıyla kalır. Bu
+  süre ürün/mühendislik kararıdır; §12.3'teki 730 günlük başvuru saklama süresi gibi, prod'a
+  çıkmadan önce **hukuk danışmanınca** KVKK madde 7 kapsamında teyit edilmelidir. Anonimleştirilmiş
+  bir kayıt üzerinde durum değişikliği yapılamaz; iptal ve doğrulama token'ları bu noktadan sonra
+  işlevsizdir (satır silinmez, yalnızca etkisizleşir).
+* **Doğrulanmamış kayıt temizliği:** Anonim kayıt, e-postası 24 saat içinde doğrulanmazsa saatlik
+  bir job ile kalıcı olarak silinir (bu kayıtlar hiçbir kontenjan sayacında yer tutmadığından
+  silme sayaçlara dokunmaz).
+* **Online link yalnızca onay e-postasında gider:** `EventSchedule.OnlineLink`, `Confirmed`
+  durumuna geçen (`Online`/`Hybrid` formatlı) bir kayda gönderilen onay e-postası dışında **hiçbir
+  yerde** bulunmaz - ne public API yanıtlarında (liste, detay, `.ics`), ne diğer bildirim
+  e-postalarında (başvuru, yedek listesi, iptal bildirimi).
+* **Katılımcı listesi hiçbir koşulda public olmaz:** Public uçlar (`GET /api/v1/public/events`,
+  içerik detayı, `.ics`) yalnızca hesaplanmış `registrationState` ve `remainingSpots` döner;
+  `EventRegistration`'a ait hiçbir alan (ad, e-posta, telefon) public yanıtta yer almaz. Katılımcı
+  CSV dışa aktarımı (`Website.Submissions.View`) yalnızca admin ucundadır.
+* **CSV enjeksiyonu kaçışı:** Katılımcı dışa aktarımı, bülten dışa aktarımıyla aynı desende
+  (UTF-8 BOM + `=`/`+`/`-`/`@` ile başlayan hücrelerin tek tırnakla kaçışlanması) üretilir.
+* **`UserId` yalnızca token'dan alınır:** Kayıt uç noktası, istemcinin gönderdiği herhangi bir
+  kimliğe güvenmez (AGENTS §26); giriş yapmış kullanıcının kimliği `ICurrentUserContext`'ten
+  okunur, istek gövdesinde `UserId` alanı yoktur.
+
 ---
 
 # 13. Sensitive Data
@@ -836,8 +869,8 @@ Audit kayıtları normal application loglarından ayrı düşünülmelidir.
 Identity'deki merkezi audit log diğer modüllerce kullanılamadığı için (bkz. AGENTS.md §9 - modüller
 arası doğrudan veritabanı/tablo erişimi yasak), Website modülü kişisel veri içeren kayıtlara erişimi
 kendi `PersonalDataAccessLog` tablosunda tutar (ADR-024 §12.2): `UserId`, `AccessedAtUtc`,
-`EntityType` (`FormSubmission`, `NewsletterSubscriber`), `EntityId` (dışa aktarmada `null`), `Action`
-(`View`, `DownloadFile`, `Export`), opsiyonel `Detail`.
+`EntityType` (`FormSubmission`, `NewsletterSubscriber`, `EventRegistration` - Faz 4 Görev 4),
+`EntityId` (dışa aktarmada `null`), `Action` (`View`, `DownloadFile`, `Export`), opsiyonel `Detail`.
 
 * Kişisel veri içeren **her okuma ucu** (başvuru detayı, dosya indirme, abone listesi, CSV dışa
   aktarım) bu kaydı yazar; kişisel veri **içermeyen** liste uçları (ör. başvuru özet listesi -

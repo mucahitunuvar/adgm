@@ -85,7 +85,7 @@ Yalnızca `Website.Structure.Manage` yetkisiyle yönetilir.
 
 `RequiresReview` tasarımda yer alır ama bu projede tüm türler için kapalı başlar (bkz. §4.4).
 
-`SortMode: EventDateAsc` yalnızca `SupportsEvent` açık bir türde seçilebilir; etkinlik takvimi Faz 4'te gelene kadar liste sorguları bunu `PublishDateDesc` ile aynı şekilde uygular (şimdilik farklı davranamayan, saklanmış bir seçim - hata değil).
+`SortMode: EventDateAsc` yalnızca `SupportsEvent` açık bir türde seçilebilir. Faz 4'ten itibaren gerçek bir sıralamadır: liste sorgusu bağlı `EventSchedule.StartsAtUtc`'ye göre artan sıralar (içerik ile takvim arasında sol join; takvimi olmayan içerik listenin sonuna düşer, bkz. §11.2).
 
 Boş `RoutePrefix`'li bir tür (`page` gibi kök seviye türler) `HasListingPage` olamaz - liste sayfasının bir URL'si olmaz. `RoutePrefix` (ve kök seviye bir `ContentItem`'ın ilk yol segmenti) statik altyapı yollarıyla ve hiçbir `SiteLanguage` koduyla (aktif/pasif fark etmez) çakışamaz; ayrılmış segmentler: `api`, `admin`, `portal`, `webuploads`, `uploads`, `media`, `assets`, `static`, `sitemap.xml`, `robots.txt`.
 
@@ -276,17 +276,17 @@ Etkinliğin *içeriği* ayrı bir aggregate değildir; `SupportsEvent` açık t�
 
 `EventSchedule`'ın owned entity değil ayrı aggregate olmasının nedeni concurrency'dir: kayıt işlemleri kontenjan sayaçlarını sık günceller. Sayaçlar ContentItem ile aynı satırda/rowversion'da olsaydı, her kayıt editörün açık düzenlemesini çakışmaya düşürürdü (ve tersi). İki aggregate aynı modülün DbContext'inde olduğu için, etkinlik oluşturma/düzenleme komutu ikisini tek Unit of Work'te kaydeder. DOMAIN.md'deki `Website.Training`, Eğitim türündeki ContentItem'dır; CareerDevelopment yalnızca `ContentItemId` referansı tutar.
 
-`EventSchedule`: başlangıç/bitiş, format (yüz yüze/online/hibrit), yer ve/veya online link, kontenjan, başvuru açılış/kapanış zamanı, yaş aralığı, ücret bilgisi (metin), eğitmenler, program akışı, erişilebilirlik notu, `IsCancelled` ve iptal açıklaması, `RegistrationEnabled`, `WaitlistEnabled`. Online link yalnızca onaylı katılımcılara e-postayla gönderilir, public yanıtta yer almaz.
+`EventSchedule`: başlangıç/bitiş, format (`InPerson`/`Online`/`Hybrid`; `Online`/`Hybrid` için mutlak `https` online link zorunlu), kontenjan (null = sınırsız, aksi halde ≥ 1), başvuru açılış/kapanış zamanı (kapanış ≤ başlangıç), yaş aralığı (**yalnızca bilgi amaçlı** - doğum tarihi toplanmaz, kayıtta yaş denetimi yapılmaz), ücret bilgisi (metin), eğitmenler, program akışı (sanitize edilmiş zengin metin), erişilebilirlik notu, `IsCancelled` ve iptal açıklaması, `RegistrationEnabled`, `WaitlistEnabled`, **`AutoConfirm`** (etkinlik başına seçilir: açıksa kontenjan varsa doğrulanmış kayıt otomatik `Confirmed` olur, kapalıysa `Applied` kalır ve admin onaylar), `ConfirmedCount`/`WaitlistedCount` sayaçları. Online link yalnızca onaylı katılımcılara e-postayla gönderilir, hiçbir public yanıtta yer almaz. Başlangıç zamanı geçmiş bir etkinliğin takvim/kapasite/kayıt alanları değiştirilemez (`Event.CannotModifyScheduleAfterStart`); yalnızca metinler ve iptal güncellenebilir. Kapasite, mevcut `ConfirmedCount`'un altına düşürülemez (`Event.CapacityBelowConfirmed`).
 
 #### 11.2. Kayıt
 
 `EventRegistration` aggregate'i.
 
 - **Herkes kayıt olabilir.** Giriş yapmış kullanıcıda formu frontend doldurur; backend `UserId`'yi **yalnızca token'dan** alır, istemcinin gönderdiği kimliğe güvenmez (AGENTS §26). Her durumda ad, e-posta, telefon kayıt anındaki haliyle saklanır.
-- **Anonim kayıtta e-posta doğrulaması zorunludur.** Doğrulanmamış kayıt kontenjandan yer tutmaz ve 24 saat sonra Hangfire job'ı ile silinir. Giriş yapmış ve e-postası doğrulanmış kullanıcı için bu adım atlanır.
-- Doğrulama linkiyle birlikte **iptal linki** de gönderilir (imzalı token).
-- Aynı etkinliğe aynı e-postayla ikinci aktif kayıt engellenir.
-- Onaylanan aydınlatma metni sürümü kaydedilir (§12).
+- **Anonim kayıtta e-posta doğrulaması zorunludur.** Doğrulanmamış kayıt (`PendingVerification`) kontenjandan yer tutmaz; 24 saat içinde doğrulanmazsa saatlik bir Hangfire job'ı ile silinir (en fazla 500/çalışma; sayaçlara dokunmaz, çünkü bu kayıtlar hiçbir sayaçta yer tutmuyordu - "kayıt `Rejected` olmaz, silinme job'ına bırakılır"). Giriş yapmış ve e-postası doğrulanmış kullanıcı için bu adım atlanır, kontenjan kararı aynı istekte verilir.
+- Doğrulama linkiyle birlikte **iptal linki** de gönderilir (rastgele, süresiz, DB'de doğrulanan token - bülten çıkış tokenıyla aynı desen). İptal **idempotent**tir: zaten iptal edilmiş bir kayıt için aynı link tekrar açılırsa durum değişmeden `200` döner; başlamış etkinlikte iptal `409` döner.
+- Aynı etkinliğe aynı e-postayla ikinci aktif (`PendingVerification`/`Applied`/`Confirmed`/`Waitlisted`) kayıt engellenir. Anonim çağıran için yanıt **tekdüzedir** (kayıt sızdırmaz): mevcut kayıt `PendingVerification` ise doğrulama e-postası yeniden gönderilir (kayıt başına 10 dakikada en fazla 1 gönderim), diğer aktif durumlarda "zaten kayıtlısınız" bildirimi + iptal linki gönderilir. Giriş yapmış kullanıcı için yanıt doğrudan `409` (`Event.AlreadyRegistered`) - kimliği zaten doğrulanmış olduğundan sızdırma riski yoktur.
+- Onaylanan aydınlatma metni sürümü kaydedilir (§12); yürürlükteki sürüm değişmişse `409` (`PublicSubmission.LegalVersionChanged`).
 
 Durumlar:
 
@@ -298,12 +298,19 @@ PendingVerification ──► Applied ──► Confirmed ──► Attended / N
 Her aktif durumdan ──► Cancelled
 ```
 
-- **Kontenjan eşzamanlılığı:** `EventSchedule` aggregate'inde onaylı/yedek sayaçları ve **optimistic concurrency (rowversion)** kullanılır; kayıt komutu `EventRegistration`'ı oluşturup `EventSchedule` sayacını aynı Unit of Work'te günceller. Çakışmada işlem sınırlı sayıda yeniden denenir. Kontenjan doluysa ve `WaitlistEnabled` açıksa kayıt `Waitlisted` olur.
-- Bir yer açıldığında yedekten otomatik terfi yapılmaz; admin onaylar (ileride otomatikleştirilebilir).
-- Etkinlik iptal edildiğinde aktif kayıtlara bildirim gider.
-- Tüm e-postalar commit sonrası `IWebsiteEmailSender` ile best-effort gönderilir (CAP kısıtı). Doğrulama e-postası için **yeniden gönder** endpoint'i vardır.
-- Takvim dosyası (`.ics`) ve katılımcı listesi dışa aktarımı sunulur. Katılımcı listesi hiçbir zaman public olmaz.
-- QR ile giriş, yoklama ekranı, sertifika ve katılım puanı bu ADR kapsamında **yoktur.**
+Kontenjanı yalnızca **kontenjanı tutan durumlar** (`Confirmed`, `Attended`, `NoShow`) doldurur; `Applied` ve `PendingVerification` hiçbir sayaçta yer tutmaz. Kontenjan kararı (doğrulanmış kayıt için) tek bir yerde (`EventSchedule.ReserveCapacity`) verilir: etkinlik iptal/kapalıysa veya kayıt penceresi dışındaysa reddedilir (`Event.Cancelled` / `Event.RegistrationClosed`); kapasite sınırsız veya boşsa `AutoConfirm` açıkken `Confirmed` (+1 `ConfirmedCount`), kapalıyken `Applied` (sayaç değişmez); kapasite doluyken `WaitlistEnabled` açıksa `Waitlisted` (+1 `WaitlistedCount`), kapalıysa `409` (`Event.CapacityFull`).
+
+- **Kontenjan eşzamanlılığı:** `EventSchedule` aggregate'inde onaylı/yedek sayaçları ve **optimistic concurrency (rowversion)** kullanılır; kayıt komutu `EventRegistration`'ı oluşturup `EventSchedule` sayacını aynı Unit of Work'te günceller. Çakışmada işlem **en fazla 3 kez** yeniden denenir, sonra `409`.
+- Bir yer açıldığında yedekten otomatik terfi yapılmaz; admin onaylar (`confirm` ucu, ileride otomatikleştirilebilir). Admin onayı hem `Applied → Confirmed` hem `Waitlisted → Confirmed` (terfi, aynı Unit of Work'te `-1 Waitlisted`/`+1 Confirmed`) için kullanılır; kontenjan doluysa `409` (`Event.CapacityFull`).
+- Etkinlik iptal edildiğinde `Applied`/`Confirmed`/`Waitlisted` kayıtlara bildirim gider (kayıtların kendi durumu değişmez, geçmiş korunur); gönderim commit sonrası best-effort, en fazla 200 alıcı tek seferde işlenir, fazlası Hangfire job'ıyla parçalanır.
+- Tüm e-postalar commit sonrası `IWebsiteEmailSender` ile best-effort gönderilir (CAP kısıtı). Doğrulama e-postası için **yeniden gönder** endpoint'i vardır. Onay e-postasında online link yalnızca `Online`/`Hybrid` etkinlikte yer alır; bildirim e-postaları başvuru dışı kişisel veri taşımaz.
+- **Saklama/anonimleştirme:** etkinlik bitiminden **365 gün** sonra (sabit, `SECURITY.md` §12.4 - hukuk danışmanınca teyit edilmelidir) günlük bir job `FirstName`/`LastName`/`Email`/`Phone`/`UserId` alanlarını temizler (`AnonymizedAtUtc`); durum, tarihler ve durum geçmişi kalır, iptal/doğrulama token'ları işlevsiz hale gelir (kayıt artık değiştirilemez). En fazla 500/çalışma.
+- Takvim dosyası (`.ics`, RFC 5545, tek `VEVENT`, online link ve kişisel veri içermez) ve katılımcı listesi CSV dışa aktarımı (UTF-8 BOM, CSV enjeksiyonu kaçışı; sütunlar `firstName,lastName,email,phone,status,registeredAtUtc,confirmedAtUtc,language`) sunulur. Katılımcı listesi hiçbir zaman public olmaz; public uçlar yalnızca `registrationState` (`NotOpen`/`Open`/`Full`/`WaitlistOpen`/`Closed`/`Cancelled`, tek bir saf fonksiyonda hesaplanır) ve `remainingSpots` döner.
+- QR ile giriş, yoklama ekranı, sertifika ve katılım puanı bu ADR kapsamında **yoktur.** Etkinlik öncesi hatırlatma e-postası ve etkinlik tarihi/yeri değişince kayıtlılara bildirim de **kapsam dışıdır** (ileride ayrı bir karar gerektirir).
+
+#### 11.3. Public etkinlik uçları
+
+`GET /api/v1/public/events` (filtreler: `typeKey`, `when` - `upcoming`/`past`/`all`, `from`/`to`, `format`, `lang`, sayfalama) ve içerik detayına eklenen `event` alanı, `EventSchedule`'ın public kısmını döner; `OnlineLink` ikisinde de **yer almaz**. `GET /api/v1/public/events/{contentItemId}/calendar.ics?lang=` tek bir `.ics` dosyası üretir.
 
 ### 12. Formlar, yasal metinler ve bot koruması
 
@@ -389,7 +396,7 @@ Başka modüllerin backend davranışını değiştiren bayraklar (ör. istihdam
 | **1b — İçerik çekirdeği (devamı)** ✅ | Galeri, video kütüphanesi + içerik video listesi, dosya ekleri, kategoriler, etiketler, ilişkili içerik, önizleme linki, çöp kutusu + kalıcı silme job'ı, kopyalama, public liste/detay endpoint'leri (`GET /api/v1/public/contents`, `GET /api/v1/public/contents/{id}`), breadcrumb, public cache + invalidation. **Kapsam dışı bırakılan (bu fazda uygulanmadı):** form bağlantısı (`FormDefinition`/`FormSubmission` motoru Faz 3'te gelir; `SupportsForm` bayrağı ve içerik-form ilişkisi alanı şimdilik veri modelinde yer tutar ama işlevsel değildir) |
 | **2 — Sunum** ✅ | `LinkTarget` + `LinkTargetResolver` (Menu/Slider/Popup'ın paylaştığı ortak hedef VO'su), konum bazlı `Menu` (`Header`/`Utility`/`Footer`; ayrı mobil menü yok, frontend `Header`'dan üretir), `Slider` + zamanlanmış `Slide`'lar, `Partner`, `ImpactMetric`, kod tabanlı blok tipi kaydı (`BlockTypeFieldDescriber` ile tek kaynaktan `GET .../block-types`) + taslak/yayın `PageLayout` (`Home` ve `SupportsBlockLayout` içerikler), public ana sayfa (`GET /api/v1/public/home`) ve içerik detayına eklenen `blocks` alanı, `Popup`/`Banner` (hedefleme, sıklık, öncelik) |
 | **3 — Etkileşim** ✅ | Anonim gönderim koruması (`public-forms` rate limit, imzalı/süreli gönderim token'ı, honeypot, minimum doldurma süresi, `IBotProtectionVerifier`); sürümlü `LegalDocument` (taslak/yayın, yürürlük tarihi, değiştirilemezlik); tipli alanlı `FormDefinition` (alan tanımı sürümü, yasal metin bağlantıları, içerik–form bağlantısı); dosya ekli, yasal onaylı, referans numaralı `FormSubmission` (eşzamanlı-güvenli sıra üretimi, özel depolama kökü, dosya imzası doğrulaması); başvuru durum makinesi, atama, iç not, iki aşamalı saklama (30 gün sonra arşiv, form bazlı saklama süresi sonunda anonimleştirme) ve kişisel veri erişim kaydı (`PersonalDataAccessLog`); çift onaylı `NewsletterSubscriber` (kayıt sızdırmayan akış, CSV dışa aktarım); ham script kabul etmeyen tipli `ThirdPartyScript` sağlayıcıları ve kimliksiz anonim `CookieConsentRecord` |
-| **4 — Etkinlik** | EventSchedule, EventRegistration (doğrulama, kontenjan, yedek, iptal), `.ics`, katılımcı dışa aktarımı |
+| **4 — Etkinlik** ✅ | Etkinlik başına seçilebilen `AutoConfirm`/`WaitlistEnabled` ile `EventSchedule` (kontenjan, kayıt penceresi, geçmiş etkinlikte kısıtlı güncelleme); gerçek `EventDateAsc` sıralaması, public etkinlik listesi/detayı ve hesaplanan `registrationState`/`remainingSpots`, public `.ics`; doğrulamalı/anonim `EventRegistration` (24 saatlik doğrulama + temizlik job'ı, kayıt sızdırmayan yinelenen kayıt akışı, idempotent iptal linki, rowversion ile en fazla 3 yeniden denemeli kontenjan eşzamanlılığı); admin kayıt yönetimi (onay/yedek terfi/reddet/iptal/`Attended`/`NoShow`, kişisel veri erişim kaydı); etkinlik iptali bildirim fan-out'u; 365 günlük anonimleştirme job'ı ve katılımcı CSV dışa aktarımı. **Kapsam dışı:** etkinlik öncesi hatırlatma e-postası, etkinlik tarihi/yeri değişince kayıtlılara bildirim, yedekten otomatik terfi, QR giriş/yoklama ekranı/sertifika/katılım puanı |
 | **5 — Keşif** | SearchDocument + genel arama + `IExternalSearchSource` + Employer Host adaptörü + senkron job'ı, sitemap/robots, schema.org verisi, revizyon geçmişi |
 
 Her faz (gerektiğinde alt fazlara bölünerek, bkz. 1a/1b), ayrı görevlere bölünmüş kendi master prompt'uyla uygulanır; her görev ayrı commit'tir.
