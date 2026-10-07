@@ -322,6 +322,119 @@ public class EventRegistrationTests
         Assert.Equal("EventRegistration.InvalidStatusTransition", result.Error.Code);
     }
 
+    // Faz 4 Görev 5 (ADR-024 §11.2 saklama): clears PII, keeps status/dates/history - mirrors
+    // FormSubmission.Anonymize's own test shape.
+    [Fact]
+    public void Anonymize_ClearsPersonalDataButKeepsStatusDatesAndHistory()
+    {
+        var registration = CreateRegistration(phone: "5551234567", userId: Guid.NewGuid()).Value;
+        registration.ApplyCapacityDecision(EventCapacityDecision.Confirmed, "System", Now);
+        registration.ConfirmCapacityDecisionCommitted();
+        var historyCountBefore = registration.StatusHistory.Count;
+        var createdAtBefore = registration.CreatedAtUtc;
+
+        registration.Anonymize(Now.AddDays(400));
+
+        Assert.Equal(string.Empty, registration.FirstName);
+        Assert.Equal(string.Empty, registration.LastName);
+        Assert.Equal(string.Empty, registration.Email);
+        Assert.Null(registration.Phone);
+        Assert.Null(registration.UserId);
+        Assert.NotNull(registration.AnonymizedAtUtc);
+        Assert.Equal(EventRegistrationStatus.Confirmed, registration.Status);
+        Assert.Equal(createdAtBefore, registration.CreatedAtUtc);
+        Assert.Equal(historyCountBefore, registration.StatusHistory.Count);
+    }
+
+    [Fact]
+    public void Anonymize_CalledTwice_KeepsTheFirstTimestamp()
+    {
+        var registration = MoveTo(EventRegistrationStatus.Confirmed);
+        registration.Anonymize(Now.AddDays(400));
+        var firstAnonymizedAtUtc = registration.AnonymizedAtUtc;
+
+        registration.Anonymize(Now.AddDays(401));
+
+        Assert.Equal(firstAnonymizedAtUtc, registration.AnonymizedAtUtc);
+    }
+
+    // §1 "Anonimleştirilmiş kayıtta durum değiştirilemez" - every mutation EventSchedule's own Görev
+    // 4 admin actions can still reach (Applied/Waitlisted/Confirmed are all still-managed-looking
+    // statuses, unlike Cancelled/Rejected which are already terminal) must refuse once anonymized.
+    [Fact]
+    public void AdminConfirm_OnAnonymizedRegistration_ReturnsAnonymizedConflict()
+    {
+        var registration = MoveTo(EventRegistrationStatus.Applied);
+        registration.Anonymize(Now.AddDays(400));
+
+        var result = registration.AdminConfirm("admin-1", Now.AddDays(400));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("EventRegistration.Anonymized", result.Error.Code);
+    }
+
+    [Fact]
+    public void AdminWaitlist_OnAnonymizedRegistration_ReturnsAnonymizedConflict()
+    {
+        var registration = MoveTo(EventRegistrationStatus.Applied);
+        registration.Anonymize(Now.AddDays(400));
+
+        var result = registration.AdminWaitlist("admin-1", Now.AddDays(400));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("EventRegistration.Anonymized", result.Error.Code);
+    }
+
+    [Fact]
+    public void Reject_OnAnonymizedRegistration_ReturnsAnonymizedConflict()
+    {
+        var registration = MoveTo(EventRegistrationStatus.Applied);
+        registration.Anonymize(Now.AddDays(400));
+
+        var result = registration.Reject("admin-1", Now.AddDays(400));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("EventRegistration.Anonymized", result.Error.Code);
+    }
+
+    [Fact]
+    public void MarkAttended_OnAnonymizedRegistration_ReturnsAnonymizedConflict()
+    {
+        var registration = MoveTo(EventRegistrationStatus.Confirmed);
+        registration.Anonymize(Now.AddDays(400));
+
+        var result = registration.MarkAttended("admin-1", Now.AddDays(400));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("EventRegistration.Anonymized", result.Error.Code);
+    }
+
+    [Fact]
+    public void Cancel_OnAnonymizedConfirmedRegistration_ReturnsAnonymizedConflict()
+    {
+        var registration = MoveTo(EventRegistrationStatus.Confirmed);
+        registration.Anonymize(Now.AddDays(400));
+
+        var result = registration.Cancel(EventRegistrationCancelledBy.Participant, Now.AddDays(400));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("EventRegistration.Anonymized", result.Error.Code);
+    }
+
+    // Already-Cancelled must stay a harmless no-op even once anonymized - §1 never asks an idempotent
+    // cancellation link on a terminal, already-resolved row to start failing.
+    [Fact]
+    public void Cancel_OnAnonymizedAlreadyCancelledRegistration_RemainsIdempotent()
+    {
+        var registration = MoveTo(EventRegistrationStatus.Cancelled);
+        registration.Anonymize(Now.AddDays(400));
+
+        var result = registration.Cancel(EventRegistrationCancelledBy.Participant, Now.AddDays(400));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(EventRegistrationCancelOutcome.AlreadyCancelled, result.Value);
+    }
+
     // Drives a fresh registration to the requested status via its own public transitions, so every
     // table test above exercises the real domain methods rather than reflection/internal setters.
     private static EventRegistration MoveTo(EventRegistrationStatus status)

@@ -50,4 +50,10 @@ public interface IEventScheduleRepository
     // the row's current ConfirmedCount/WaitlistedCount/RowVersion, not the stale values the failed
     // attempt started from.
     Task ReloadAsync(EventSchedule eventSchedule, CancellationToken cancellationToken = default);
+
+    // Faz 4 Görev 5: AnonymizeExpiredEventRegistrationsJob's own first step - every EventSchedule whose
+    // EndsAtUtc has already passed endedBeforeUtc (now - RetentionDays), regardless of cancellation.
+    // Deliberately unbounded (there are orders of magnitude fewer EventSchedules than registrations) -
+    // IEventRegistrationRepository.GetDueForAnonymizationAsync is what the 500-row batch cap belongs to.
+    Task<IReadOnlyList<Guid>> GetIdsEndedBeforeAsync(DateTime endedBeforeUtc, CancellationToken cancellationToken = default);
 }

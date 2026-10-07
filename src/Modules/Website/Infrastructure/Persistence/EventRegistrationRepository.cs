@@ -97,4 +97,44 @@ public sealed class EventRegistrationRepository(WebsiteDbContext dbContext) : IE
             .Take(take)
             .Select(r => new EventRegistrationCancellationRecipient(r.Email, r.LanguageCode))
             .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<EventRegistration>> GetExpiredPendingVerificationAsync(
+        DateTime createdBeforeUtc, int maxCount, CancellationToken cancellationToken = default) =>
+        await dbContext.EventRegistrations
+            .Where(r => r.Status == EventRegistrationStatus.PendingVerification && r.CreatedAtUtc <= createdBeforeUtc)
+            .Take(maxCount)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<EventRegistration>> GetDueForAnonymizationAsync(
+        IReadOnlyList<Guid> eventScheduleIds, int maxCount, CancellationToken cancellationToken = default)
+    {
+        if (eventScheduleIds.Count == 0)
+        {
+            return [];
+        }
+
+        return await dbContext.EventRegistrations
+            .Where(r => r.AnonymizedAtUtc == null && eventScheduleIds.Contains(r.EventScheduleId))
+            .Take(maxCount)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<EventRegistrationExportItem>> GetForExportAsync(
+        Guid contentItemId, EventRegistrationStatus? status, CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.EventRegistrations.AsNoTracking().Where(r => r.ContentItemId == contentItemId);
+        if (status is not null)
+        {
+            query = query.Where(r => r.Status == status.Value);
+        }
+
+        var registrations = await query.OrderBy(r => r.CreatedAtUtc).ToListAsync(cancellationToken);
+
+        return registrations
+            .Select(r => new EventRegistrationExportItem(
+                r.FirstName, r.LastName, r.Email, r.Phone, r.Status, r.CreatedAtUtc,
+                r.StatusHistory.FirstOrDefault(h => h.NewStatus == EventRegistrationStatus.Confirmed)?.OccurredAtUtc,
+                r.LanguageCode.Value))
+            .ToList();
+    }
 }

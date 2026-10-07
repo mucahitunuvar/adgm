@@ -375,6 +375,10 @@ if (!isTestingEnvironment)
         "website-cleanup-expired-newsletter-subscribers", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
     RecurringJob.AddOrUpdate<CleanupExpiredCookieConsentRecordsJob>(
         "website-cleanup-expired-cookie-consent-records", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
+    RecurringJob.AddOrUpdate<CleanupExpiredPendingEventRegistrationsJob>(
+        "website-cleanup-expired-pending-event-registrations", job => job.ExecuteAsync(CancellationToken.None), Cron.Hourly);
+    RecurringJob.AddOrUpdate<AnonymizeExpiredEventRegistrationsJob>(
+        "website-anonymize-expired-event-registrations", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
 }
 
 app.Run();

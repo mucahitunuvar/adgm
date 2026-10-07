@@ -98,4 +98,44 @@ public sealed class FakeEventRegistrationRepository : IEventRegistrationReposito
 
         return Task.FromResult(recipients);
     }
+
+    public Task<IReadOnlyList<EventRegistration>> GetExpiredPendingVerificationAsync(
+        DateTime createdBeforeUtc, int maxCount, CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<EventRegistration> due = _registrations
+            .Where(r => r.Status == EventRegistrationStatus.PendingVerification && r.CreatedAtUtc <= createdBeforeUtc)
+            .Take(maxCount)
+            .ToList();
+        return Task.FromResult(due);
+    }
+
+    public Task<IReadOnlyList<EventRegistration>> GetDueForAnonymizationAsync(
+        IReadOnlyList<Guid> eventScheduleIds, int maxCount, CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<EventRegistration> due = _registrations
+            .Where(r => r.AnonymizedAtUtc is null && eventScheduleIds.Contains(r.EventScheduleId))
+            .Take(maxCount)
+            .ToList();
+        return Task.FromResult(due);
+    }
+
+    public Task<IReadOnlyList<EventRegistrationExportItem>> GetForExportAsync(
+        Guid contentItemId, EventRegistrationStatus? status, CancellationToken cancellationToken = default)
+    {
+        var query = _registrations.Where(r => r.ContentItemId == contentItemId);
+        if (status is not null)
+        {
+            query = query.Where(r => r.Status == status.Value);
+        }
+
+        IReadOnlyList<EventRegistrationExportItem> items = query
+            .OrderBy(r => r.CreatedAtUtc)
+            .Select(r => new EventRegistrationExportItem(
+                r.FirstName, r.LastName, r.Email, r.Phone, r.Status, r.CreatedAtUtc,
+                r.StatusHistory.FirstOrDefault(h => h.NewStatus == EventRegistrationStatus.Confirmed)?.OccurredAtUtc,
+                r.LanguageCode.Value))
+            .ToList();
+
+        return Task.FromResult(items);
+    }
 }

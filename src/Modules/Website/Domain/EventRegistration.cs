@@ -42,6 +42,9 @@ public sealed partial class EventRegistration : AggregateRoot
     // double-recording (or recording the wrong) decision.
     private EventRegistrationStatusHistoryEntry? _uncommittedDecisionEntry;
 
+    private static readonly Error AnonymizedError = Error.Conflict(
+        "EventRegistration.Anonymized", "An anonymized registration can no longer be managed.");
+
     public Guid EventScheduleId { get; private set; }
 
     public Guid ContentItemId { get; private set; }
@@ -296,6 +299,11 @@ public sealed partial class EventRegistration : AggregateRoot
             return Result.Success(EventRegistrationCancelOutcome.AlreadyCancelled);
         }
 
+        if (AnonymizedAtUtc is not null)
+        {
+            return Result.Failure<EventRegistrationCancelOutcome>(AnonymizedError);
+        }
+
         if (Status is not (EventRegistrationStatus.PendingVerification or EventRegistrationStatus.Applied
             or EventRegistrationStatus.Confirmed or EventRegistrationStatus.Waitlisted))
         {
@@ -329,6 +337,11 @@ public sealed partial class EventRegistration : AggregateRoot
     // ever reverts to PendingVerification) to avoid touching that already-committed Görev 3 method.
     public Result AdminConfirm(string changedBy, DateTime now)
     {
+        if (AnonymizedAtUtc is not null)
+        {
+            return Result.Failure(AnonymizedError);
+        }
+
         if (_uncommittedDecisionEntry is not null)
         {
             var previous = _uncommittedDecisionEntry;
@@ -357,6 +370,11 @@ public sealed partial class EventRegistration : AggregateRoot
     // AdminConfirm, paired with EventSchedule.AddToWaitlist() inside the same retry-executor mutate().
     public Result AdminWaitlist(string changedBy, DateTime now)
     {
+        if (AnonymizedAtUtc is not null)
+        {
+            return Result.Failure(AnonymizedError);
+        }
+
         if (_uncommittedDecisionEntry is not null)
         {
             var previous = _uncommittedDecisionEntry;
@@ -393,6 +411,11 @@ public sealed partial class EventRegistration : AggregateRoot
     // be released" question this needs, regardless of which transition produced it.
     public Result<EventRegistrationCancelOutcome> Reject(string changedBy, DateTime now)
     {
+        if (AnonymizedAtUtc is not null)
+        {
+            return Result.Failure<EventRegistrationCancelOutcome>(AnonymizedError);
+        }
+
         if (Status is not (EventRegistrationStatus.Applied or EventRegistrationStatus.Waitlisted))
         {
             return Result.Failure<EventRegistrationCancelOutcome>(Error.Conflict(
@@ -423,6 +446,11 @@ public sealed partial class EventRegistration : AggregateRoot
 
     private Result TransitionFromConfirmed(EventRegistrationStatus newStatus, string changedBy, DateTime now)
     {
+        if (AnonymizedAtUtc is not null)
+        {
+            return Result.Failure(AnonymizedError);
+        }
+
         if (Status != EventRegistrationStatus.Confirmed)
         {
             return Result.Failure(Error.Conflict(
@@ -436,6 +464,31 @@ public sealed partial class EventRegistration : AggregateRoot
         BumpRowVersion();
 
         return Result.Success();
+    }
+
+    // §1 Faz 4 Görev 5 (ADR-024 §11.2 saklama): "etkinlik bitiminden 365 gün sonra ... FirstName,
+    // LastName, Email, Phone, UserId temizlenir ... durum, tarihler ve durum geçmişi kalır" - mirrors
+    // FormSubmission.Anonymize's own shape (clear PII, keep everything else). CancelToken/
+    // VerificationTokenHash are deliberately left as-is (both NOT NULL/unique-indexed columns a blank
+    // value would collide on) rather than cleared - every method that would act on them (Cancel,
+    // AdminConfirm/AdminWaitlist/Reject, MarkAttended/MarkNoShow) now refuses once AnonymizedAtUtc is
+    // set, which is what "token'ları geçersizleşir" actually requires: the token stops being able to
+    // change anything, not that the column itself must be emptied. Idempotent defensively, exactly like
+    // FormSubmission.Anonymize - the cleanup job's own query already excludes already-anonymized rows.
+    public void Anonymize(DateTime anonymizedAtUtc)
+    {
+        if (AnonymizedAtUtc is not null)
+        {
+            return;
+        }
+
+        FirstName = string.Empty;
+        LastName = string.Empty;
+        Email = string.Empty;
+        Phone = null;
+        UserId = null;
+        AnonymizedAtUtc = anonymizedAtUtc;
+        BumpRowVersion();
     }
 
     private static Result<string> NormalizeRequiredText(string? value, int maxLength, string fieldName)

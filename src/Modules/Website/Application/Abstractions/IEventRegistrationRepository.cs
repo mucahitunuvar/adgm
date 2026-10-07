@@ -52,4 +52,25 @@ public interface IEventRegistrationRepository
     // overflow continuations.
     Task<IReadOnlyList<EventRegistrationCancellationRecipient>> GetCancellationRecipientsAsync(
         Guid contentItemId, int skip, int take, CancellationToken cancellationToken = default);
+
+    // Faz 4 Görev 5: CleanupExpiredPendingEventRegistrationsJob's own query - §1 "kayıt Rejected olmaz,
+    // silinme job'ına bırakılır". PendingVerification never holds capacity, so the job that removes
+    // these rows outright never needs to touch EventSchedule's counters.
+    Task<IReadOnlyList<EventRegistration>> GetExpiredPendingVerificationAsync(
+        DateTime createdBeforeUtc, int maxCount, CancellationToken cancellationToken = default);
+
+    // Faz 4 Görev 5: AnonymizeExpiredEventRegistrationsJob's own query - every non-anonymized
+    // registration against one of the already-ended-long-enough-ago schedules the job's own
+    // IEventScheduleRepository.GetIdsEndedBeforeAsync call found (not filtered by Status - §1 applies
+    // the retention window to every registration of that event, regardless of outcome).
+    Task<IReadOnlyList<EventRegistration>> GetDueForAnonymizationAsync(
+        IReadOnlyList<Guid> eventScheduleIds, int maxCount, CancellationToken cancellationToken = default);
+
+    // Faz 4 Görev 5: the participant CSV export's own row source - unlike SearchAsync (paged admin
+    // list), returns every matching row in one go. ConfirmedAtUtc is derived from StatusHistory's own
+    // Confirmed entry (there is no dedicated column for it) rather than VerifiedAtUtc (set for every
+    // capacity decision, not only Confirmed) or StatusChangedAtUtc (overwritten by every later
+    // transition, e.g. Attended).
+    Task<IReadOnlyList<EventRegistrationExportItem>> GetForExportAsync(
+        Guid contentItemId, EventRegistrationStatus? status, CancellationToken cancellationToken = default);
 }

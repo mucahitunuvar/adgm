@@ -119,6 +119,10 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddTransient<CleanupExpiredNewsletterSubscribersJob>();
         services.AddTransient<CleanupExpiredCookieConsentRecordsJob>();
         services.AddTransient<ProcessEventCancellationNotificationsJob>();
+        // ADR-024 §11.2 (Faz 4 Görev 5): the registration cleanup/retention jobs, same
+        // singleton-safe-dependencies-only Transient registration as every other job above.
+        services.AddTransient<CleanupExpiredPendingEventRegistrationsJob>();
+        services.AddTransient<AnonymizeExpiredEventRegistrationsJob>();
         services.AddSingleton<IImageProcessor, SkiaSharpImageProcessor>();
         services.AddScoped<IMediaUsageChecker, CompositeMediaUsageChecker>();
         services.AddScoped<IMediaUsageProvider, SiteSettingsMediaUsageProvider>();

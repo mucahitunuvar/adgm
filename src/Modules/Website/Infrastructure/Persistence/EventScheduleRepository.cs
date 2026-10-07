@@ -154,4 +154,10 @@ public sealed class EventScheduleRepository(WebsiteDbContext dbContext) : IEvent
 
     public Task ReloadAsync(EventSchedule eventSchedule, CancellationToken cancellationToken = default) =>
         dbContext.Entry(eventSchedule).ReloadAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Guid>> GetIdsEndedBeforeAsync(DateTime endedBeforeUtc, CancellationToken cancellationToken = default) =>
+        await dbContext.EventSchedules.AsNoTracking()
+            .Where(es => es.EndsAtUtc <= endedBeforeUtc)
+            .Select(es => es.Id)
+            .ToListAsync(cancellationToken);
 }

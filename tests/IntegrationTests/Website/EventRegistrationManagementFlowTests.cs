@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using GenclikMerkezi.IntegrationTests.Identity;
 using GenclikMerkezi.Modules.Identity.Features.Login;
+using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.Modules.Website.Features.AdminCancelEventRegistration;
 using GenclikMerkezi.Modules.Website.Features.CancelEventSchedule;
@@ -229,12 +230,21 @@ public class EventRegistrationManagementFlowTests : IClassFixture<CustomWebAppli
             HttpMethod.Post, $"/api/v1/admin/website/contents/{contentItemId}/event/registrations/{registrationId}/no-show", accessToken,
             new MarkEventRegistrationNoShowRequest(rowVersion)));
 
-    private async Task<int> GetPersonalDataAccessLogCountAsync(PersonalDataEntityType entityType, Guid? entityId)
+    private Task<HttpResponseMessage> ExportRegistrationsAsync(string accessToken, Guid contentItemId, string? status = null) =>
+        _client.SendAsync(Authorized(
+            HttpMethod.Get,
+            $"/api/v1/admin/website/contents/{contentItemId}/event/registrations/export" + (status is null ? string.Empty : $"?status={status}"),
+            accessToken));
+
+    private Task<int> GetPersonalDataAccessLogCountAsync(PersonalDataEntityType entityType, Guid? entityId) =>
+        GetPersonalDataAccessLogCountAsync(entityType, entityId, PersonalDataAccessAction.View);
+
+    private async Task<int> GetPersonalDataAccessLogCountAsync(PersonalDataEntityType entityType, Guid? entityId, PersonalDataAccessAction action)
     {
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<WebsiteDbContext>();
         return await dbContext.PersonalDataAccessLogs.CountAsync(
-            l => l.EntityType == entityType && l.EntityId == entityId && l.Action == PersonalDataAccessAction.View);
+            l => l.EntityType == entityType && l.EntityId == entityId && l.Action == action);
     }
 
     [Fact]
@@ -605,6 +615,137 @@ public class EventRegistrationManagementFlowTests : IClassFixture<CustomWebAppli
         var rejectedAfter = await _factory.GetEventRegistrationSnapshotAsync(contentItemId, rejectedEmail);
         Assert.Equal(EventRegistrationStatus.Applied, appliedAfter!.Status);
         Assert.Equal(EventRegistrationStatus.Rejected, rejectedAfter!.Status);
+    }
+
+    // §1 Faz 4 Görev 5 "Katılımcı dışa aktarımı": CSV columns, BOM, and that the response actually
+    // carries the registrant's own data (never a public endpoint - WebsitePolicies.SubmissionsView).
+    [Fact]
+    public async Task Export_Succeeds_ReturnsCsvWithExpectedRow()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var (_, privacyVersion) = await EnableEventRegistrationAsync(accessToken);
+        var eventTypeId = await GetContentTypeIdAsync(accessToken, "event");
+        var contentItemId = await CreatePublishedEventAsync(
+            accessToken, eventTypeId, NewScheduleRequest(capacity: 10, autoConfirm: true, waitlistEnabled: true));
+
+        var (email, userAccessToken, _) = await RegisterVerifiedUserAsync();
+        await CreateAuthenticatedRegistrationAsync(contentItemId, email, privacyVersion, userAccessToken);
+
+        var response = await ExportRegistrationsAsync(accessToken, contentItemId);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/csv", response.Content.Headers.ContentType!.MediaType);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        Assert.Equal([0xEF, 0xBB, 0xBF], bytes.Take(3));
+        var text = System.Text.Encoding.UTF8.GetString(bytes);
+        Assert.StartsWith("﻿firstName,lastName,email,phone,status,registeredAtUtc,confirmedAtUtc,language\r\n", text);
+        Assert.Contains($"Ahmet,Yılmaz,{email},,Confirmed,", text);
+    }
+
+    [Fact]
+    public async Task Export_FiltersByStatus()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var (_, privacyVersion) = await EnableEventRegistrationAsync(accessToken);
+        var eventTypeId = await GetContentTypeIdAsync(accessToken, "event");
+        var contentItemId = await CreatePublishedEventAsync(
+            accessToken, eventTypeId, NewScheduleRequest(capacity: 10, autoConfirm: false, waitlistEnabled: true));
+
+        var (appliedEmail, appliedToken, _) = await RegisterVerifiedUserAsync();
+        await CreateAuthenticatedRegistrationAsync(contentItemId, appliedEmail, privacyVersion, appliedToken);
+
+        var (rejectedEmail, rejectedToken, _) = await RegisterVerifiedUserAsync();
+        await CreateAuthenticatedRegistrationAsync(contentItemId, rejectedEmail, privacyVersion, rejectedToken);
+        var rejectedSnapshot = await _factory.GetEventRegistrationSnapshotAsync(contentItemId, rejectedEmail);
+        var rejectedDetail = await GetRegistrationAsync(accessToken, contentItemId, rejectedSnapshot!.Id);
+        await RejectAsync(accessToken, contentItemId, rejectedSnapshot.Id, rejectedDetail.RowVersion);
+
+        var response = await ExportRegistrationsAsync(accessToken, contentItemId, "Rejected");
+
+        var text = System.Text.Encoding.UTF8.GetString(await response.Content.ReadAsByteArrayAsync());
+        Assert.Contains(rejectedEmail, text);
+        Assert.DoesNotContain(appliedEmail, text);
+    }
+
+    [Fact]
+    public async Task Export_Succeeds_WritesPersonalDataAccessLogEntryWithExportAction()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var (_, privacyVersion) = await EnableEventRegistrationAsync(accessToken);
+        var eventTypeId = await GetContentTypeIdAsync(accessToken, "event");
+        var contentItemId = await CreatePublishedEventAsync(
+            accessToken, eventTypeId, NewScheduleRequest(capacity: 10, autoConfirm: true, waitlistEnabled: true));
+
+        var (email, userAccessToken, _) = await RegisterVerifiedUserAsync();
+        await CreateAuthenticatedRegistrationAsync(contentItemId, email, privacyVersion, userAccessToken);
+
+        var countBefore = await GetPersonalDataAccessLogCountAsync(PersonalDataEntityType.EventRegistration, null, PersonalDataAccessAction.Export);
+        await ExportRegistrationsAsync(accessToken, contentItemId);
+        var countAfter = await GetPersonalDataAccessLogCountAsync(PersonalDataEntityType.EventRegistration, null, PersonalDataAccessAction.Export);
+
+        Assert.Equal(countBefore + 1, countAfter);
+    }
+
+    // §1/AGENTS §26: never trust a client's own authenticated session for an admin-only action - a
+    // plain Candidate must be refused, same as every other Website admin endpoint.
+    [Fact]
+    public async Task Export_AsNonAdmin_ReturnsForbidden()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var (_, privacyVersion) = await EnableEventRegistrationAsync(accessToken);
+        _ = privacyVersion;
+        var eventTypeId = await GetContentTypeIdAsync(accessToken, "event");
+        var contentItemId = await CreatePublishedEventAsync(
+            accessToken, eventTypeId, NewScheduleRequest(capacity: 10, autoConfirm: true, waitlistEnabled: true));
+
+        var candidateEmail = $"aday-{Guid.NewGuid():N}@example.com";
+        await _client.PostAsJsonAsync(
+            "/api/v1/auth/register",
+            new { email = candidateEmail, password = "Sifre123", firstName = "Test", lastName = "User", role = "Candidate" });
+        var loginResponse = await _client.PostAsJsonAsync("/api/v1/auth/login", new { email = candidateEmail, password = "Sifre123" });
+        var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+
+        var response = await ExportRegistrationsAsync(login!.AccessToken, contentItemId);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    // Exercises the real EF query translation (EventSchedules.EndsAtUtc comparison, then
+    // EventRegistrations.EventScheduleId IN (...) over the ids that query returned) against a real
+    // SQLite database - the threshold parameter is shifted instead of waiting 365 real days, since
+    // CustomWebApplicationFactory wires the real system TimeProvider (mirrors
+    // FormSubmissionManagementFlowTests' own FormSubmissionRepository_DueForArchiveAndAnonymization
+    // test for the same reason). AnonymizeExpiredEventRegistrationsJob's own batching/cutoff-math is
+    // unit-tested separately (AnonymizeExpiredEventRegistrationsJobTests).
+    [Fact]
+    public async Task EventScheduleAndRegistrationRepositories_DueForAnonymization_ReflectRealElapsedWindow()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var (_, privacyVersion) = await EnableEventRegistrationAsync(accessToken);
+        var eventTypeId = await GetContentTypeIdAsync(accessToken, "event");
+        var contentItemId = await CreatePublishedEventAsync(
+            accessToken, eventTypeId, NewScheduleRequest(capacity: 10, autoConfirm: true, waitlistEnabled: true));
+
+        var (email, userAccessToken, _) = await RegisterVerifiedUserAsync();
+        await CreateAuthenticatedRegistrationAsync(contentItemId, email, privacyVersion, userAccessToken);
+        var snapshot = await _factory.GetEventRegistrationSnapshotAsync(contentItemId, email);
+
+        using var scope = _factory.Services.CreateScope();
+        var scheduleRepository = scope.ServiceProvider.GetRequiredService<IEventScheduleRepository>();
+        var registrationRepository = scope.ServiceProvider.GetRequiredService<IEventRegistrationRepository>();
+        var schedule = await scheduleRepository.GetByContentItemIdAsync(contentItemId);
+
+        var notYetEndedIds = await scheduleRepository.GetIdsEndedBeforeAsync(schedule!.EndsAtUtc.AddDays(-1));
+        Assert.DoesNotContain(schedule.Id, notYetEndedIds);
+
+        var endedIds = await scheduleRepository.GetIdsEndedBeforeAsync(schedule.EndsAtUtc.AddDays(366));
+        Assert.Contains(schedule.Id, endedIds);
+
+        var notYetDue = await registrationRepository.GetDueForAnonymizationAsync(notYetEndedIds, 500, CancellationToken.None);
+        Assert.DoesNotContain(notYetDue, r => r.Id == snapshot!.Id);
+
+        var due = await registrationRepository.GetDueForAnonymizationAsync(endedIds, 500, CancellationToken.None);
+        Assert.Contains(due, r => r.Id == snapshot!.Id);
     }
 
     // Local shim: only the RowVersion field this test class needs from

@@ -54,6 +54,12 @@ public sealed class FakeEventScheduleRepository : IEventScheduleRepository
     // exercised instead, against a FakeUnitOfWork that throws DbUpdateConcurrencyException once).
     public Task ReloadAsync(EventSchedule eventSchedule, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
+    public Task<IReadOnlyList<Guid>> GetIdsEndedBeforeAsync(DateTime endedBeforeUtc, CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<Guid> ids = _eventSchedules.Where(es => es.EndsAtUtc <= endedBeforeUtc).Select(es => es.Id).ToList();
+        return Task.FromResult(ids);
+    }
+
     private static EventRegistrationStateInputs ToInputs(EventSchedule es) =>
         new(es.IsCancelled, es.RegistrationEnabled, es.RegistrationOpensAtUtc, es.RegistrationClosesAtUtc, es.StartsAtUtc, es.Capacity,
             es.ConfirmedCount, es.WaitlistEnabled);

@@ -74,6 +74,7 @@ using GenclikMerkezi.Modules.Website.Features.DiscardContentLayoutDraft;
 using GenclikMerkezi.Modules.Website.Features.DiscardHomeLayoutDraft;
 using GenclikMerkezi.Modules.Website.Features.DownloadFormSubmissionFile;
 using GenclikMerkezi.Modules.Website.Features.DuplicateContentItem;
+using GenclikMerkezi.Modules.Website.Features.ExportEventRegistrations;
 using GenclikMerkezi.Modules.Website.Features.ExportNewsletterSubscribers;
 using GenclikMerkezi.Modules.Website.Features.GetBlockTypes;
 using GenclikMerkezi.Modules.Website.Features.GetContentCategoriesByType;
@@ -301,6 +302,10 @@ public static class WebsiteModuleEndpointExtensions
         AdminCancelEventRegistrationEndpoint.Map(app);
         MarkEventRegistrationAttendedEndpoint.Map(app);
         MarkEventRegistrationNoShowEndpoint.Map(app);
+
+        // ADR-024 §11.2 (Faz 4 Görev 5): the participant CSV export - never a public endpoint (§1
+        // "Katılımcı listesi hiçbir koşulda public olmaz").
+        ExportEventRegistrationsEndpoint.Map(app);
 
         CreateRedirectEndpoint.Map(app);
         UpdateRedirectEndpoint.Map(app);
