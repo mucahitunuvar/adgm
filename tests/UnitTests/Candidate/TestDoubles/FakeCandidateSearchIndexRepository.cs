@@ -1,6 +1,7 @@
 using GenclikMerkezi.Modules.Candidate.Application.Abstractions;
 using GenclikMerkezi.Modules.Candidate.Domain;
 using GenclikMerkezi.SharedKernel.Results;
+using GenclikMerkezi.SharedKernel.Text;
 
 namespace GenclikMerkezi.UnitTests.Candidate.TestDoubles;
 

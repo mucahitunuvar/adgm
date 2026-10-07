@@ -1,3 +1,5 @@
+using GenclikMerkezi.SharedKernel.Text;
+
 namespace GenclikMerkezi.Modules.Candidate.Domain;
 
 // Domain service (AGENTS.md §10): pure projection from the two source aggregates into

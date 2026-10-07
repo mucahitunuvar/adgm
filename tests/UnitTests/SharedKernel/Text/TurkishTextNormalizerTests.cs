@@ -1,6 +1,6 @@
-using GenclikMerkezi.Modules.Candidate.Domain;
+using GenclikMerkezi.SharedKernel.Text;
 
-namespace GenclikMerkezi.UnitTests.Candidate.Domain;
+namespace GenclikMerkezi.UnitTests.SharedKernel.Text;
 
 public class TurkishTextNormalizerTests
 {
