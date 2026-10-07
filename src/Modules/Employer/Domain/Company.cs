@@ -18,6 +18,10 @@ public sealed class Company : AggregateRoot
     // Firma Bilgileri
     public FileAttachment? Logo { get; private set; }
 
+    // Görev 2 (Employer public jobs master prompt): firmanın açık onayı (varsayılan false). Logo
+    // yoksa true yapılamaz (Company.LogoRequired - bkz. SetShowLogoOnWebsite).
+    public bool ShowLogoOnWebsite { get; private set; }
+
     public string Name { get; private set; }
 
     public Guid SectorId { get; private set; }
@@ -68,6 +72,12 @@ public sealed class Company : AggregateRoot
     public DateTime? DeactivatedAtUtc { get; private set; }
 
     public DateTime CreatedAtUtc { get; private set; }
+
+    // Görev 2 (Employer public jobs master prompt): SetShowLogoOnWebsite'ın gerektirdiği iyimser
+    // eşzamanlılık (409) için - AGENTS.md §10, repodaki her Website aggregate'inin uyguladığı aynı
+    // application-managed (DB rowversion değil) token (ör. Partner.RowVersion). Her mutasyon
+    // metodunda yeniden üretilir.
+    public byte[] RowVersion { get; private set; } = Guid.NewGuid().ToByteArray();
 
     private Company(
         Guid id,
@@ -174,6 +184,7 @@ public sealed class Company : AggregateRoot
         Status = CompanyStatus.Approved;
         ApprovedByUserId = approvedByUserId;
         ApprovedAtUtc = approvedAtUtc;
+        RowVersion = Guid.NewGuid().ToByteArray();
 
         return Result.Success();
     }
@@ -188,6 +199,7 @@ public sealed class Company : AggregateRoot
 
         Status = CompanyStatus.Rejected;
         RejectionReason = reason;
+        RowVersion = Guid.NewGuid().ToByteArray();
 
         return Result.Success();
     }
@@ -206,6 +218,7 @@ public sealed class Company : AggregateRoot
         Status = CompanyStatus.Deactivated;
         DeactivatedByUserId = deactivatedByUserId;
         DeactivatedAtUtc = deactivatedAtUtc;
+        RowVersion = Guid.NewGuid().ToByteArray();
 
         return Result.Success();
     }
@@ -215,6 +228,7 @@ public sealed class Company : AggregateRoot
     public void AssignCareerAdvisor(Guid? careerAdvisorId)
     {
         CareerAdvisorId = careerAdvisorId;
+        RowVersion = Guid.NewGuid().ToByteArray();
     }
 
     // CandidateCv.SetPhoto'nun aksine domain event fırlatmaz (Görev 4): Company hiçbir zaman domain
@@ -223,5 +237,22 @@ public sealed class Company : AggregateRoot
     public void SetLogo(FileAttachment? logo)
     {
         Logo = logo;
+        RowVersion = Guid.NewGuid().ToByteArray();
+    }
+
+    // Görev 2 (Employer public jobs master prompt): true yapılabilmesi için Logo yüklü olmalı
+    // (Company.LogoRequired) - false'a dönmek her zaman serbest (ör. logo silinmeden önce kapatmak).
+    public Result SetShowLogoOnWebsite(bool showLogoOnWebsite)
+    {
+        if (showLogoOnWebsite && Logo is null)
+        {
+            return Result.Failure(Error.Validation(
+                "Company.LogoRequired", "A logo must be uploaded before it can be shown on the public website."));
+        }
+
+        ShowLogoOnWebsite = showLogoOnWebsite;
+        RowVersion = Guid.NewGuid().ToByteArray();
+
+        return Result.Success();
     }
 }

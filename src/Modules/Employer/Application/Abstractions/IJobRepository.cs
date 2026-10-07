@@ -10,6 +10,11 @@ public interface IJobRepository
 
     Task<IReadOnlyList<Job>> GetPublishedAsync(CancellationToken cancellationToken = default);
 
+    // Görev 2 (Employer public jobs master prompt) public firma profili için: GetByCompanyIdAsync'in
+    // tüm Job graph'ini (child collection'larla) yüklemesi yerine, yalnızca sayım için tek bir
+    // projeksiyon sorgusu.
+    Task<int> GetPublishedCountByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken = default);
+
     // Danışmanın inceleme kuyruğu: Status == UnderReview ve Job.CompanyId'nin Company.CareerAdvisorId'si
     // bu danışmana eşit olan firmalar - Jobs ve Companies aynı EmployerDbContext'te olduğu için tek bir
     // SQL join'e çevrilir (ayrı sorgu + bellekte filtreleme değil).

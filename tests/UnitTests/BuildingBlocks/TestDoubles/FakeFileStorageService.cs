@@ -15,6 +15,8 @@ public sealed class FakeFileStorageService : IFileStorageService
 
     public List<string> DeletedFileKeys { get; } = [];
 
+    public byte[]? ReadResult { get; set; }
+
     public (Stream Content, string FileName, string ContentType, FileCategory Category, string OwnerEntityType, Guid OwnerEntityId)? UploadCall
     { get; private set; }
 
@@ -42,5 +44,5 @@ public sealed class FakeFileStorageService : IFileStorageService
         Task.FromResult(UrlToReturn);
 
     public Task<byte[]?> ReadAsync(string fileKey, CancellationToken cancellationToken = default) =>
-        Task.FromResult<byte[]?>(null);
+        Task.FromResult(ReadResult);
 }

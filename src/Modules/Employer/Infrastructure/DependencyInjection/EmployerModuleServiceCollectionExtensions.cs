@@ -1,6 +1,7 @@
 using GenclikMerkezi.Contracts.Employer;
 using GenclikMerkezi.Modules.Employer.Application.Abstractions;
 using GenclikMerkezi.Modules.Employer.Infrastructure.Persistence;
+using GenclikMerkezi.Modules.Employer.Infrastructure.Sanitization;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -34,6 +35,7 @@ public static class EmployerModuleServiceCollectionExtensions
 
         services.AddScoped<ICompanyRepository, CompanyRepository>();
         services.AddScoped<ICompanyModuleContract, CompanyModuleContract>();
+        services.AddSingleton<IHtmlContentSanitizer, HtmlSanitizerContentSanitizer>();
         services.AddScoped<IJobRepository, JobRepository>();
         services.AddScoped<IPersonnelNeedRepository, PersonnelNeedRepository>();
         services.AddScoped<IPersonnelNeedModuleContract, PersonnelNeedModuleContract>();

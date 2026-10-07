@@ -46,6 +46,14 @@ public sealed class JobRepository(EmployerDbContext dbContext) : IJobRepository
             .ToListAsync(cancellationToken);
     }
 
+    public Task<int> GetPublishedCountByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken = default)
+    {
+        return dbContext.Jobs
+            .AsNoTracking()
+            .Where(j => j.CompanyId == companyId && j.Status == JobStatus.Published)
+            .CountAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Job>> GetNeedingSlugBackfillAsync(CancellationToken cancellationToken = default)
     {
         return await dbContext.Jobs

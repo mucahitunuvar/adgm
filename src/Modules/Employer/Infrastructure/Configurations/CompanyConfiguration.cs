@@ -18,6 +18,11 @@ public sealed class CompanyConfiguration : IEntityTypeConfiguration<Company>
 
         builder.Property(c => c.CareerAdvisorId);
 
+        // Görev 2 (Employer public jobs master prompt): Website aggregate'lerindeki RowVersion
+        // deseniyle aynı (application-managed, DB rowversion değil) - IsConcurrencyToken() EF'e
+        // SaveChanges sırasında bu kolonun WHERE yan tümcesine dahil edilmesini söyler.
+        builder.Property(c => c.RowVersion).IsConcurrencyToken();
+
         // Firma Bilgileri
         builder.OwnsOne(c => c.Logo, logo =>
         {
@@ -30,6 +35,8 @@ public sealed class CompanyConfiguration : IEntityTypeConfiguration<Company>
             logo.Property(l => l.OwnerEntityType).HasColumnName("LogoOwnerEntityType").HasMaxLength(100);
             logo.Property(l => l.OwnerEntityId).HasColumnName("LogoOwnerEntityId");
         });
+
+        builder.Property(c => c.ShowLogoOnWebsite).IsRequired();
 
         builder.Property(c => c.Name).HasMaxLength(200).IsRequired();
         builder.Property(c => c.SectorId).IsRequired();

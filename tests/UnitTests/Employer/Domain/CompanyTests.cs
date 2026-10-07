@@ -44,6 +44,8 @@ public class CompanyTests
         Assert.Null(company.RejectionReason);
         Assert.Null(company.DeactivatedByUserId);
         Assert.Null(company.DeactivatedAtUtc);
+        Assert.False(company.ShowLogoOnWebsite);
+        Assert.NotEmpty(company.RowVersion);
     }
 
     [Fact]
@@ -154,6 +156,69 @@ public class CompanyTests
 
         Assert.Equal(logo, company.Logo);
         Assert.Empty(company.DomainEvents);
+    }
+
+    // Görev 2 (Employer public jobs master prompt): "Logo yoksa true yapılamaz" (Company.LogoRequired).
+    [Fact]
+    public void SetShowLogoOnWebsite_ToTrue_WithoutLogo_Fails()
+    {
+        var company = CreateCompany();
+
+        var result = company.SetShowLogoOnWebsite(true);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Company.LogoRequired", result.Error.Code);
+        Assert.False(company.ShowLogoOnWebsite);
+    }
+
+    [Fact]
+    public void SetShowLogoOnWebsite_ToTrue_WithLogo_Succeeds()
+    {
+        var company = CreateCompany();
+        company.SetLogo(FileAttachment.Create(
+            "employer-logos/2026/09/21/logo.png", "logo.png", "image/png", 1024, DateTime.UtcNow, "Company", company.Id));
+
+        var result = company.SetShowLogoOnWebsite(true);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(company.ShowLogoOnWebsite);
+    }
+
+    // false'a dönmek her zaman serbest - logo olmasa da (ör. hiç yüklenmemişken kapatmaya çalışmak,
+    // ya da zaten false iken no-op) herhangi bir LogoRequired kontrolüne çarpmaz.
+    [Fact]
+    public void SetShowLogoOnWebsite_ToFalse_WithoutLogo_Succeeds()
+    {
+        var company = CreateCompany();
+
+        var result = company.SetShowLogoOnWebsite(false);
+
+        Assert.True(result.IsSuccess);
+        Assert.False(company.ShowLogoOnWebsite);
+    }
+
+    [Fact]
+    public void SetShowLogoOnWebsite_Succeeding_ChangesRowVersion()
+    {
+        var company = CreateCompany();
+        company.SetLogo(FileAttachment.Create(
+            "employer-logos/2026/09/21/logo.png", "logo.png", "image/png", 1024, DateTime.UtcNow, "Company", company.Id));
+        var rowVersionBeforeToggle = company.RowVersion;
+
+        company.SetShowLogoOnWebsite(true);
+
+        Assert.NotEqual(rowVersionBeforeToggle, company.RowVersion);
+    }
+
+    [Fact]
+    public void SetShowLogoOnWebsite_Failing_DoesNotChangeRowVersion()
+    {
+        var company = CreateCompany();
+        var rowVersionBeforeAttempt = company.RowVersion;
+
+        company.SetShowLogoOnWebsite(true);
+
+        Assert.Equal(rowVersionBeforeAttempt, company.RowVersion);
     }
 
     private static Company TransitionTo(CompanyStatus status)

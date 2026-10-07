@@ -26,19 +26,24 @@ public static class FileCategoryExtensions
     }
 
     // The criterion is "is this ever shown on the public site", not "which module owns it" - e.g.
-    // EmployerLogo is public (shown on the site) while WebsiteFormAttachment is private (personal
-    // data submitted through a public form).
+    // WebsiteImage/WebsiteDocument are public while WebsiteFormAttachment is private (personal data
+    // submitted through a public form). EmployerLogo moved from public to private here (Employer
+    // public jobs master prompt, Görev 2): a company's logo is only ever meant to be reachable once
+    // the company is Approved AND it has opted in via ShowLogoOnWebsite - the static public-root file
+    // server (Program.cs's UseStaticFiles) has no way to enforce that per-request check, so the file
+    // itself must live under the private root and only be servable through the dedicated, consent-
+    // checked GET /api/v1/public/companies/{id}/logo endpoint (which reads it via ReadAsync).
     public static bool TryGetIsPublic(this FileCategory category, out bool isPublic)
     {
         switch (category)
         {
-            case FileCategory.EmployerLogo:
             case FileCategory.WebsiteImage:
             case FileCategory.WebsiteDocument:
                 isPublic = true;
                 return true;
             case FileCategory.CandidatePhoto:
             case FileCategory.CandidateCv:
+            case FileCategory.EmployerLogo:
             case FileCategory.EmployerDocument:
             case FileCategory.WebsiteFormAttachment:
                 isPublic = false;

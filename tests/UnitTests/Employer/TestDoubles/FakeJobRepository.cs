@@ -43,6 +43,12 @@ public sealed class FakeJobRepository : IJobRepository
         return Task.FromResult(matches);
     }
 
+    public Task<int> GetPublishedCountByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken = default)
+    {
+        var count = _jobs.Count(j => j.CompanyId == companyId && j.Status == JobStatus.Published);
+        return Task.FromResult(count);
+    }
+
     public Task<IReadOnlyList<Job>> GetNeedingSlugBackfillAsync(CancellationToken cancellationToken = default)
     {
         IReadOnlyList<Job> matches = _jobs.Where(j => j.Slug is null && j.PublishedAtUtc is not null).ToList();

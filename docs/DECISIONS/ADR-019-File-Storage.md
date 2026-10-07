@@ -57,8 +57,10 @@ Gerekçe:
 
 | Kök | Ayar | Varsayılan yol | Servis | Kategoriler |
 |---|---|---|---|---|
-| Public | `FileStorage:PublicRootDirectory` | `App_Data/webuploads` | Statik, `FileStorage:PublicRequestPath` (`/webuploads`) altından, `Cache-Control: public, max-age=31536000, immutable`, dizin listeleme kapalı, `X-Content-Type-Options: nosniff` | `EmployerLogo`, `WebsiteImage`, `WebsiteDocument` |
-| Özel | `FileStorage:RootDirectory` | `App_Data/uploads` | **Asla statik servis edilmez** | `CandidatePhoto`, `CandidateCv`, `EmployerDocument`, `WebsiteFormAttachment` |
+| Public | `FileStorage:PublicRootDirectory` | `App_Data/webuploads` | Statik, `FileStorage:PublicRequestPath` (`/webuploads`) altından, `Cache-Control: public, max-age=31536000, immutable`, dizin listeleme kapalı, `X-Content-Type-Options: nosniff` | `WebsiteImage`, `WebsiteDocument` |
+| Özel | `FileStorage:RootDirectory` | `App_Data/uploads` | **Asla statik servis edilmez** | `CandidatePhoto`, `CandidateCv`, `EmployerLogo`, `EmployerDocument`, `WebsiteFormAttachment` |
+
+**Değişiklik (Employer public jobs master prompt, Görev 2):** `EmployerLogo` public kategoriden özel kategoriye taşındı. Gerekçe: bir firma logosu yalnızca firma `Approved` **ve** `ShowLogoOnWebsite=true` iken gösterilmeli; bu, istek bazlı bir onay kontrolüdür ve statik dosya sunucusunun (önceden tanımlı, dosya bazlı `Cache-Control: immutable` politikasıyla çalışan `UseStaticFiles`) uygulayabileceği bir şey değildir. Public kategori altında dosya, tahmin edilemez GUID adına güvenen ama hiçbir onay kontrolü yapmayan bir statik URL üzerinden süresiz erişilebilir kalıyordu - bu, `GET /api/v1/public/companies/{id}/logo` ucunun onay kontrolünü etkisiz kılan bir yan kanaldı. Artık logo özel kökte saklanır ve yalnızca bu uç nokta (`IFileStorageService.ReadAsync` ile okuyup onay kontrolünden geçtikten sonra stream ederek) onu servis eder. `GetUrlAsync`'in döndürdüğü URL artık bu kategori için çözülmez (diğer özel kategorilerle aynı, önceden olduğu gibi).
 
 **Değişmeyenler:**
 

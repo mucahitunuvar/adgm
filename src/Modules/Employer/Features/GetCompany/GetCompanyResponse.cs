@@ -6,6 +6,7 @@ public sealed record GetCompanyResponse(
     Guid Id,
     Guid UserId,
     Guid? CareerAdvisorId,
+    bool ShowLogoOnWebsite,
     string Name,
     Guid SectorId,
     int? FoundedYear,
@@ -29,12 +30,14 @@ public sealed record GetCompanyResponse(
     string? RejectionReason,
     Guid? DeactivatedByUserId,
     DateTime? DeactivatedAtUtc,
-    DateTime CreatedAtUtc)
+    DateTime CreatedAtUtc,
+    byte[] RowVersion)
 {
     public static GetCompanyResponse FromDomain(Company company) => new(
         company.Id,
         company.UserId,
         company.CareerAdvisorId,
+        company.ShowLogoOnWebsite,
         company.Name,
         company.SectorId,
         company.FoundedYear,
@@ -58,5 +61,6 @@ public sealed record GetCompanyResponse(
         company.RejectionReason,
         company.DeactivatedByUserId,
         company.DeactivatedAtUtc,
-        company.CreatedAtUtc);
+        company.CreatedAtUtc,
+        company.RowVersion);
 }

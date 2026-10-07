@@ -13,12 +13,15 @@ using GenclikMerkezi.Modules.Employer.Features.GetMyCompany;
 using GenclikMerkezi.Modules.Employer.Features.GetMyCompanyJobs;
 using GenclikMerkezi.Modules.Employer.Features.GetMyPersonnelNeeds;
 using GenclikMerkezi.Modules.Employer.Features.GetOwnPoolPersonnelNeeds;
+using GenclikMerkezi.Modules.Employer.Features.GetPublicCompanyLogo;
+using GenclikMerkezi.Modules.Employer.Features.GetPublicCompanyProfile;
 using GenclikMerkezi.Modules.Employer.Features.GetPublishedJobs;
 using GenclikMerkezi.Modules.Employer.Features.PoolPersonnelNeed;
 using GenclikMerkezi.Modules.Employer.Features.RegisterEmployer;
 using GenclikMerkezi.Modules.Employer.Features.RejectCompany;
 using GenclikMerkezi.Modules.Employer.Features.RejectJob;
 using GenclikMerkezi.Modules.Employer.Features.RequestJobRevision;
+using GenclikMerkezi.Modules.Employer.Features.SetCompanyLogoVisibility;
 using GenclikMerkezi.Modules.Employer.Features.SubmitJobForReview;
 using GenclikMerkezi.Modules.Employer.Features.SubmitPersonnelNeed;
 using GenclikMerkezi.Modules.Employer.Features.UpdateJob;
@@ -39,7 +42,10 @@ public static class EmployerModuleEndpointExtensions
         GetCompanyEndpoint.Map(app);
         GetMyCompanyEndpoint.Map(app);
         UploadCompanyLogoEndpoint.Map(app);
+        SetCompanyLogoVisibilityEndpoint.Map(app);
         AdminReassignCompanyEndpoint.Map(app);
+        GetPublicCompanyProfileEndpoint.Map(app);
+        GetPublicCompanyLogoEndpoint.Map(app);
 
         CreateJobEndpoint.Map(app);
         UpdateJobEndpoint.Map(app);

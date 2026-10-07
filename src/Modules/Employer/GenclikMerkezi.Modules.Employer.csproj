@@ -13,6 +13,12 @@
   <ItemGroup>
     <PackageReference Include="MediatR" Version="12.5.0" />
     <PackageReference Include="FluentValidation" Version="12.1.1" />
+    <!-- MIT license (also its AngleSharp/AngleSharp.Css dependencies), already vetted for this
+         repository (AGENTS.md §47-48; see Website's GenclikMerkezi.Modules.Website.csproj). Görev 2
+         (Employer public jobs master prompt): Company.AboutHtml must be sanitized before an anonymous
+         public endpoint returns it - Website's own IHtmlContentSanitizer cannot be reused (Employer
+         must not depend on Website), so this is a separate, deliberately smaller whitelist. -->
+    <PackageReference Include="HtmlSanitizer" Version="9.2.1039" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">

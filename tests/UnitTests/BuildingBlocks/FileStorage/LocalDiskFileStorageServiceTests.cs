@@ -68,15 +68,15 @@ public sealed class LocalDiskFileStorageServiceTests : IDisposable
 
         using var secondContent = new MemoryStream(Encoding.UTF8.GetBytes("day-two"));
         var secondResult = await service.UploadAsync(
-            secondContent, "photo.png", "image/png", FileCategory.EmployerLogo, "EmployerProfile", Guid.NewGuid(), CreatePhotoPolicy());
+            secondContent, "photo.png", "image/png", FileCategory.WebsiteImage, "WebsiteMedia", Guid.NewGuid(), CreatePhotoPolicy());
 
         Assert.True(firstResult.IsSuccess);
         Assert.True(secondResult.IsSuccess);
         Assert.StartsWith("candidate-photos/2026/09/17/", firstResult.Value.FileKey);
-        Assert.StartsWith("employer-logos/2026/09/18/", secondResult.Value.FileKey);
+        Assert.StartsWith("website-images/2026/09/18/", secondResult.Value.FileKey);
         Assert.NotEqual(firstResult.Value.FileKey, secondResult.Value.FileKey);
 
-        // First upload (CandidatePhoto) is private -> _rootDirectory; second (EmployerLogo) is
+        // First upload (CandidatePhoto) is private -> _rootDirectory; second (WebsiteImage) is
         // public -> _publicRootDirectory (ADR-024 Faz 0 Görev 4).
         var firstFullPath = Path.Combine(_rootDirectory, firstResult.Value.FileKey.Replace('/', Path.DirectorySeparatorChar));
         var secondFullPath = Path.Combine(_publicRootDirectory, secondResult.Value.FileKey.Replace('/', Path.DirectorySeparatorChar));
@@ -88,7 +88,9 @@ public sealed class LocalDiskFileStorageServiceTests : IDisposable
     {
         yield return [FileCategory.CandidatePhoto, false];
         yield return [FileCategory.CandidateCv, false];
-        yield return [FileCategory.EmployerLogo, true];
+        // Görev 2 (Employer public jobs master prompt): EmployerLogo moved from public to private -
+        // only the dedicated, consent-checked GetPublicCompanyLogo endpoint may ever serve it.
+        yield return [FileCategory.EmployerLogo, false];
         yield return [FileCategory.EmployerDocument, false];
         yield return [FileCategory.WebsiteImage, true];
         yield return [FileCategory.WebsiteDocument, true];
