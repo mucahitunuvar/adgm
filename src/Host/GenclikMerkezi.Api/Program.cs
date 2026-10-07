@@ -379,6 +379,8 @@ if (!isTestingEnvironment)
         "website-cleanup-expired-pending-event-registrations", job => job.ExecuteAsync(CancellationToken.None), Cron.Hourly);
     RecurringJob.AddOrUpdate<AnonymizeExpiredEventRegistrationsJob>(
         "website-anonymize-expired-event-registrations", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
+    RecurringJob.AddOrUpdate<ReconcileWebsiteSearchIndexJob>(
+        "website-reconcile-search-index", job => job.ExecuteAsync(CancellationToken.None), "*/10 * * * *");
 }
 
 app.Run();

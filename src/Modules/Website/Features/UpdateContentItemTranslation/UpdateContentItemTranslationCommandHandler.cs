@@ -15,6 +15,7 @@ public sealed class UpdateContentItemTranslationCommandHandler(
     IMediaAssetRepository mediaAssetRepository,
     IHtmlContentSanitizer htmlContentSanitizer,
     ContentPathCascadeService contentPathCascadeService,
+    ISearchIndexUpdater searchIndexUpdater,
     ICurrentUserContext currentUserContext,
     ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
@@ -129,6 +130,7 @@ public sealed class UpdateContentItemTranslationCommandHandler(
             }
         }
 
+        await searchIndexUpdater.ReindexWithDescendantsAsync(contentItem, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 

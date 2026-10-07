@@ -19,6 +19,7 @@ public sealed class DuplicateContentItemCommandHandler(
     ISiteLanguageRepository siteLanguageRepository,
     IEventScheduleRepository eventScheduleRepository,
     ContentPathCascadeService contentPathCascadeService,
+    ISearchIndexUpdater searchIndexUpdater,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
     ICacheService cacheService,
@@ -189,6 +190,7 @@ public sealed class DuplicateContentItemCommandHandler(
             eventScheduleRepository.Add(copyResult.Value);
         }
 
+        await searchIndexUpdater.ReindexAsync(newItem, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 

@@ -8,6 +8,7 @@ namespace GenclikMerkezi.Modules.Website.Features.ActivateContentType;
 
 public sealed class ActivateContentTypeCommandHandler(
     IContentTypeRepository contentTypeRepository,
+    ISearchIndexUpdater searchIndexUpdater,
     ICurrentUserContext currentUserContext,
     ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
@@ -33,6 +34,7 @@ public sealed class ActivateContentTypeCommandHandler(
             return activateResult;
         }
 
+        await searchIndexUpdater.ReindexContentTypeAsync(contentType.Id, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 

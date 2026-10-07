@@ -10,6 +10,7 @@ namespace GenclikMerkezi.Modules.Website.Features.PermanentlyDeleteContentItem;
 public sealed class PermanentlyDeleteContentItemCommandHandler(
     IContentItemRepository contentItemRepository,
     ContentItemPermanentDeletionService permanentDeletionService,
+    ISearchIndexUpdater searchIndexUpdater,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
     ICacheService cacheService,
@@ -37,6 +38,7 @@ public sealed class PermanentlyDeleteContentItemCommandHandler(
             return deleteResult;
         }
 
+        await searchIndexUpdater.RemoveAsync(contentItem.Id, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 

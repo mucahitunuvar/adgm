@@ -11,6 +11,7 @@ public sealed class PublishContentItemCommandHandler(
     IContentItemRepository contentItemRepository,
     IContentTypeRepository contentTypeRepository,
     ISiteLanguageRepository siteLanguageRepository,
+    ISearchIndexUpdater searchIndexUpdater,
     ICurrentUserContext currentUserContext,
     ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
@@ -63,6 +64,7 @@ public sealed class PublishContentItemCommandHandler(
             return publishResult;
         }
 
+        await searchIndexUpdater.ReindexWithDescendantsAsync(contentItem, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 

@@ -8,6 +8,7 @@ namespace GenclikMerkezi.Modules.Website.Features.DeactivateSiteLanguage;
 
 public sealed class DeactivateSiteLanguageCommandHandler(
     ISiteLanguageRepository siteLanguageRepository,
+    ISearchIndexUpdater searchIndexUpdater,
     ICurrentUserContext currentUserContext,
     ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
@@ -27,6 +28,7 @@ public sealed class DeactivateSiteLanguageCommandHandler(
             return deactivateResult;
         }
 
+        await searchIndexUpdater.RemoveLanguageAsync(siteLanguage.Code, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         WebsiteCacheInvalidator.InvalidatePublicSite(cacheService);

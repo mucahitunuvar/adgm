@@ -12,6 +12,7 @@ namespace GenclikMerkezi.Modules.Website.Features.DeleteContentItem;
 public sealed class DeleteContentItemCommandHandler(
     IContentItemRepository contentItemRepository,
     ISiteLanguageRepository siteLanguageRepository,
+    ISearchIndexUpdater searchIndexUpdater,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
     ICacheService cacheService,
@@ -49,6 +50,7 @@ public sealed class DeleteContentItemCommandHandler(
             return trashResult;
         }
 
+        await searchIndexUpdater.ReindexAsync(contentItem, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 

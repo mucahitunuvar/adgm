@@ -13,12 +13,13 @@ namespace GenclikMerkezi.UnitTests.Website.Features.DeactivateSiteLanguage;
 public class DeactivateSiteLanguageCommandHandlerTests
 {
     private readonly FakeSiteLanguageRepository _repository = new();
+    private readonly FakeSearchIndexUpdater _searchIndexUpdater = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
     private readonly ICacheService _cacheService =
         new MemoryCacheService(new MemoryCache(new MemoryCacheOptions()), Options.Create(new CacheSettings()));
 
     private DeactivateSiteLanguageCommandHandler CreateHandler() =>
-        new(_repository, new FakeCurrentUserContext(Guid.NewGuid()), _cacheService, _unitOfWork);
+        new(_repository, _searchIndexUpdater, new FakeCurrentUserContext(Guid.NewGuid()), _cacheService, _unitOfWork);
 
     [Fact]
     public async Task Handle_WithNonDefaultLanguage_Deactivates()
@@ -31,6 +32,7 @@ public class DeactivateSiteLanguageCommandHandlerTests
         Assert.True(result.IsSuccess);
         Assert.False(language.IsActive);
         Assert.Equal(1, _unitOfWork.SaveChangesCallCount);
+        Assert.Contains(language.Code, _searchIndexUpdater.RemovedLanguages);
     }
 
     [Fact]

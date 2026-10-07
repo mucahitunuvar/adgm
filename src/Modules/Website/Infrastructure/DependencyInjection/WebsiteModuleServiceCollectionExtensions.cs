@@ -13,6 +13,7 @@ using GenclikMerkezi.Modules.Website.Application.Media;
 using GenclikMerkezi.Modules.Website.Application.Partners;
 using GenclikMerkezi.Modules.Website.Application.PublicSubmissions;
 using GenclikMerkezi.Modules.Website.Application.RouteResolution;
+using GenclikMerkezi.Modules.Website.Application.Search;
 using GenclikMerkezi.Modules.Website.Application.Sliders;
 using GenclikMerkezi.Modules.Website.Infrastructure;
 using GenclikMerkezi.Modules.Website.Infrastructure.BotProtection;
@@ -87,6 +88,16 @@ public static class WebsiteModuleServiceCollectionExtensions
         // ADR-024 §10 (Faz 5 Görev 1): the search read-model repository - no IExternalSearchSource is
         // registered yet (Görev 4 is where the Host project adds its first one).
         services.AddScoped<ISearchDocumentRepository, SearchDocumentRepository>();
+
+        // ADR-024 §10 (Faz 5 Görev 2): registered under its own concrete type too (not just the
+        // interface) since ContinueSearchIndexBatchJob resolves it directly to call the batch-
+        // continuation methods that are not part of the public ISearchIndexUpdater port - same shape
+        // as EventCancellationNotifier/IEventCancellationNotifier above.
+        services.AddScoped<SearchIndexUpdater>();
+        services.AddScoped<ISearchIndexUpdater>(sp => sp.GetRequiredService<SearchIndexUpdater>());
+        services.AddScoped<ISearchIndexBatchScheduler, HangfireSearchIndexBatchScheduler>();
+        services.AddTransient<ContinueSearchIndexBatchJob>();
+        services.AddTransient<ReconcileWebsiteSearchIndexJob>();
         services.AddScoped<PublicFormDefinitionResolver>();
         services.AddScoped<LinkTargetResolver>();
         services.AddScoped<SliderPublicQueryService>();

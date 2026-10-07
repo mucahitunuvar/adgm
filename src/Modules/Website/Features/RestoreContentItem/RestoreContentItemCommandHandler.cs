@@ -11,6 +11,7 @@ namespace GenclikMerkezi.Modules.Website.Features.RestoreContentItem;
 // ContentItem.Restore has no parent access of its own.
 public sealed class RestoreContentItemCommandHandler(
     IContentItemRepository contentItemRepository,
+    ISearchIndexUpdater searchIndexUpdater,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
     ICacheService cacheService,
@@ -41,6 +42,7 @@ public sealed class RestoreContentItemCommandHandler(
             return restoreResult;
         }
 
+        await searchIndexUpdater.ReindexAsync(contentItem, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 

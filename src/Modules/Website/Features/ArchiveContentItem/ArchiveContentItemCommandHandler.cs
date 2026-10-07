@@ -8,6 +8,7 @@ namespace GenclikMerkezi.Modules.Website.Features.ArchiveContentItem;
 
 public sealed class ArchiveContentItemCommandHandler(
     IContentItemRepository contentItemRepository,
+    ISearchIndexUpdater searchIndexUpdater,
     ICurrentUserContext currentUserContext,
     ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
@@ -40,6 +41,7 @@ public sealed class ArchiveContentItemCommandHandler(
             return archiveResult;
         }
 
+        await searchIndexUpdater.ReindexWithDescendantsAsync(contentItem, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 

@@ -12,6 +12,7 @@ public sealed class SetContentItemParentCommandHandler(
     IContentTypeRepository contentTypeRepository,
     ISiteLanguageRepository siteLanguageRepository,
     ContentPathCascadeService contentPathCascadeService,
+    ISearchIndexUpdater searchIndexUpdater,
     ICurrentUserContext currentUserContext,
     ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
@@ -113,6 +114,7 @@ public sealed class SetContentItemParentCommandHandler(
 
         contentItem.SetParent(request.ParentId, userId, now);
 
+        await searchIndexUpdater.ReindexWithDescendantsAsync(contentItem, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 

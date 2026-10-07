@@ -15,6 +15,7 @@ public sealed class CreateContentItemCommandHandler(
     IMediaAssetRepository mediaAssetRepository,
     IHtmlContentSanitizer htmlContentSanitizer,
     ContentPathCascadeService contentPathCascadeService,
+    ISearchIndexUpdater searchIndexUpdater,
     ICurrentUserContext currentUserContext,
     ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
@@ -99,6 +100,7 @@ public sealed class CreateContentItemCommandHandler(
         }
 
         contentItemRepository.Add(contentItemResult.Value);
+        await searchIndexUpdater.ReindexAsync(contentItemResult.Value, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 
