@@ -15,6 +15,8 @@ using GenclikMerkezi.Modules.Employer.Features.GetMyPersonnelNeeds;
 using GenclikMerkezi.Modules.Employer.Features.GetOwnPoolPersonnelNeeds;
 using GenclikMerkezi.Modules.Employer.Features.GetPublicCompanyLogo;
 using GenclikMerkezi.Modules.Employer.Features.GetPublicCompanyProfile;
+using GenclikMerkezi.Modules.Employer.Features.GetPublicJobDetail;
+using GenclikMerkezi.Modules.Employer.Features.GetPublicJobs;
 using GenclikMerkezi.Modules.Employer.Features.GetPublishedJobs;
 using GenclikMerkezi.Modules.Employer.Features.PoolPersonnelNeed;
 using GenclikMerkezi.Modules.Employer.Features.RegisterEmployer;
@@ -59,6 +61,8 @@ public static class EmployerModuleEndpointExtensions
         AdminSuspendJobEndpoint.Map(app);
         AdminReinstateJobEndpoint.Map(app);
         BackfillJobSlugsEndpoint.Map(app);
+        GetPublicJobsEndpoint.Map(app);
+        GetPublicJobDetailEndpoint.Map(app);
 
         CreatePersonnelNeedEndpoint.Map(app);
         UpdatePersonnelNeedEndpoint.Map(app);

@@ -33,6 +33,15 @@ public sealed class JobConfiguration : IEntityTypeConfiguration<Job>
         builder.Property(j => j.ExperienceLevelId).IsRequired();
 
         builder.Property(j => j.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+
+        // Görev 3 (Employer public jobs master prompt): public ilan listesi/detayı ve Görev 4'ün
+        // arama adaptörü dahil her public sorgu önce Status == Published'a daralır, sonra
+        // PublishedAtUtc DESC sıralar (liste) ya da artan sıralar (Görev 4). CompanyId/Slug'ın aksine
+        // bu filtrenin seçiciliği düşük görünebilir ama her satırda uygulanan ortak önkoşul olduğu ve
+        // varsayılan sıralamayı da kapsadığı için eklendi - diğer filtre alanları (provinceId vb.)
+        // isteğe bağlı/seyrek kullanıldığından ölçülmüş bir ihtiyaç olmadan eklenmedi (PERFORMANCE.md
+        // "ölç, sonra ekle").
+        builder.HasIndex(j => new { j.Status, j.PublishedAtUtc });
         builder.Property(j => j.ReviewedByAdvisorId);
         builder.Property(j => j.ReviewedAtUtc);
         builder.Property(j => j.RejectionReason).HasMaxLength(1000);
