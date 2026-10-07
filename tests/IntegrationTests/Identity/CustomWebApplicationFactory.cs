@@ -2,6 +2,7 @@ using GenclikMerkezi.Modules.Candidate.Infrastructure;
 using GenclikMerkezi.Modules.CareerAdvisor.Application.Abstractions;
 using GenclikMerkezi.Modules.CareerAdvisor.Infrastructure;
 using GenclikMerkezi.Modules.CareerDevelopment.Infrastructure;
+using GenclikMerkezi.Modules.Employer.Application.Abstractions;
 using GenclikMerkezi.Modules.Employer.Infrastructure;
 using GenclikMerkezi.Modules.Employment.Infrastructure;
 using GenclikMerkezi.Modules.Identity;
@@ -352,6 +353,18 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         return registration is null
             ? null
             : new EventRegistrationSnapshot(registration.Id, registration.Status, registration.CancelToken, registration.UserId);
+    }
+
+    // Görev 1 (Employer public jobs master prompt): Job.Slug hiçbir mevcut HTTP yanıtında dönmüyor
+    // (GetPublishedJobs/GetMyCompanyJobs iç uçları - master prompt §1 "değiştirilmez" - Slug alanı
+    // eklemiyor; public uçlar Görev 3'te gelecek), bu yüzden JobSlugFlowTests burada doğrudan
+    // IJobRepository üzerinden okuyor, SeedAdminUserAsync'in aynı bypass-the-HTTP-surface deseniyle.
+    public async Task<string?> GetJobSlugAsync(Guid jobId)
+    {
+        using var scope = Services.CreateScope();
+        var jobRepository = scope.ServiceProvider.GetRequiredService<IJobRepository>();
+        var job = await jobRepository.GetByIdAsync(jobId);
+        return job!.Slug;
     }
 
     public async Task<(int ConfirmedCount, int WaitlistedCount)> GetEventScheduleCountersAsync(Guid contentItemId)

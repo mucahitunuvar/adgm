@@ -46,6 +46,13 @@ public sealed class JobRepository(EmployerDbContext dbContext) : IJobRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Job>> GetNeedingSlugBackfillAsync(CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Jobs
+            .Where(j => j.Slug == null && j.PublishedAtUtc != null)
+            .ToListAsync(cancellationToken);
+    }
+
     public void Add(Job job)
     {
         dbContext.Jobs.Add(job);

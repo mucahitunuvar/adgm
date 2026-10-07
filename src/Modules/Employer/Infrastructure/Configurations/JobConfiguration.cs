@@ -17,6 +17,12 @@ public sealed class JobConfiguration : IEntityTypeConfiguration<Job>
         builder.HasIndex(j => j.CompanyId);
 
         builder.Property(j => j.Title).HasMaxLength(200).IsRequired();
+
+        // Görev 1 (master prompt): nullable (taslakta null), ilk yayında atanır ve değişmez. Id eki
+        // çakışmayı pratikte imkânsız kılar; filtreli benzersiz indeks emniyet kemeridir.
+        builder.Property(j => j.Slug).HasMaxLength(120);
+        builder.HasIndex(j => j.Slug).IsUnique().HasFilter("[Slug] IS NOT NULL");
+
         builder.Property(j => j.IsForDisabledCandidates).IsRequired();
         builder.Property(j => j.EmploymentTypeId).IsRequired();
         builder.Property(j => j.WorkLocationTypeId).IsRequired();

@@ -43,6 +43,12 @@ public sealed class FakeJobRepository : IJobRepository
         return Task.FromResult(matches);
     }
 
+    public Task<IReadOnlyList<Job>> GetNeedingSlugBackfillAsync(CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<Job> matches = _jobs.Where(j => j.Slug is null && j.PublishedAtUtc is not null).ToList();
+        return Task.FromResult(matches);
+    }
+
     public void Add(Job job)
     {
         _jobs.Add(job);

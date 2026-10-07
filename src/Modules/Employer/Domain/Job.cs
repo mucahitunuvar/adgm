@@ -17,6 +17,11 @@ public sealed class Job : AggregateRoot
 
     public string Title { get; private set; }
 
+    // Görev 1 (master prompt): yalnızca ilk yayınlandığı anda (Approve içinde) atanır, sonra
+    // değişmez - başlık sonradan düzenlense (Update, RevisionRequested sırasında) bile URL kararlı
+    // kalır. Taslakta null.
+    public string? Slug { get; private set; }
+
     public bool IsForDisabledCandidates { get; private set; }
 
     public Guid EmploymentTypeId { get; private set; }
@@ -194,6 +199,11 @@ public sealed class Job : AggregateRoot
         ReviewedAtUtc = approvedAtUtc;
         PublishedAtUtc = approvedAtUtc;
 
+        // ??=: RevisionRequested -> Submit -> Approve döngüsüyle bir ilan birden fazla kez buradan
+        // geçebilir (ör. reddedilip düzeltilip yeniden onaylanabilir), ama Slug yalnızca ilk seferde
+        // atanır - Görev 1 master prompt'un "ilk yayınlandığı anda atanır ve sonra değişmez" kararı.
+        Slug ??= JobSlugGenerator.Generate(Title, Id);
+
         return Result.Success();
     }
 
@@ -254,6 +264,14 @@ public sealed class Job : AggregateRoot
         Status = JobStatus.Published;
 
         return Result.Success();
+    }
+
+    // Görev 1 (master prompt) BackfillJobSlugsCommand'ın tek seferlik, idempotent geri doldurması için:
+    // Slug alanı eklenmeden önce yayınlanmış (PublishedAtUtc dolu) ilanlar burada Approve'u tekrar
+    // çağırmadan (durum geçişine dokunmadan) slug alır. Zaten atanmışsa hiçbir şey yapmaz.
+    public void BackfillSlug()
+    {
+        Slug ??= JobSlugGenerator.Generate(Title, Id);
     }
 
     // "Value-by-set" değiştirme: istemci taraflı bunlar adreslenebilir tekil öğeler değil, düz bir

@@ -69,6 +69,7 @@ public class JobTests
         Assert.Equal(languageId, job.LanguageRequirements.Single().LanguageId);
         Assert.Equal(languageLevelId, job.LanguageRequirements.Single().LanguageLevelId);
         Assert.Null(job.PublishedAtUtc);
+        Assert.Null(job.Slug);
     }
 
     [Theory]
@@ -112,6 +113,52 @@ public class JobTests
         Assert.Equal(advisorId, job.ReviewedByAdvisorId);
         Assert.Equal(approvedAtUtc, job.ReviewedAtUtc);
         Assert.Equal(approvedAtUtc, job.PublishedAtUtc);
+        Assert.Equal(JobSlugGenerator.Generate(job.Title, job.Id), job.Slug);
+    }
+
+    // Görev 1 (master prompt): "yeniden yayınlama ... slug'ı korur". Domain'de Approve() yalnızca
+    // UnderReview'dan geçer ve Published'tan dönüşün tek yolu Suspend/Reinstate olduğu için (Rejected
+    // terminal, RequestRevision yalnızca UnderReview'dan) Approve() bir Job'ın ömründe en fazla bir kez
+    // başarıyla çağrılabilir - Approve_FromNonUnderReviewStatus_Fails (Published dahil) bunu zaten
+    // doğruluyor. Gerçek "yeniden yayınlama" senaryosu bu yüzden AdminReinstateJob'un Suspend->Reinstate
+    // döngüsüdür; Reinstate() Slug'a hiç dokunmaz.
+    [Fact]
+    public void Reinstate_AfterSuspend_DoesNotChangeSlug()
+    {
+        var job = TransitionTo(JobStatus.Published);
+        var originalSlug = job.Slug;
+
+        job.Suspend(Guid.NewGuid(), "Uygunsuz içerik", DateTime.UtcNow);
+        job.Reinstate(DateTime.UtcNow);
+
+        Assert.Equal(JobStatus.Published, job.Status);
+        Assert.Equal(originalSlug, job.Slug);
+    }
+
+    [Fact]
+    public void BackfillSlug_WhenSlugAlreadyAssigned_DoesNotChangeIt()
+    {
+        var job = TransitionTo(JobStatus.Published);
+        var originalSlug = job.Slug;
+
+        job.BackfillSlug();
+
+        Assert.Equal(originalSlug, job.Slug);
+    }
+
+    // Approve() artık Slug'ı her zaman atadığı için, "Slug'ı eksik yayınlanmış ilan" durumu normal
+    // domain API'siyle üretilemez - bu, yalnızca Slug sütunu eklenmeden önce yayınlanmış geçmiş
+    // kayıtları temsil eder (BackfillJobSlugsCommand'ın tek var oluş nedeni). Reflection ile bu
+    // geçmiş durum simüle edilir.
+    [Fact]
+    public void BackfillSlug_WhenSlugIsMissing_AssignsGeneratedSlug()
+    {
+        var job = TransitionTo(JobStatus.Published);
+        typeof(Job).GetProperty(nameof(Job.Slug))!.SetValue(job, null);
+
+        job.BackfillSlug();
+
+        Assert.Equal(JobSlugGenerator.Generate(job.Title, job.Id), job.Slug);
     }
 
     [Theory]

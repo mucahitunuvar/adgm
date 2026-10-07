@@ -3,6 +3,7 @@ using GenclikMerkezi.Modules.Employer.Features.AdminReinstateJob;
 using GenclikMerkezi.Modules.Employer.Features.AdminSuspendJob;
 using GenclikMerkezi.Modules.Employer.Features.ApproveCompany;
 using GenclikMerkezi.Modules.Employer.Features.ApproveJob;
+using GenclikMerkezi.Modules.Employer.Features.BackfillJobSlugs;
 using GenclikMerkezi.Modules.Employer.Features.CreateJob;
 using GenclikMerkezi.Modules.Employer.Features.CreatePersonnelNeed;
 using GenclikMerkezi.Modules.Employer.Features.DeactivateCompany;
@@ -51,6 +52,7 @@ public static class EmployerModuleEndpointExtensions
         GetJobsPendingReviewEndpoint.Map(app);
         AdminSuspendJobEndpoint.Map(app);
         AdminReinstateJobEndpoint.Map(app);
+        BackfillJobSlugsEndpoint.Map(app);
 
         CreatePersonnelNeedEndpoint.Map(app);
         UpdatePersonnelNeedEndpoint.Map(app);
