@@ -401,7 +401,7 @@ Başka modüllerin backend davranışını değiştiren bayraklar (ör. istihdam
 
 Her faz (gerektiğinde alt fazlara bölünerek, bkz. 1a/1b), ayrı görevlere bölünmüş kendi master prompt'uyla uygulanır; her görev ayrı commit'tir.
 
-**Paralel iş (Employer modülü, bu ADR'nin kapsamı dışında):** İlan listesine sayfalama ve filtre, ilan slug'ı ve public detay endpoint'i, public firma profili ve firmanın logosunun sitede gösterilmesine izin veren onay alanı, arama adaptörü için yayındaki ilan özetlerini sayfalı dönen public contract metodu.
+**Paralel iş (Employer modülü, bu ADR'nin kapsamı dışında) — ✅ Tamamlandı:** İlan listesine sayfalama ve filtre, ilan slug'ı ve public detay endpoint'i, public firma profili ve firmanın logosunun sitede gösterilmesine izin veren onay alanı, arama adaptörü için yayındaki ilan özetlerini sayfalı dönen public contract metodu (`IPublishedJobModuleContract`, bkz. ADR-023 §6). Faz 5'in arama adaptörü artık bu contract üzerine kurulabilir.
 
 ## Sonuçlar
 

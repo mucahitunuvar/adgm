@@ -990,6 +990,36 @@ veri paylaşımı, küçük resim için geçerli değildir.
   — bu durumda zaten kendi medya kütüphanesinden servis edilen bir görsel vardır, YouTube'a hiç
   istek atılmasına gerek yoktur.
 
+## 23.4 Public Employer (İlan/Firma) Endpoint'leri
+
+Employer modülünün anonim public uçları (`GET /api/v1/public/jobs`, `/api/v1/public/jobs/{slug}`,
+`/api/v1/public/companies/{id}`, `/api/v1/public/companies/{id}/logo` — ADR-023 §6) diğer public
+okuma uçlarıyla aynı `public-read` rate limiting policy'sine (§23.1) tabidir.
+
+* **Kişisel veri ve iç alan sızdırmama:** Hiçbir public yanıt firmanın iletişim bilgisini
+  (`ContactFirstName/LastName/Email/Phone`), vergi bilgisini (`TaxOfficeId`/`TaxNumber`), atanmış
+  danışmanını veya ilanın inceleme/ret/revizyon notlarını içermez. İlan yanıtlarında **cinsiyet
+  tercihi hiçbir zaman yer almaz** — bu alan yalnızca danışman/aday eşleştirmesinde kullanılır ve
+  public'e açılması ayrımcılık riski taşır (hukuki teyit gerektiren bir konu olarak kasıtlı dışarıda
+  bırakılmıştır). Askerlik durumu tercihi yalnızca ilan **detayında** bulunur, listede ve arama
+  adaptörünün (`IPublishedJobModuleContract`) özetinde yer almaz.
+* **Onay zinciri her istekte yeniden doğrulanır:** Bir ilan yalnızca kendisi `Published` **ve**
+  firması `Approved` ise public yanıta girer. Firma sonradan reddedilir/pasife alınırsa veya ilan
+  idari olarak askıya alınırsa (`AdminSuspendJob`), ilan bir sonraki public istekte otomatik olarak
+  kaybolur — ayrı bir senkronizasyon/temizlik adımına gerek yoktur, çünkü sorgu bu iki durumu her
+  seferinde canlı veriden kontrol eder.
+* **Firma logosu yalnızca açık onayla servis edilir:** `Company.ShowLogoOnWebsite` varsayılan
+  `false`'dur ve logo yüklenmeden `true` yapılamaz (`Company.LogoRequired`). Public logo ucu,
+  firma onaylı **ve** `ShowLogoOnWebsite = true` olmadıkça dosyayı döndürmez; dosya yolu istemciden
+  gelmez, sunucu tarafında firma kaydından çözülür.
+* **`404` tekdüzeliği:** Bulunamayan, yayında olmayan veya firması onaysız bir ilan/firma için tüm
+  public uçlar **aynı** `404` yanıtını döner; hangi sebeple erişilemediği (yok/taslak/askıda/firma
+  reddedilmiş) anonim çağırana sızdırılmaz — aynı ilke önizleme linklerinde (§23.2) ve etkinlik
+  kaydında (§12.4) de uygulanır.
+* **`SiteSettings.PublicJobListingsEnabled` bir güvenlik kontrolü değildir:** bu bayrak yalnızca
+  Website'in frontend yanıtını ve arama adaptörünü kısıtlar; Employer'ın public uçları bayraktan
+  bağımsız olarak her zaman yukarıdaki kurallara göre çalışır.
+
 ---
 
 # 24. CORS
