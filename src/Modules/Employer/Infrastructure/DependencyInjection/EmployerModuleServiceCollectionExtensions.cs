@@ -37,6 +37,7 @@ public static class EmployerModuleServiceCollectionExtensions
         services.AddScoped<ICompanyModuleContract, CompanyModuleContract>();
         services.AddSingleton<IHtmlContentSanitizer, HtmlSanitizerContentSanitizer>();
         services.AddScoped<IJobRepository, JobRepository>();
+        services.AddScoped<IPublishedJobModuleContract, PublishedJobModuleContract>();
         services.AddScoped<IPersonnelNeedRepository, PersonnelNeedRepository>();
         services.AddScoped<IPersonnelNeedModuleContract, PersonnelNeedModuleContract>();
 
