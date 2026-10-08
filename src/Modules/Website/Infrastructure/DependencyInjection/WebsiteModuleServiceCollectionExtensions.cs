@@ -85,9 +85,11 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<INewsletterSubscriberRepository, NewsletterSubscriberRepository>();
         services.AddScoped<IThirdPartyScriptRepository, ThirdPartyScriptRepository>();
         services.AddScoped<ICookieConsentRecordRepository, CookieConsentRecordRepository>();
-        // ADR-024 §10 (Faz 5 Görev 1): the search read-model repository - no IExternalSearchSource is
-        // registered yet (Görev 4 is where the Host project adds its first one).
+        // ADR-024 §10 (Faz 5 Görev 1): the search read-model repository. Görev 4 is where the Host
+        // project adds its first IExternalSearchSource (EmployerJobSearchSource) - this registration
+        // alone does not change.
         services.AddScoped<ISearchDocumentRepository, SearchDocumentRepository>();
+        services.AddScoped<ISearchSourceStateRepository, SearchSourceStateRepository>();
 
         // ADR-024 §10 (Faz 5 Görev 2): registered under its own concrete type too (not just the
         // interface) since ContinueSearchIndexBatchJob resolves it directly to call the batch-
@@ -98,6 +100,15 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<ISearchIndexBatchScheduler, HangfireSearchIndexBatchScheduler>();
         services.AddTransient<ContinueSearchIndexBatchJob>();
         services.AddTransient<ReconcileWebsiteSearchIndexJob>();
+
+        // ADR-024 §10 (Faz 5 Görev 4): one process-wide lock shared by both sync paths below (the
+        // recurring jobs and the admin on-demand reindex command), plus the two sync algorithms
+        // themselves - "website" (WebsiteSearchIndexReconciler) and every registered
+        // IExternalSearchSource (ExternalSearchSourceSynchronizer, one call handles any of them).
+        services.AddSingleton<SearchSourceSyncCoordinator>();
+        services.AddScoped<WebsiteSearchIndexReconciler>();
+        services.AddScoped<ExternalSearchSourceSynchronizer>();
+        services.AddTransient<SyncExternalSearchSourcesJob>();
         services.AddScoped<PublicFormDefinitionResolver>();
         services.AddScoped<LinkTargetResolver>();
         services.AddScoped<SliderPublicQueryService>();

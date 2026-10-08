@@ -124,6 +124,7 @@ using GenclikMerkezi.Modules.Website.Features.GetPublicSearch;
 using GenclikMerkezi.Modules.Website.Features.GetPublicSite;
 using GenclikMerkezi.Modules.Website.Features.GetPublicVideos;
 using GenclikMerkezi.Modules.Website.Features.GetRedirects;
+using GenclikMerkezi.Modules.Website.Features.GetSearchSources;
 using GenclikMerkezi.Modules.Website.Features.GetSiteLanguages;
 using GenclikMerkezi.Modules.Website.Features.GetSiteSettings;
 using GenclikMerkezi.Modules.Website.Features.GetSliderById;
@@ -143,6 +144,7 @@ using GenclikMerkezi.Modules.Website.Features.PublishLegalDocumentDraft;
 using GenclikMerkezi.Modules.Website.Features.PublishContentLayout;
 using GenclikMerkezi.Modules.Website.Features.PublishHomeLayout;
 using GenclikMerkezi.Modules.Website.Features.ReactivateEventSchedule;
+using GenclikMerkezi.Modules.Website.Features.ReindexSearchSource;
 using GenclikMerkezi.Modules.Website.Features.RejectEventRegistration;
 using GenclikMerkezi.Modules.Website.Features.ReplaceContentDraftBlocks;
 using GenclikMerkezi.Modules.Website.Features.ReplaceHomeDraftBlocks;
@@ -473,6 +475,10 @@ public static class WebsiteModuleEndpointExtensions
 
         // ADR-024 §10 (Faz 5 Görev 3): public global search (token-AND matching over SearchDocument).
         GetPublicSearchEndpoint.Map(app);
+
+        // ADR-024 §10 (Faz 5 Görev 4): search source sync status and on-demand reindexing.
+        GetSearchSourcesEndpoint.Map(app);
+        ReindexSearchSourceEndpoint.Map(app);
 
         return app;
     }

@@ -146,14 +146,19 @@ public class SearchDocumentPersistenceFlowTests : IClassFixture<CustomWebApplica
         Assert.NotNull(await repository.GetAsync(sourceKey, remainingId, Tr()));
     }
 
-    // ADR-024 §10: "Başka projede kaynak kaydedilmezse job boş çalışır" - the port must resolve
-    // cleanly to an empty collection, not throw, when the Host registers no IExternalSearchSource.
+    // ADR-024 §10: "Başka projede kaynak kaydedilmezse job boş çalışır" - the port itself must resolve
+    // cleanly, not throw, regardless of how many implementations the Host registers. Written when this
+    // project had none yet (Görev 1); Görev 4 is where the Host registers its first one
+    // (EmployerJobSearchSource), so this now proves the collection resolves to exactly that one adapter
+    // rather than an empty one - the "no source registered" case itself has no project left to prove it
+    // with, since Host always wires EmployerJobSearchSource in (PublicJobListingsEnabled gates its data,
+    // not its registration).
     [Fact]
-    public void IExternalSearchSource_WithNoneRegistered_ResolvesToAnEmptyCollection()
+    public void IExternalSearchSource_ResolvesTheHostRegisteredEmployerAdapter()
     {
         using var scope = _factory.Services.CreateScope();
         var sources = scope.ServiceProvider.GetServices<IExternalSearchSource>();
 
-        Assert.Empty(sources);
+        Assert.Equal(["employer.job"], sources.Select(s => s.SourceKey));
     }
 }

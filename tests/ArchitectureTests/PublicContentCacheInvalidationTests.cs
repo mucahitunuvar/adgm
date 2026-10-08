@@ -118,6 +118,11 @@ public class PublicContentCacheInvalidationTests
         // same bucket as UpdateSiteSettingsCookieConsentCommandHandler above (calls InvalidatePublicSite
         // directly, which this test does not count as InvalidatePublicContent/InvalidateAllPublic).
         "UpdateSiteSettingsEventsCommandHandler",
+
+        // Faz 5 Görev 4: triggers a SearchDocument/SearchSourceState sync - search results are
+        // deliberately never cached (Görev 3's own decision), so there is no public content cache entry
+        // for this to invalidate.
+        "ReindexSearchSourceCommandHandler",
     };
 
     [Fact]

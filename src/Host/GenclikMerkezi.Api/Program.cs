@@ -33,6 +33,7 @@ using GenclikMerkezi.Modules.Support;
 using GenclikMerkezi.Modules.Support.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.Support.Infrastructure.Jobs;
 using GenclikMerkezi.Modules.Website;
+using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Infrastructure.DependencyInjection;
 using GenclikMerkezi.Modules.Website.Infrastructure.Jobs;
 using Hangfire;
@@ -97,6 +98,13 @@ builder.Services.AddWebsiteModule(builder.Configuration);
 // directly by AddWebsiteModule, since it never touches another business module (ARCHITECTURE.md
 // §50.1).
 builder.Services.AddScoped<IWebsiteEmailSender, NotificationWebsiteEmailSender>();
+
+// ADR-024 §10 (Faz 5 Görev 4): Website's IExternalSearchSource port, wired the same way to Employer's
+// public contract (IPublishedJobModuleContract) - Website never references GenclikMerkezi.Contracts.
+// Employer, and Employer never references Website (WebsiteContractsBoundaryTests/ModuleBoundaryTests).
+// Multiple IExternalSearchSource implementations can be registered this way; SyncExternalSearchSourcesJob
+// resolves all of them via IEnumerable<IExternalSearchSource>.
+builder.Services.AddScoped<IExternalSearchSource, EmployerJobSearchSource>();
 
 // ADR-024 §11.2 (Faz 4 Görev 3): CreateEventRegistrationCommandHandler's "logged-in + email-confirmed
 // registrant skips verification" check, wired the same way as IWebsiteEmailSender above - Website
@@ -401,6 +409,14 @@ if (!isTestingEnvironment)
         "website-anonymize-expired-event-registrations", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
     RecurringJob.AddOrUpdate<ReconcileWebsiteSearchIndexJob>(
         "website-reconcile-search-index", job => job.ExecuteAsync(CancellationToken.None), "*/10 * * * *");
+
+    // ADR-024 §10 (Faz 5 Görev 4): full sync of every registered IExternalSearchSource (e.g.
+    // EmployerJobSearchSource above). Interval configurable since an external source's acceptable
+    // staleness is a deployment concern, not a code constant.
+    var externalSyncIntervalMinutes = builder.Configuration.GetValue("Website:Search:ExternalSyncIntervalMinutes", 10);
+    RecurringJob.AddOrUpdate<SyncExternalSearchSourcesJob>(
+        "website-sync-external-search-sources", job => job.ExecuteAsync(CancellationToken.None),
+        $"*/{externalSyncIntervalMinutes} * * * *");
 }
 
 app.Run();

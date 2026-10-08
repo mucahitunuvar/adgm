@@ -1,5 +1,4 @@
-using GenclikMerkezi.Modules.Website.Application.Abstractions;
-using GenclikMerkezi.SharedKernel.Abstractions;
+using GenclikMerkezi.Modules.Website.Application.Search;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GenclikMerkezi.Modules.Website.Infrastructure.Jobs;
@@ -12,21 +11,17 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Jobs;
 // searchable content type catches up anything a schedule crossing (or any other drift) missed, adding
 // newly-visible items and removing newly-invisible ones in the same pass. Only singleton-safe
 // dependencies in the constructor, the same self-scoping shape every other Website Hangfire job uses.
+//
+// Görev 4: the actual reconciliation logic (plus SearchSourceState bookkeeping and the
+// SearchSourceSyncCoordinator lock) now lives in WebsiteSearchIndexReconciler, shared with the admin
+// "POST .../search/sources/website/reindex" command - this job is just that logic's scheduled trigger.
 public sealed class ReconcileWebsiteSearchIndexJob(IServiceScopeFactory serviceScopeFactory)
 {
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
         using var scope = serviceScopeFactory.CreateScope();
-        var contentTypeRepository = scope.ServiceProvider.GetRequiredService<IContentTypeRepository>();
-        var searchIndexUpdater = scope.ServiceProvider.GetRequiredService<ISearchIndexUpdater>();
-        var unitOfWork = scope.ServiceProvider.GetRequiredKeyedService<IUnitOfWork>(WebsiteModuleMarker.UnitOfWorkKey);
+        var reconciler = scope.ServiceProvider.GetRequiredService<WebsiteSearchIndexReconciler>();
 
-        var contentTypes = await contentTypeRepository.GetAllAsync(cancellationToken);
-        foreach (var contentType in contentTypes.Where(t => t.IsSearchable && t.IsActive && t.HasDetailPage))
-        {
-            await searchIndexUpdater.ReindexContentTypeAsync(contentType.Id, cancellationToken);
-        }
-
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        await reconciler.ReconcileAsync(cancellationToken);
     }
 }
