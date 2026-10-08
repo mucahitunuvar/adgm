@@ -120,6 +120,7 @@ using GenclikMerkezi.Modules.Website.Features.GetPartners;
 using GenclikMerkezi.Modules.Website.Features.GetPopupById;
 using GenclikMerkezi.Modules.Website.Features.GetPopups;
 using GenclikMerkezi.Modules.Website.Features.GetPublicPartners;
+using GenclikMerkezi.Modules.Website.Features.GetPublicSearch;
 using GenclikMerkezi.Modules.Website.Features.GetPublicSite;
 using GenclikMerkezi.Modules.Website.Features.GetPublicVideos;
 using GenclikMerkezi.Modules.Website.Features.GetRedirects;
@@ -469,6 +470,9 @@ public static class WebsiteModuleEndpointExtensions
         GetThirdPartyScriptByIdEndpoint.Map(app);
         CreateCookieConsentRecordEndpoint.Map(app);
         GetCookieConsentSummaryEndpoint.Map(app);
+
+        // ADR-024 §10 (Faz 5 Görev 3): public global search (token-AND matching over SearchDocument).
+        GetPublicSearchEndpoint.Map(app);
 
         return app;
     }

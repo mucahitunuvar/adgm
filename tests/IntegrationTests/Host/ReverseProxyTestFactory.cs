@@ -7,7 +7,8 @@ namespace GenclikMerkezi.IntegrationTests.Host;
 // everything else (Identity/Notification/etc. LocalDB wiring, Website's Sqlite database) stays
 // exactly as CustomWebApplicationFactory sets it up.
 public sealed class ReverseProxyTestFactory(
-    bool reverseProxyEnabled, string[] knownNetworks, int? publicReadPermitLimit = null, int? publicFormsPermitLimit = null)
+    bool reverseProxyEnabled, string[] knownNetworks, int? publicReadPermitLimit = null, int? publicFormsPermitLimit = null,
+    int? publicSearchPermitLimit = null)
     : CustomWebApplicationFactory
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -28,6 +29,12 @@ public sealed class ReverseProxyTestFactory(
         if (publicFormsPermitLimit is not null)
         {
             builder.UseSetting("RateLimiting:PublicFormsPermitLimit", publicFormsPermitLimit.Value.ToString());
+        }
+
+        // ADR-024 §10 (Faz 5 Görev 3): the public-search policy's own dedicated override, same pattern.
+        if (publicSearchPermitLimit is not null)
+        {
+            builder.UseSetting("RateLimiting:PublicSearchPermitLimit", publicSearchPermitLimit.Value.ToString());
         }
     }
 }

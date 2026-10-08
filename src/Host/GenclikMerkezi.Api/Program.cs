@@ -194,6 +194,14 @@ var publicReadEndpointPermitLimit = builder.Configuration.GetValue(
 var publicFormsEndpointPermitLimit = builder.Configuration.GetValue(
     "RateLimiting:PublicFormsPermitLimit", isTestingEnvironment ? 1000 : 10);
 
+// ADR-024 §10 (Faz 5 Görev 3): the public global search endpoint gets its own, tighter policy than
+// "public-read" - unlike a page view's fan-out of GETs, search is a single deliberate action per
+// keystroke-debounced query, so 30/min in production is enough while still bounding the unindexed
+// LIKE query's worst case. Configuration-driven like PublicReadPermitLimit so a dedicated test can
+// override it to a small, deterministic value (ReverseProxyTestFactory).
+var publicSearchEndpointPermitLimit = builder.Configuration.GetValue(
+    "RateLimiting:PublicSearchPermitLimit", isTestingEnvironment ? 1000 : 30);
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -247,6 +255,18 @@ builder.Services.AddRateLimiter(options =>
         factory: _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = publicFormsEndpointPermitLimit,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0,
+        }));
+
+    // Anonymous public global search (ADR-024 §10/Faz 5 Görev 3): partitioned per client IP, same as
+    // "public-read"/"public-forms".
+    options.AddPolicy("public-search", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: GetClientIpAddress(httpContext),
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = publicSearchEndpointPermitLimit,
             Window = TimeSpan.FromMinutes(1),
             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
             QueueLimit = 0,

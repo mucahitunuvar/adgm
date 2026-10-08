@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Website.Domain;
+using GenclikMerkezi.SharedKernel.Results;
 
 namespace GenclikMerkezi.Modules.Website.Application.Abstractions;
 
@@ -26,4 +27,17 @@ public interface ISearchDocumentRepository
         string sourceKey, IReadOnlyCollection<string> seenSourceIds, CancellationToken cancellationToken = default);
 
     Task<int> CountBySourceAsync(string sourceKey, CancellationToken cancellationToken = default);
+
+    // Görev 3 (public global search): `likePatterns` are '%...%' LIKE patterns already escaped by
+    // SearchQueryTokenizer, ANDed together against NormalizedText (required match) and, for ordering
+    // only, against Title (titles matching every token sort first). `typeKeys`/`sourceKey` are optional
+    // equality filters; TypeCounts is computed with the same language/source/token filters but without
+    // the type filter (see PublicSearchQueryResult).
+    Task<PublicSearchQueryResult> SearchAsync(
+        LanguageCode languageCode,
+        IReadOnlyList<string> likePatterns,
+        IReadOnlyList<string>? typeKeys,
+        string? sourceKey,
+        PagedRequest pagedRequest,
+        CancellationToken cancellationToken = default);
 }
