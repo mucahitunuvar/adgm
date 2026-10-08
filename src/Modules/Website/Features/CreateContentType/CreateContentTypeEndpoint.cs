@@ -20,7 +20,7 @@ internal static class CreateContentTypeEndpoint
                         request.SupportsGallery, request.SupportsVideos, request.SupportsAttachments, request.SupportsEvent,
                         request.SupportsBlockLayout, request.SupportsForm, request.SupportsRelatedContent, request.HasDetailPage,
                         request.HasListingPage, request.IsSearchable, request.RequiresReview,
-                        request.DefaultLanguageName, request.DefaultLanguageRoutePrefix, request.Seo);
+                        request.DefaultLanguageName, request.DefaultLanguageRoutePrefix, request.Seo, request.SchemaKind);
                     var result = await sender.Send(command, cancellationToken);
                     return result.IsSuccess
                         ? Results.Created("/api/v1/admin/website/content-types", result.Value)

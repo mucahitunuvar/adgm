@@ -26,4 +26,5 @@ public sealed record CreateContentTypeCommand(
     bool RequiresReview,
     string? DefaultLanguageName,
     string? DefaultLanguageRoutePrefix,
-    CreateContentTypeSeoInput Seo) : IRequest<Result<CreateContentTypeResponse>>;
+    CreateContentTypeSeoInput Seo,
+    string? SchemaKind = null) : IRequest<Result<CreateContentTypeResponse>>;

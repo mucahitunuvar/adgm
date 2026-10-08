@@ -27,4 +27,5 @@ public sealed record PublicContentDetailResponse(
     PublicContentDetailSeoResponse Seo,
     IReadOnlyList<PublicLayoutBlockResponse>? Blocks,
     PublicFormDefinitionResponse? Form,
-    PublicContentDetailEventResponse? Event);
+    PublicContentDetailEventResponse? Event,
+    IReadOnlyList<IReadOnlyDictionary<string, object?>> JsonLd);

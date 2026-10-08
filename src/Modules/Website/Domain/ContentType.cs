@@ -71,6 +71,14 @@ public sealed partial class ContentType : AggregateRoot
 
     public bool RequiresReview { get; private set; }
 
+    // ADR-024 §15 (Faz 5 Görev 6): a plain scalar on ContentType itself, deliberately outside
+    // ContentTypeFeatureFlags (it is not a boolean capability switch, and unlike every Flags field it
+    // carries no cross-field invariant of its own) and outside ContentTypeTranslation (it is not
+    // language-dependent). Set independently via SetSchemaKind rather than through Create/Update's
+    // flags parameter, so the many existing Create/Update call sites across the test suite are
+    // unaffected by this field's addition.
+    public ContentSchemaKind SchemaKind { get; private set; } = ContentSchemaKind.None;
+
     public ContentTypeFeatureFlags Flags => new(
         SupportsHierarchy, SupportsCategories, SupportsTags, SupportsDetailImage, SupportsGallery, SupportsVideos,
         SupportsAttachments, SupportsEvent, SupportsBlockLayout, SupportsForm, SupportsRelatedContent, HasDetailPage,
@@ -292,6 +300,12 @@ public sealed partial class ContentType : AggregateRoot
         Touch(updatedByUserId, updatedAtUtc);
 
         return Result.Success();
+    }
+
+    public void SetSchemaKind(ContentSchemaKind schemaKind, Guid updatedByUserId, DateTime updatedAtUtc)
+    {
+        SchemaKind = schemaKind;
+        Touch(updatedByUserId, updatedAtUtc);
     }
 
     public Result Activate(Guid updatedByUserId, DateTime updatedAtUtc)

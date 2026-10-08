@@ -7,6 +7,7 @@ using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
+using Microsoft.Extensions.Configuration;
 
 namespace GenclikMerkezi.Modules.Website.Features.GetPublicContentById;
 
@@ -33,6 +34,7 @@ public sealed class GetPublicContentByIdQueryHandler(
     PublicFormDefinitionResolver publicFormDefinitionResolver,
     IEventScheduleRepository eventScheduleRepository,
     ICacheService cacheService,
+    IConfiguration configuration,
     TimeProvider timeProvider)
     : IRequestHandler<GetPublicContentByIdQuery, Result<PublicContentDetailResponse>>
 {
@@ -134,6 +136,22 @@ public sealed class GetPublicContentByIdQueryHandler(
     {
         var languageCode = resolvedLanguage.Code;
         var path = RoutePathFormat.BuildPublicPath(resolvedLanguage.Code.Value, defaultLanguage.Code.Value, translation.FullPath);
+        var publicSiteBaseUrl = (configuration["Website:PublicSiteBaseUrl"] ?? string.Empty).TrimEnd('/');
+        var pageAbsoluteUrl = publicSiteBaseUrl + path;
+        var effectivePublishDate = contentItem.PublishAtUtc ?? contentItem.PublishedAtUtc ?? now;
+
+        // ADR-024 §15 (Faz 5 Görev 6): moved ahead of gallery/video/etc. so both the Article/NewsArticle
+        // JSON-LD object below and the final Seo response field share one resolution instead of running
+        // ContentSeoResolver twice.
+        var settings = await siteSettingsRepository.GetAsync(cancellationToken) ?? SiteSettings.CreateDefault();
+        var settingsTranslation = settings.Translations.FirstOrDefault(t => t.LanguageCode == languageCode);
+        var resolvedSeo = ContentSeoResolver.Resolve(
+            translation.Seo, translation.Title, translation.Summary, path, contentItem.DetailImageMediaId, contentItem.CoverImageMediaId,
+            settings.DefaultOgImageMediaId, settingsTranslation?.DefaultMetaDescription ?? string.Empty);
+        var ogImage = await BuildImageAsync(resolvedSeo.OgImageMediaId, cancellationToken);
+        var seo = new PublicContentDetailSeoResponse(
+            resolvedSeo.MetaTitle, resolvedSeo.MetaDescription, resolvedSeo.OgTitle, resolvedSeo.OgDescription, ogImage?.Original,
+            resolvedSeo.CanonicalUrl, resolvedSeo.NoIndex);
 
         var coverImage = await BuildImageAsync(contentItem.CoverImageMediaId, cancellationToken);
         var detailImage = contentType.SupportsDetailImage ? await BuildImageAsync(contentItem.DetailImageMediaId, cancellationToken) : null;
@@ -180,6 +198,7 @@ public sealed class GetPublicContentByIdQueryHandler(
         // this whole response is about to be cached, and those two fields are overwritten by the outer
         // Handle method on every request (cache hit or miss), never served from the cache itself.
         PublicContentDetailEventResponse? eventResponse = null;
+        IReadOnlyDictionary<string, object?>? eventJsonLd = null;
         if (contentType.SupportsEvent)
         {
             var eventSchedule = await eventScheduleRepository.GetByContentItemIdAsync(contentItem.Id, cancellationToken);
@@ -192,26 +211,58 @@ public sealed class GetPublicContentByIdQueryHandler(
                     scheduleTranslation?.FeeInfo ?? string.Empty, scheduleTranslation?.Instructors ?? string.Empty,
                     scheduleTranslation?.ProgramFlow ?? string.Empty, scheduleTranslation?.AccessibilityNote ?? string.Empty, eventSchedule.MinAge,
                     eventSchedule.MaxAge, eventSchedule.RegistrationOpensAtUtc, eventSchedule.RegistrationClosesAtUtc);
+
+                // ADR-024 §15/§11.3 (Faz 5 Görev 6): "Etkinlik SupportsEvent türlerinde SchemaKind'den
+                // bağımsız olarak otomatik Event üretilir" - generated whenever a SupportsEvent type
+                // actually has a schedule, regardless of ContentType.SchemaKind.
+                eventJsonLd = StructuredDataBuilder.BuildEvent(
+                    translation.Title, eventSchedule.StartsAtUtc, eventSchedule.EndsAtUtc, eventSchedule.IsCancelled, eventSchedule.Format,
+                    scheduleTranslation?.VenueName ?? string.Empty, scheduleTranslation?.VenueAddress ?? string.Empty, resolvedSeo.MetaDescription,
+                    ogImage?.Original, pageAbsoluteUrl);
             }
         }
 
         var breadcrumb = BuildBreadcrumb(contentItem, contentType, translation, ancestorChain, resolvedLanguage, defaultLanguage);
         var alternates = BuildAlternates(contentItem, ancestorChain, resolvedLanguage.Code.Value, defaultLanguage.Code.Value, activeLanguages);
 
-        var settings = await siteSettingsRepository.GetAsync(cancellationToken) ?? SiteSettings.CreateDefault();
-        var settingsTranslation = settings.Translations.FirstOrDefault(t => t.LanguageCode == languageCode);
-        var resolvedSeo = ContentSeoResolver.Resolve(
-            translation.Seo, translation.Title, translation.Summary, path, contentItem.DetailImageMediaId, contentItem.CoverImageMediaId,
-            settings.DefaultOgImageMediaId, settingsTranslation?.DefaultMetaDescription ?? string.Empty);
-        var ogImage = await BuildImageAsync(resolvedSeo.OgImageMediaId, cancellationToken);
-        var seo = new PublicContentDetailSeoResponse(
-            resolvedSeo.MetaTitle, resolvedSeo.MetaDescription, resolvedSeo.OgTitle, resolvedSeo.OgDescription, ogImage?.Original,
-            resolvedSeo.CanonicalUrl, resolvedSeo.NoIndex);
+        var jsonLd = await BuildJsonLdAsync(
+            contentType, translation, breadcrumb, publicSiteBaseUrl, resolvedSeo, ogImage, effectivePublishDate, contentItem.UpdatedAtUtc,
+            pageAbsoluteUrl, settingsTranslation, settings, eventJsonLd, cancellationToken);
 
         return new PublicContentDetailResponse(
             contentItem.Id, contentType.Key.Value, contentType.DetailTemplate, translation.Title, translation.Summary, translation.Body, path,
-            contentItem.PublishAtUtc ?? contentItem.PublishedAtUtc ?? now, contentItem.UpdatedAtUtc, coverImage, detailImage, gallery, videos,
-            attachments, categories, tags, children, related, breadcrumb, alternates, seo, blocks, form, eventResponse);
+            effectivePublishDate, contentItem.UpdatedAtUtc, coverImage, detailImage, gallery, videos,
+            attachments, categories, tags, children, related, breadcrumb, alternates, seo, blocks, form, eventResponse, jsonLd);
+    }
+
+    // ADR-024 §15/§1 (Faz 5 Görev 6): BreadcrumbList is always included; Article/NewsArticle is added
+    // only for those two ContentSchemaKind values; Event (built by the caller, since it needs the
+    // EventSchedule this method has no access to) is appended last when present.
+    private async Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> BuildJsonLdAsync(
+        ContentType contentType, ContentItemTranslation translation, IReadOnlyList<PublicContentBreadcrumbItemResponse> breadcrumb,
+        string publicSiteBaseUrl, ResolvedContentSeo resolvedSeo, PublicContentDetailImageResponse? ogImage, DateTime effectivePublishDate,
+        DateTime? updatedAtUtc, string pageAbsoluteUrl, SiteSettingsTranslation? settingsTranslation, SiteSettings settings,
+        IReadOnlyDictionary<string, object?>? eventJsonLd, CancellationToken cancellationToken)
+    {
+        var items = new List<IReadOnlyDictionary<string, object?>>
+        {
+            StructuredDataBuilder.BuildBreadcrumbList(breadcrumb.Select(b => (b.Title, publicSiteBaseUrl + b.Path)).ToList()),
+        };
+
+        if (contentType.SchemaKind is ContentSchemaKind.Article or ContentSchemaKind.NewsArticle)
+        {
+            var publisherLogo = await BuildImageAsync(settings.LogoLightMediaAssetId, cancellationToken);
+            items.Add(StructuredDataBuilder.BuildArticle(
+                contentType.SchemaKind, translation.Title, resolvedSeo.MetaDescription, ogImage?.Original, effectivePublishDate, updatedAtUtc,
+                pageAbsoluteUrl, settingsTranslation?.SiteName ?? string.Empty, publisherLogo?.Original));
+        }
+
+        if (eventJsonLd is not null)
+        {
+            items.Add(eventJsonLd);
+        }
+
+        return items;
     }
 
     private async Task<IReadOnlyList<ContentItem>> GetAncestorChainAsync(ContentItem item, CancellationToken cancellationToken)

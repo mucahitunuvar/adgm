@@ -20,4 +20,5 @@ public sealed record UpdateContentTypeRequest(
     bool HasDetailPage,
     bool HasListingPage,
     bool IsSearchable,
-    bool RequiresReview);
+    bool RequiresReview,
+    string? SchemaKind = null);

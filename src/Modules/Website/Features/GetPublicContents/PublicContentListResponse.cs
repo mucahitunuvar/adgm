@@ -9,4 +9,5 @@ public sealed record PublicContentListResponse(
     IReadOnlyList<PublicContentAlternateResponse> Alternates,
     IReadOnlyList<PublicContentCategoryTreeItemResponse> Categories,
     PublicContentCategoryResponse? SelectedCategory,
-    PagedResult<PublicContentListItemResponse> Items);
+    PagedResult<PublicContentListItemResponse> Items,
+    IReadOnlyDictionary<string, object?>? JsonLd);

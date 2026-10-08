@@ -167,15 +167,21 @@ public sealed class GetPublicContentsQueryHandler(
 
         var contentTypeName = contentType.Translations.FirstOrDefault(t => t.LanguageCode == resolvedLanguage.Code)?.Name ?? contentType.Key.Value;
 
+        // ADR-024 §15/§1 (Faz 5 Görev 6): "FaqPage türünün liste yanıtına eklenir (öğeler satır içi
+        // gövdeli)" - built from this page's own rendered items (Title/Body), never a second query.
+        var jsonLd = contentType.SchemaKind == ContentSchemaKind.FaqPage
+            ? StructuredDataBuilder.BuildFaqPage(items.Select(i => (i.Title, i.Body ?? string.Empty)).ToList())
+            : null;
+
         return Result.Success(new PublicContentListResponse(
             contentTypeName, contentType.ListTemplate, seoResponse, alternates, categoryTree, selectedCategoryResponse,
-            new PagedResult<PublicContentListItemResponse>(items, paged.TotalCount, paged.Page, paged.PageSize)));
+            new PagedResult<PublicContentListItemResponse>(items, paged.TotalCount, paged.Page, paged.PageSize), jsonLd));
     }
 
     private static PublicContentListResponse EmptyResponse(string listTemplate, string languageCode) =>
         new(
             string.Empty, listTemplate, new PublicContentSeoResponse(string.Empty, string.Empty, string.Empty, string.Empty, null, string.Empty, false),
-            [], [], null, new PagedResult<PublicContentListItemResponse>([], 0, 1, PagedRequest.DefaultPageSize));
+            [], [], null, new PagedResult<PublicContentListItemResponse>([], 0, 1, PagedRequest.DefaultPageSize), null);
 
     private async Task<PublicContentListItemResponse> BuildItemAsync(
         PublicContentListItemCandidate candidate, LanguageCode languageCode, IReadOnlyDictionary<Guid, ContentCategory> categoriesById,

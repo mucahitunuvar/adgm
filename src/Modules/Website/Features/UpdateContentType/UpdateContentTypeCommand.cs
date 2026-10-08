@@ -24,4 +24,5 @@ public sealed record UpdateContentTypeCommand(
     bool HasDetailPage,
     bool HasListingPage,
     bool IsSearchable,
-    bool RequiresReview) : IRequest<Result>;
+    bool RequiresReview,
+    string? SchemaKind = null) : IRequest<Result>;

@@ -29,4 +29,5 @@ public sealed record PublicSiteResponse(
     PublicMenusResponse Menus,
     IReadOnlyList<PublicPopupResponse> Popups,
     PublicSiteCookieConsentResponse CookieConsent,
-    IReadOnlyList<PublicSiteScriptResponse> Scripts);
+    IReadOnlyList<PublicSiteScriptResponse> Scripts,
+    IReadOnlyDictionary<string, object?> Organization);

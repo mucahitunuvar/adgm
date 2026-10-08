@@ -5,6 +5,7 @@ using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
+using Microsoft.Extensions.Configuration;
 
 namespace GenclikMerkezi.Modules.Website.Features.GetPublicSite;
 
@@ -25,6 +26,7 @@ public sealed class GetPublicSiteQueryHandler(
     ILegalDocumentRepository legalDocumentRepository,
     LinkTargetResolver linkTargetResolver,
     ICacheService cacheService,
+    IConfiguration configuration,
     TimeProvider timeProvider)
     : IRequestHandler<GetPublicSiteQuery, Result<PublicSiteResponse>>
 {
@@ -98,6 +100,7 @@ public sealed class GetPublicSiteQueryHandler(
         var activeScripts = await thirdPartyScriptRepository.SearchActiveAsync(resolvedLanguage.Code, cancellationToken);
         var scripts = BuildScripts(activeScripts);
         var cookieConsent = await BuildCookieConsentAsync(settings, translation, activeScripts, resolvedLanguage.Code, now, cancellationToken);
+        var organization = await BuildOrganizationAsync(settings, translation, cancellationToken);
 
         return new PublicSiteResponse(
             languageResponses, resolvedLanguage.Code.Value,
@@ -112,7 +115,23 @@ public sealed class GetPublicSiteQueryHandler(
             settings.GlobalSearchEnabled, settings.NewsletterEnabled, settings.PublicJobListingsEnabled, settings.DonationPageEnabled,
             settings.MaintenanceModeEnabled, translation?.MaintenanceMessage ?? string.Empty,
             settings.TurnstileSiteKey,
-            menus, popups, cookieConsent, scripts);
+            menus, popups, cookieConsent, scripts, organization);
+    }
+
+    // ADR-024 §13/§15 (Faz 5 Görev 6): "GET /api/v1/public/site yanıtına organization olarak" -
+    // always present (unlike the detail/list jsonLd arrays, Organization is not conditional on any
+    // ContentType), with every optional sub-field omitted ("boş alanlar yazılmaz") rather than sent
+    // empty.
+    private async Task<IReadOnlyDictionary<string, object?>> BuildOrganizationAsync(
+        SiteSettings settings, SiteSettingsTranslation? translation, CancellationToken cancellationToken)
+    {
+        var publicSiteBaseUrl = (configuration["Website:PublicSiteBaseUrl"] ?? string.Empty).TrimEnd('/');
+        var logoUrl = await ResolveMediaUrlAsync(settings.LogoLightMediaAssetId, cancellationToken);
+        var sameAs = settings.SocialLinks.OrderBy(l => l.SortOrder).Select(l => l.Url).ToList();
+
+        return StructuredDataBuilder.BuildOrganization(
+            translation?.SiteName ?? string.Empty, publicSiteBaseUrl, logoUrl, sameAs,
+            settings.Contact.Phone, settings.Contact.Email, settings.Contact.Address);
     }
 
     private async Task<string?> ResolveMediaUrlAsync(Guid? mediaAssetId, CancellationToken cancellationToken)

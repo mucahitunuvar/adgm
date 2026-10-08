@@ -25,6 +25,7 @@ public sealed class GetContentTypesQueryHandler(IContentTypeRepository contentTy
                     // ContentItem does not exist until Görev 3, so no content can exist yet - this
                     // becomes a real count once IContentItemRepository is available to query.
                     ContentCount: 0,
+                    ct.SchemaKind.ToString(),
                     ct.RowVersion);
             })
             .ToList();

@@ -32,7 +32,7 @@ public sealed class GetContentTypeByIdQueryHandler(IContentTypeRepository conten
             contentType.SupportsAttachments, contentType.SupportsEvent, contentType.SupportsBlockLayout,
             contentType.SupportsForm, contentType.SupportsRelatedContent, contentType.HasDetailPage,
             contentType.HasListingPage, contentType.IsSearchable, contentType.RequiresReview,
-            contentType.RowVersion, translations);
+            contentType.SchemaKind.ToString(), contentType.RowVersion, translations);
 
         return Result.Success(response);
     }

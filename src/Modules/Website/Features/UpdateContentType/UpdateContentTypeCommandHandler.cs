@@ -36,6 +36,13 @@ public sealed class UpdateContentTypeCommandHandler(
                 "ContentType.InvalidSortMode", $"'{request.SortMode}' is not a recognized sort mode."));
         }
 
+        var schemaKind = ContentSchemaKind.None;
+        if (!string.IsNullOrWhiteSpace(request.SchemaKind) && !Enum.TryParse(request.SchemaKind, ignoreCase: true, out schemaKind))
+        {
+            return Result.Failure(Error.Validation(
+                "ContentType.InvalidSchemaKind", $"'{request.SchemaKind}' is not a recognized schema kind."));
+        }
+
         var flags = new ContentTypeFeatureFlags(
             request.SupportsHierarchy, request.SupportsCategories, request.SupportsTags, request.SupportsDetailImage,
             request.SupportsGallery, request.SupportsVideos, request.SupportsAttachments, request.SupportsEvent,
@@ -69,6 +76,8 @@ public sealed class UpdateContentTypeCommandHandler(
         {
             return updateResult;
         }
+
+        contentType.SetSchemaKind(schemaKind, currentUserContext.UserId!.Value, DateTime.UtcNow);
 
         await searchIndexUpdater.ReindexContentTypeAsync(contentType.Id, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

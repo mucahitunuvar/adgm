@@ -23,5 +23,6 @@ public sealed record ContentTypeDetailResponse(
     bool HasListingPage,
     bool IsSearchable,
     bool RequiresReview,
+    string SchemaKind,
     byte[] RowVersion,
     IReadOnlyList<ContentTypeTranslationResponse> Translations);

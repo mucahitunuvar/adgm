@@ -10,4 +10,5 @@ public sealed record ContentTypeSummaryResponse(
     bool IsActive,
     int SortOrder,
     int ContentCount,
+    string SchemaKind,
     byte[] RowVersion);

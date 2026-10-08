@@ -23,4 +23,5 @@ public sealed record CreateContentTypeRequest(
     bool RequiresReview,
     string? DefaultLanguageName,
     string? DefaultLanguageRoutePrefix,
-    CreateContentTypeSeoInput Seo);
+    CreateContentTypeSeoInput Seo,
+    string? SchemaKind = null);

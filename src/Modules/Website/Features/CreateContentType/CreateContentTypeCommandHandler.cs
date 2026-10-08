@@ -36,6 +36,13 @@ public sealed class CreateContentTypeCommandHandler(
                 "ContentType.InvalidSortMode", $"'{request.SortMode}' is not a recognized sort mode."));
         }
 
+        var schemaKind = ContentSchemaKind.None;
+        if (!string.IsNullOrWhiteSpace(request.SchemaKind) && !Enum.TryParse(request.SchemaKind, ignoreCase: true, out schemaKind))
+        {
+            return Result.Failure<CreateContentTypeResponse>(Error.Validation(
+                "ContentType.InvalidSchemaKind", $"'{request.SchemaKind}' is not a recognized schema kind."));
+        }
+
         var defaultLanguage = await siteLanguageRepository.GetDefaultAsync(cancellationToken);
         if (defaultLanguage is null)
         {
@@ -73,6 +80,8 @@ public sealed class CreateContentTypeCommandHandler(
         {
             return Result.Failure<CreateContentTypeResponse>(contentTypeResult.Error);
         }
+
+        contentTypeResult.Value.SetSchemaKind(schemaKind, currentUserContext.UserId!.Value, DateTime.UtcNow);
 
         contentTypeRepository.Add(contentTypeResult.Value);
         await unitOfWork.SaveChangesAsync(cancellationToken);

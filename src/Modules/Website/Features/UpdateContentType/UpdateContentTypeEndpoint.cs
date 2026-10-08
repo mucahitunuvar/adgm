@@ -19,7 +19,7 @@ internal static class UpdateContentTypeEndpoint
                         request.SupportsHierarchy, request.SupportsCategories, request.SupportsTags, request.SupportsDetailImage,
                         request.SupportsGallery, request.SupportsVideos, request.SupportsAttachments, request.SupportsEvent,
                         request.SupportsBlockLayout, request.SupportsForm, request.SupportsRelatedContent, request.HasDetailPage,
-                        request.HasListingPage, request.IsSearchable, request.RequiresReview);
+                        request.HasListingPage, request.IsSearchable, request.RequiresReview, request.SchemaKind);
                     var result = await sender.Send(command, cancellationToken);
                     return result.ToNoContentOrProblem();
                 })

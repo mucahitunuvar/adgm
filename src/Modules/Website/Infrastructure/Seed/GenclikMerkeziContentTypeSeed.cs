@@ -16,55 +16,55 @@ internal static class GenclikMerkeziContentTypeSeed
     [
         new("page", "list", "page", ContentTypeSortMode.Manual,
             Flags("Hierarchy", "DetailImage", "Gallery", "Videos", "Attachments", "BlockLayout", "Form", "DetailPage", "Searchable"),
-            new("Sayfa", string.Empty), new("Page", string.Empty)),
+            new("Sayfa", string.Empty), new("Page", string.Empty), ContentSchemaKind.None),
 
         new("news", "cards", "article", ContentTypeSortMode.PublishDateDesc,
             Flags("Categories", "Tags", "DetailImage", "Gallery", "Videos", "Attachments", "RelatedContent", "DetailPage", "ListingPage", "Searchable"),
-            new("Haber", "haberler"), new("News", "news")),
+            new("Haber", "haberler"), new("News", "news"), ContentSchemaKind.NewsArticle),
 
         new("announcement", "list", "article", ContentTypeSortMode.PublishDateDesc,
             Flags("Categories", "Attachments", "RelatedContent", "DetailPage", "ListingPage", "Searchable"),
-            new("Duyuru", "duyurular"), new("Announcement", "announcements")),
+            new("Duyuru", "duyurular"), new("Announcement", "announcements"), ContentSchemaKind.NewsArticle),
 
         new("project", "cards", "project", ContentTypeSortMode.Manual,
             Flags("Categories", "Tags", "DetailImage", "Gallery", "Videos", "Attachments", "Form", "RelatedContent", "DetailPage", "ListingPage", "Searchable"),
-            new("Proje", "projeler"), new("Project", "projects")),
+            new("Proje", "projeler"), new("Project", "projects"), ContentSchemaKind.Article),
 
         new("activity", "cards", "article", ContentTypeSortMode.PublishDateDesc,
             Flags("Categories", "Tags", "DetailImage", "Gallery", "Videos", "RelatedContent", "DetailPage", "ListingPage", "Searchable"),
-            new("Faaliyet", "faaliyetler"), new("Activity", "activities")),
+            new("Faaliyet", "faaliyetler"), new("Activity", "activities"), ContentSchemaKind.Article),
 
         new("success-story", "cards", "story", ContentTypeSortMode.PublishDateDesc,
             Flags("Tags", "DetailImage", "Gallery", "Videos", "RelatedContent", "DetailPage", "ListingPage", "Searchable"),
-            new("Başarı Hikayesi", "basari-hikayeleri"), new("Success Story", "success-stories")),
+            new("Başarı Hikayesi", "basari-hikayeleri"), new("Success Story", "success-stories"), ContentSchemaKind.Article),
 
         new("event", "cards", "event", ContentTypeSortMode.EventDateAsc,
             Flags("Categories", "Tags", "DetailImage", "Gallery", "Videos", "Attachments", "Event", "RelatedContent", "DetailPage", "ListingPage", "Searchable"),
-            new("Etkinlik", "etkinlikler"), new("Event", "events")),
+            new("Etkinlik", "etkinlikler"), new("Event", "events"), ContentSchemaKind.None),
 
         new("training", "cards", "event", ContentTypeSortMode.EventDateAsc,
             Flags("Categories", "Tags", "DetailImage", "Gallery", "Videos", "Attachments", "Event", "RelatedContent", "DetailPage", "ListingPage", "Searchable"),
-            new("Eğitim ve Atölye", "egitimler"), new("Training & Workshop", "trainings")),
+            new("Eğitim ve Atölye", "egitimler"), new("Training & Workshop", "trainings"), ContentSchemaKind.None),
 
         new("volunteer-opportunity", "cards", "opportunity", ContentTypeSortMode.PublishDateDesc,
             Flags("Categories", "DetailImage", "Form", "RelatedContent", "DetailPage", "ListingPage", "Searchable"),
-            new("Gönüllülük Fırsatı", "gonulluluk-firsatlari"), new("Volunteer Opportunity", "volunteer-opportunities")),
+            new("Gönüllülük Fırsatı", "gonulluluk-firsatlari"), new("Volunteer Opportunity", "volunteer-opportunities"), ContentSchemaKind.None),
 
         new("faq", "faq-accordion", "faq", ContentTypeSortMode.Manual,
             Flags("Categories", "ListingPage", "Searchable"),
-            new("SSS", "sss"), new("FAQ", "faq")),
+            new("SSS", "sss"), new("FAQ", "faq"), ContentSchemaKind.FaqPage),
 
         new("team", "team-grid", "team", ContentTypeSortMode.Manual,
             Flags("Categories", "ListingPage"),
-            new("Ekip", "ekip"), new("Team", "team")),
+            new("Ekip", "ekip"), new("Team", "team"), ContentSchemaKind.None),
 
         new("document", "document-list", "document", ContentTypeSortMode.PublishDateDesc,
             Flags("Categories", "Attachments", "ListingPage", "Searchable"),
-            new("Belge", "belgeler"), new("Document", "documents")),
+            new("Belge", "belgeler"), new("Document", "documents"), ContentSchemaKind.None),
 
         new("press-release", "list", "article", ContentTypeSortMode.PublishDateDesc,
             Flags("DetailImage", "Attachments", "RelatedContent", "DetailPage", "ListingPage", "Searchable"),
-            new("Basın Bülteni", "basin-bultenleri"), new("Press Release", "press-releases")),
+            new("Basın Bülteni", "basin-bultenleri"), new("Press Release", "press-releases"), ContentSchemaKind.NewsArticle),
     ];
 
     // Flags' 14 fields are listed flat, top-level, rather than nested as "Flags = type.Flags": EF
@@ -97,6 +97,7 @@ internal static class GenclikMerkeziContentTypeSeed
             type.Flags.HasListingPage,
             type.Flags.IsSearchable,
             type.Flags.RequiresReview,
+            SchemaKind = type.SchemaKind,
             RowVersion = DeterministicGuid.Create($"ContentType:{type.Key}:RowVersion").ToByteArray(),
             CreatedByUserId = SeedUserId,
             CreatedAtUtc = SeedTimestamp,
@@ -177,5 +178,6 @@ internal static class GenclikMerkeziContentTypeSeed
         ContentTypeSortMode SortMode,
         ContentTypeFeatureFlags Flags,
         SeedTranslation Tr,
-        SeedTranslation En);
+        SeedTranslation En,
+        ContentSchemaKind SchemaKind);
 }

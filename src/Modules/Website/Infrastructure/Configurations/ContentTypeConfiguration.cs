@@ -45,6 +45,9 @@ public sealed class ContentTypeConfiguration : IEntityTypeConfiguration<ContentT
         builder.Property(ct => ct.RequiresReview).IsRequired();
         builder.Ignore(ct => ct.Flags);
 
+        // ADR-024 §15 (Faz 5 Görev 6): plain scalar, same string-conversion pattern as SortMode.
+        builder.Property(ct => ct.SchemaKind).HasConversion<string>().HasMaxLength(20).IsRequired();
+
         builder.OwnsMany(ct => ct.Translations, translation =>
         {
             translation.ToTable("ContentTypeTranslations");
