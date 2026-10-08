@@ -29,4 +29,5 @@ public sealed record SiteSettingsResponse(
     string? CookiePolicyKey,
     string? EventPrivacyNoticeKey,
     bool MaintenanceModeEnabled,
+    bool AllowSearchEngineIndexing,
     DateTime? UpdatedAtUtc);

@@ -66,7 +66,8 @@ public class PublicSearchEndpointFlowTests : IClassFixture<CustomWebApplicationF
         var response = await _client.SendAsync(Authorized(
             HttpMethod.Put, "/api/v1/admin/website/settings/features", accessToken,
             new UpdateSiteSettingsFeaturesRequest(
-                settings.RowVersion, enabled, settings.NewsletterEnabled, settings.PublicJobListingsEnabled, settings.DonationPageEnabled)));
+                settings.RowVersion, enabled, settings.NewsletterEnabled, settings.PublicJobListingsEnabled, settings.DonationPageEnabled,
+                settings.AllowSearchEngineIndexing)));
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 

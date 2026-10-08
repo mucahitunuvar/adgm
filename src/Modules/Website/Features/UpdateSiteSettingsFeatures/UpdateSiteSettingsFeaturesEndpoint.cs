@@ -16,7 +16,7 @@ internal static class UpdateSiteSettingsFeaturesEndpoint
                 {
                     var command = new UpdateSiteSettingsFeaturesCommand(
                         request.RowVersion, request.GlobalSearchEnabled, request.NewsletterEnabled,
-                        request.PublicJobListingsEnabled, request.DonationPageEnabled);
+                        request.PublicJobListingsEnabled, request.DonationPageEnabled, request.AllowSearchEngineIndexing);
                     var result = await sender.Send(command, cancellationToken);
                     return result.ToNoContentOrProblem();
                 })

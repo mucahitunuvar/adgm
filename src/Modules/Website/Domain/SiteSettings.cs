@@ -63,6 +63,13 @@ public sealed partial class SiteSettings : AggregateRoot
 
     public bool MaintenanceModeEnabled { get; private set; }
 
+    // ADR-024 §15 (Faz 5 Görev 5): robots.txt/sitemap's own kill switch, independent of
+    // MaintenanceModeEnabled - a test/staging deployment can disable indexing without pretending to be
+    // "under maintenance". Defaults to true (every real deployment wants to be indexed) via this field
+    // initializer, so CreateDefault() needs no explicit assignment, the same shape BotProtectionEnabled's
+    // constructor parameter could have used but predates this convention.
+    public bool AllowSearchEngineIndexing { get; private set; } = true;
+
     // ADR-024 §13: the public (non-secret) Turnstile key the frontend widget embeds. The secret key
     // is never stored here - it lives only in the Website Infrastructure adapter's configuration.
     public string TurnstileSiteKey { get; private set; } = string.Empty;
@@ -215,6 +222,7 @@ public sealed partial class SiteSettings : AggregateRoot
         bool newsletterEnabled,
         bool publicJobListingsEnabled,
         bool donationPageEnabled,
+        bool allowSearchEngineIndexing,
         Guid updatedByUserId,
         DateTime updatedAtUtc)
     {
@@ -222,6 +230,7 @@ public sealed partial class SiteSettings : AggregateRoot
         NewsletterEnabled = newsletterEnabled;
         PublicJobListingsEnabled = publicJobListingsEnabled;
         DonationPageEnabled = donationPageEnabled;
+        AllowSearchEngineIndexing = allowSearchEngineIndexing;
         Touch(updatedByUserId, updatedAtUtc);
     }
 

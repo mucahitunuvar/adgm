@@ -127,6 +127,13 @@ public sealed class SearchDocumentRepository(WebsiteDbContext dbContext) : ISear
             new PagedResult<PublicSearchResultCandidate>(items, totalCount, pagedRequest.Page, pagedRequest.PageSize), typeCounts);
     }
 
+    public async Task<IReadOnlyList<SearchDocument>> GetSitemapEligibleExternalAsync(
+        string excludedSourceKey, CancellationToken cancellationToken = default) =>
+        await dbContext.SearchDocuments.AsNoTracking()
+            .Where(d => d.SourceKey != excludedSourceKey && d.IncludeInSitemap)
+            .OrderBy(d => d.Id)
+            .ToListAsync(cancellationToken);
+
     private static Expression<Func<SearchDocument, bool>> BuildAllLikeExpression(
         Expression<Func<SearchDocument, string>> fieldSelector, IReadOnlyList<string> likePatterns)
     {

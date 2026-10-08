@@ -183,12 +183,13 @@ public class SiteSettingsTests
     {
         var settings = SiteSettings.CreateDefault();
 
-        settings.UpdateFeatureFlags(true, true, true, true, Guid.NewGuid(), DateTime.UtcNow);
+        settings.UpdateFeatureFlags(true, true, true, true, false, Guid.NewGuid(), DateTime.UtcNow);
 
         Assert.True(settings.GlobalSearchEnabled);
         Assert.True(settings.NewsletterEnabled);
         Assert.True(settings.PublicJobListingsEnabled);
         Assert.True(settings.DonationPageEnabled);
+        Assert.False(settings.AllowSearchEngineIndexing);
     }
 
     [Theory]

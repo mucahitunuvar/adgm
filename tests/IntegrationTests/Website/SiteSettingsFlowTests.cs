@@ -164,9 +164,10 @@ public class SiteSettingsFlowTests : IClassFixture<CustomWebApplicationFactory>
         PutAsync(accessToken, "/api/v1/admin/website/settings/bank-accounts", new UpdateSiteSettingsBankAccountsRequest(rowVersion, bankAccounts));
 
     private Task<HttpResponseMessage> PutFeaturesAsync(
-        string accessToken, byte[] rowVersion, bool donationPageEnabled = false, bool globalSearchEnabled = false) =>
+        string accessToken, byte[] rowVersion, bool donationPageEnabled = false, bool globalSearchEnabled = false,
+        bool allowSearchEngineIndexing = true) =>
         PutAsync(accessToken, "/api/v1/admin/website/settings/features",
-            new UpdateSiteSettingsFeaturesRequest(rowVersion, globalSearchEnabled, false, false, donationPageEnabled));
+            new UpdateSiteSettingsFeaturesRequest(rowVersion, globalSearchEnabled, false, false, donationPageEnabled, allowSearchEngineIndexing));
 
     private Task<HttpResponseMessage> PutMaintenanceAsync(
         string accessToken, byte[] rowVersion, bool maintenanceModeEnabled,

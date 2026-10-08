@@ -45,7 +45,8 @@ public sealed class GetSiteSettingsQueryHandler(
             settings.GlobalSearchEnabled, settings.NewsletterEnabled, settings.PublicJobListingsEnabled,
             settings.DonationPageEnabled, settings.BotProtectionEnabled, settings.TurnstileSiteKey,
             settings.SubmissionReferencePrefix, settings.NewsletterPrivacyNoticeKey?.Value, settings.CookiePolicyKey?.Value,
-            settings.EventPrivacyNoticeKey?.Value, settings.MaintenanceModeEnabled, settings.UpdatedAtUtc));
+            settings.EventPrivacyNoticeKey?.Value, settings.MaintenanceModeEnabled, settings.AllowSearchEngineIndexing,
+            settings.UpdatedAtUtc));
     }
 
     private async Task<string?> ResolveMediaUrlAsync(Guid? mediaAssetId, CancellationToken cancellationToken)

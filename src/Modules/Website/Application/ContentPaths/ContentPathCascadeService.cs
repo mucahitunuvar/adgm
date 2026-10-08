@@ -207,6 +207,25 @@ public sealed class ContentPathCascadeService(IContentItemRepository contentItem
         }
     }
 
+    // ADR-024 §15 (Faz 5 Görev 5): every ancestor of item, in no particular order (callers only ever
+    // check "does some ancestor lack a translation in language X", where order is irrelevant) - the
+    // same walk GetPublicContentByIdQueryHandler and RouteResolutionService each already inline as a
+    // private method for their own hreflang alternates; SitemapContentCollector is a third caller with
+    // the same need, so this one is shared instead of adding a third private copy.
+    public async Task<IReadOnlyList<ContentItem>> GetAncestorChainAsync(ContentItem item, CancellationToken cancellationToken)
+    {
+        var chain = new List<ContentItem>();
+        var current = item;
+        while (current.ParentId is not null)
+        {
+            current = await contentItemRepository.GetByIdAsync(current.ParentId.Value, cancellationToken)
+                ?? throw new InvalidOperationException($"Content item '{current.ParentId}' referenced as a parent could not be found.");
+            chain.Add(current);
+        }
+
+        return chain;
+    }
+
     private async Task<int> ComputeDepthAsync(ContentItem item, CancellationToken cancellationToken)
     {
         var depth = 1;
@@ -221,7 +240,11 @@ public sealed class ContentPathCascadeService(IContentItemRepository contentItem
         return depth;
     }
 
-    private async Task<IReadOnlyCollection<Guid>> GetDescendantIdsAsync(Guid itemId, CancellationToken cancellationToken)
+    // ADR-024 §15 (Faz 5 Görev 5): also SitemapContentCollector's own tree walk (every descendant of a
+    // root content item, regardless of depth) - made public for that second caller rather than
+    // duplicating the same BFS over GetChildrenAsync a third time (SearchIndexUpdater.
+    // CollectDescendantIdsAsync already has its own private copy of this exact walk).
+    public async Task<IReadOnlyCollection<Guid>> GetDescendantIdsAsync(Guid itemId, CancellationToken cancellationToken)
     {
         var result = new List<Guid>();
         var queue = new Queue<Guid>();

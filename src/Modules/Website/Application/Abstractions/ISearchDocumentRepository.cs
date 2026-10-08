@@ -40,4 +40,12 @@ public interface ISearchDocumentRepository
         string? sourceKey,
         PagedRequest pagedRequest,
         CancellationToken cancellationToken = default);
+
+    // ADR-024 §15 (Faz 5 Görev 5): the sitemap's "dış kaynak belgeleri" section - every external
+    // source's document (SourceKey other than excludedSourceKey, i.e. "website", which the sitemap
+    // instead rebuilds straight from ContentItem so it can reuse the same visibility resolver Görev 2
+    // uses) flagged IncludeInSitemap. Ordered by Id for a stable, deterministic page-to-page split
+    // across sitemap index segments.
+    Task<IReadOnlyList<SearchDocument>> GetSitemapEligibleExternalAsync(
+        string excludedSourceKey, CancellationToken cancellationToken = default);
 }

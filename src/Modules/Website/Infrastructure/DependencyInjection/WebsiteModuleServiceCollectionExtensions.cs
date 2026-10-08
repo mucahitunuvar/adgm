@@ -3,6 +3,7 @@ using GenclikMerkezi.Modules.Website.Application.BlockTypes;
 using GenclikMerkezi.Modules.Website.Application.BlockTypes.Definitions;
 using GenclikMerkezi.Modules.Website.Application.BlockTypes.PublicResolution;
 using GenclikMerkezi.Modules.Website.Application.ContentPaths;
+using GenclikMerkezi.Modules.Website.Application.Sitemap;
 using GenclikMerkezi.Modules.Website.Application.Events;
 using GenclikMerkezi.Modules.Website.Application.ImpactMetrics;
 using GenclikMerkezi.Modules.Website.Application.Forms;
@@ -118,6 +119,9 @@ public static class WebsiteModuleServiceCollectionExtensions
         services.AddScoped<ContentPathCascadeService>();
         services.AddScoped<RelatedContentResolutionService>();
         services.AddScoped<ContentItemPermanentDeletionService>();
+
+        // ADR-024 §15 (Faz 5 Görev 5): the sitemap's own content/listing/external-source collector.
+        services.AddScoped<SitemapContentCollector>();
 
         // ADR-024 §11.2 (Faz 4 Görev 4): the real cancellation fan-out, replacing Görev 1's placeholder.
         // Registered under its own concrete type too (not just the interface) since

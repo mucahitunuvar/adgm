@@ -33,11 +33,15 @@ public sealed class UpdateSiteSettingsFeaturesCommandHandler(
 
         settings.UpdateFeatureFlags(
             request.GlobalSearchEnabled, request.NewsletterEnabled, request.PublicJobListingsEnabled, request.DonationPageEnabled,
-            currentUserContext.UserId!.Value, DateTime.UtcNow);
+            request.AllowSearchEngineIndexing, currentUserContext.UserId!.Value, DateTime.UtcNow);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        WebsiteCacheInvalidator.InvalidatePublicSite(cacheService);
+        // ADR-024 §15 (Faz 5 Görev 5): AllowSearchEngineIndexing now feeds the cached sitemap response
+        // too (under PublicContentPrefix), not just the public-site bootstrap - InvalidateAllPublic
+        // clears both in one call, same broadening Faz 2 Görev 1 already did to this prefix set when
+        // the public-site response grew to depend on more sources.
+        WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 
         return Result.Success();
     }

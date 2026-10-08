@@ -36,6 +36,14 @@ public static class WebsiteCacheKeys
 
     public static string PublicContentInvalidationPrefix => PublicContentPrefix;
 
+    // ADR-024 §15 (Faz 5 Görev 5): the sitemap's own computed entry list (not the rendered XML itself -
+    // GetSitemapQueryHandler/GetSitemapSegmentQueryHandler each render their own slice from the same
+    // cached list, so a segment request never re-runs the underlying ContentItem/SearchDocument walk).
+    // Lives under PublicContentPrefix since it is built from exactly the same sources (ContentItem,
+    // ContentType, SearchDocument, SiteSettings.AllowSearchEngineIndexing) - InvalidateAllPublic already
+    // clears it with no new invalidation call needed anywhere.
+    public static string PublicSitemapEntries => $"{PublicContentPrefix}sitemap-entries";
+
     // ADR-024 §12.1 (Faz 3 Görev 2): the effective-version and specific-version public responses live
     // under the same PublicContentPrefix as list/detail/route/home, so the existing
     // InvalidatePublicContent/InvalidateAllPublic sweep every LegalDocument-mutating handler already

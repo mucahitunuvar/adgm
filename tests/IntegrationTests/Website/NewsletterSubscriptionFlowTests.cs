@@ -111,7 +111,8 @@ public class NewsletterSubscriptionFlowTests : IClassFixture<CustomWebApplicatio
         var featuresResponse = await _client.SendAsync(Authorized(
             HttpMethod.Put, "/api/v1/admin/website/settings/features", accessToken,
             new UpdateSiteSettingsFeaturesRequest(
-                settings.RowVersion, settings.GlobalSearchEnabled, true, settings.PublicJobListingsEnabled, settings.DonationPageEnabled)));
+                settings.RowVersion, settings.GlobalSearchEnabled, true, settings.PublicJobListingsEnabled, settings.DonationPageEnabled,
+                settings.AllowSearchEngineIndexing)));
         Assert.Equal(HttpStatusCode.NoContent, featuresResponse.StatusCode);
 
         settings = await GetSiteSettingsAsync(accessToken);
@@ -149,7 +150,8 @@ public class NewsletterSubscriptionFlowTests : IClassFixture<CustomWebApplicatio
         var disableResponse = await _client.SendAsync(Authorized(
             HttpMethod.Put, "/api/v1/admin/website/settings/features", accessToken,
             new UpdateSiteSettingsFeaturesRequest(
-                settings.RowVersion, settings.GlobalSearchEnabled, false, settings.PublicJobListingsEnabled, settings.DonationPageEnabled)));
+                settings.RowVersion, settings.GlobalSearchEnabled, false, settings.PublicJobListingsEnabled, settings.DonationPageEnabled,
+                settings.AllowSearchEngineIndexing)));
         Assert.Equal(HttpStatusCode.NoContent, disableResponse.StatusCode);
 
         var token = await FetchSubmissionTokenAndWaitAsync();

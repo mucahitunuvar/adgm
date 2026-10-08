@@ -124,7 +124,10 @@ using GenclikMerkezi.Modules.Website.Features.GetPublicSearch;
 using GenclikMerkezi.Modules.Website.Features.GetPublicSite;
 using GenclikMerkezi.Modules.Website.Features.GetPublicVideos;
 using GenclikMerkezi.Modules.Website.Features.GetRedirects;
+using GenclikMerkezi.Modules.Website.Features.GetRobotsTxt;
 using GenclikMerkezi.Modules.Website.Features.GetSearchSources;
+using GenclikMerkezi.Modules.Website.Features.GetSitemap;
+using GenclikMerkezi.Modules.Website.Features.GetSitemapSegment;
 using GenclikMerkezi.Modules.Website.Features.GetSiteLanguages;
 using GenclikMerkezi.Modules.Website.Features.GetSiteSettings;
 using GenclikMerkezi.Modules.Website.Features.GetSliderById;
@@ -479,6 +482,11 @@ public static class WebsiteModuleEndpointExtensions
         // ADR-024 §10 (Faz 5 Görev 4): search source sync status and on-demand reindexing.
         GetSearchSourcesEndpoint.Map(app);
         ReindexSearchSourceEndpoint.Map(app);
+
+        // ADR-024 §15 (Faz 5 Görev 5): dynamic sitemap (root-path, possibly segmented) and robots.txt.
+        GetSitemapEndpoint.Map(app);
+        GetSitemapSegmentEndpoint.Map(app);
+        GetRobotsTxtEndpoint.Map(app);
 
         return app;
     }

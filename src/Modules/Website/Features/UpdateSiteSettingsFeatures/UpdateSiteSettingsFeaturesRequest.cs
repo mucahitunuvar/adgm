@@ -5,4 +5,5 @@ public sealed record UpdateSiteSettingsFeaturesRequest(
     bool GlobalSearchEnabled,
     bool NewsletterEnabled,
     bool PublicJobListingsEnabled,
-    bool DonationPageEnabled);
+    bool DonationPageEnabled,
+    bool AllowSearchEngineIndexing);

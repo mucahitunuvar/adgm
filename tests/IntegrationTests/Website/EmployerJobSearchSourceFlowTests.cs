@@ -51,7 +51,8 @@ public class EmployerJobSearchSourceFlowTests
         var putResponse = await client.SendAsync(Authorized(
             HttpMethod.Put, "/api/v1/admin/website/settings/features", accessToken,
             new UpdateSiteSettingsFeaturesRequest(
-                settings.RowVersion, settings.GlobalSearchEnabled, settings.NewsletterEnabled, enabled, settings.DonationPageEnabled)));
+                settings.RowVersion, settings.GlobalSearchEnabled, settings.NewsletterEnabled, enabled, settings.DonationPageEnabled,
+                settings.AllowSearchEngineIndexing)));
         Assert.Equal(HttpStatusCode.NoContent, putResponse.StatusCode);
     }
 

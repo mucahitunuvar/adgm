@@ -18,6 +18,7 @@ public sealed class ExternalSearchSourceSynchronizer(
     ISiteLanguageRepository siteLanguageRepository,
     SearchSourceSyncCoordinator syncCoordinator,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork,
+    ICacheService cacheService,
     TimeProvider timeProvider)
 {
     private const int PageSize = 200;
@@ -82,15 +83,24 @@ public sealed class ExternalSearchSourceSynchronizer(
                 state.MarkSucceeded(timeProvider.GetUtcNow().UtcDateTime, documentCount);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
 
+                // ADR-024 §15 (Faz 5 Görev 5): the cached sitemap entry list (WebsiteCacheKeys.
+                // PublicSitemapEntries) reads this source's IncludeInSitemap-flagged rows - nothing else
+                // ever calls InvalidateAllPublic for a SearchDocument change, since Görev 3 deliberately
+                // never caches search results themselves.
+                WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
+
                 return Result.Success();
             }
             catch (Exception ex)
             {
                 // Recorded on SearchSourceState, not rethrown (same reasoning as
                 // WebsiteSearchIndexReconciler) - and critically, nothing is deleted on this path: the
-                // DeleteUnseenBySourceAsync call above never ran.
+                // DeleteUnseenBySourceAsync call above never ran. Still invalidates below: documents
+                // upserted from pages read before the failure were already committed by this same
+                // SaveChangesAsync call.
                 state.MarkFailed(ex.Message);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
+                WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 
                 return Result.Success();
             }

@@ -8,4 +8,5 @@ public sealed record UpdateSiteSettingsFeaturesCommand(
     bool GlobalSearchEnabled,
     bool NewsletterEnabled,
     bool PublicJobListingsEnabled,
-    bool DonationPageEnabled) : IRequest<Result>;
+    bool DonationPageEnabled,
+    bool AllowSearchEngineIndexing) : IRequest<Result>;

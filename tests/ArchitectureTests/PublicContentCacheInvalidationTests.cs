@@ -36,10 +36,12 @@ public class PublicContentCacheInvalidationTests
 
         // SiteSettings sections whose fields never feed a public content list/detail/SEO response,
         // unlike UpdateSiteSettingsIdentityCommandHandler (feeds ContentSeoResolver's site defaults via
-        // DefaultOgImageMediaId/DefaultMetaDescription) which IS wired.
+        // DefaultOgImageMediaId/DefaultMetaDescription) which IS wired. UpdateSiteSettingsFeatures moved
+        // OUT of this list in Faz 5 Görev 5: AllowSearchEngineIndexing now feeds the cached sitemap
+        // response, which lives under PublicContentPrefix, so it calls InvalidateAllPublic like any
+        // other handler that reaches that cache.
         "UpdateSiteSettingsThemeCommandHandler",
         "UpdateSiteSettingsContactCommandHandler",
-        "UpdateSiteSettingsFeaturesCommandHandler",
         "UpdateSiteSettingsMaintenanceCommandHandler",
         "UpdateSiteSettingsBotProtectionCommandHandler",
         "UpdateSiteSettingsBankAccountsCommandHandler",
