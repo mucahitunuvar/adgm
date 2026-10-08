@@ -54,3 +54,5 @@ Görev 6'da (Profil Tamamlanma Yüzdesi) kurulan mekanizma — `CandidateCv`/`Ca
 - ADR-016: Cross-module erişim pattern'i (`IReferenceDataLookupReader.GetByIdsAsync` bu ADR kapsamında eklendi)
 - ADR-018: Candidate aggregate tasarımı ve completion percentage senkron dispatch mekanizması
 - Pagination kararı (SharedKernel `PagedRequest/PagedResult<T>`)
+
+**Uygulama notu (Faz 5 — Website genel arama, ADR-024 §10):** `FullNameNormalized`'i üreten normalize fonksiyonu (`TurkishTextNormalizer`), Website modülünün `SearchDocument.NormalizedText` alanı için de aynı kurallarla yeniden kullanılacağı için, davranışı **birebir korunarak** Candidate modülünden `GenclikMerkezi.SharedKernel.Text.TurkishTextNormalizer`'a taşındı (Website, iş modüllerine bağımlı olamayacağı için Candidate'te bırakılamazdı). `CandidateSearchIndexProjector` ve `CandidateSearchIndexRepository` artık SharedKernel'deki sınıfı kullanır; bu ADR'de tanımlanan `FullNameNormalized`/`searchText` davranışı değişmedi.

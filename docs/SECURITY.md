@@ -1020,6 +1020,50 @@ okuma uçlarıyla aynı `public-read` rate limiting policy'sine (§23.1) tabidir
   Website'in frontend yanıtını ve arama adaptörünü kısıtlar; Employer'ın public uçları bayraktan
   bağımsız olarak her zaman yukarıdaki kurallara göre çalışır.
 
+## 23.5 Genel Arama, Sitemap/Robots ve JSON-LD (ADR-024 §10, §15 — Faz 5)
+
+* **Aramada kişisel veri yoktur ve sorgu metni saklanmaz:** `SearchDocument` yalnızca public içerik
+  (Website içeriği, yayındaki ilan özetleri) için üretilir; form başvurusu, kayıt, bülten abonesi,
+  firma iç kaydı veya danışman notu tasarım gereği hiçbir zaman indekse girmez. `GET
+  /api/v1/public/search`'ün `q` parametresi hiçbir yerde loglanmaz veya veritabanına yazılmaz —
+  popüler arama/analitik bu nedenle **kasıtlı olarak yoktur** (kişisel veri ihtimali). Yanıt
+  sunucu tarafında cache'lenmez.
+* **Arama kaynağı hata mesajları kırpılır:** `SearchSourceState.LastError` en fazla 500 karakter
+  ve yalnızca istisna mesajıdır — yığın izi (stack trace) hiçbir zaman saklanmaz/döndürülmez.
+* **`SiteSettings.AllowSearchEngineIndexing` ve bakım modu bir erişim kontrolü değildir:** bu
+  bayraklar yalnızca `/sitemap.xml` ve `/robots.txt`'in arama motorlarına verdiği sinyali
+  değiştirir; `false`/bakım modunda bile içerik uçları (`/api/v1/public/contents/...`) normal
+  yetkilendirme kurallarına göre erişilebilir kalır — "indekslenmesin" ile "erişilemesin" ayrı
+  kavramlardır.
+* **JSON-LD'de `OnlineLink` hiçbir koşulda yer almaz:** Etkinlik `jsonLd` çıktısı (`Event`),
+  Faz 4'teki kuralla (bkz. §12.4) tutarlı olarak katılımcıya özel online bağlantıyı hiçbir zaman
+  içermez; salt online etkinlikte `VirtualLocation.url` etkinliğin kendi public sayfasıdır, link
+  değil. Bu invariant bir regresyon testiyle korunur.
+* **Frontend JSON-LD'yi basarken `<` karakterini kaçışlamalıdır:** Backend `jsonLd` alanını
+  düz JSON olarak döner; frontend bunu `<script type="application/ld+json">` içine **doğrudan**
+  basarsa, içerik içinde `</script>` benzeri bir dizi (ör. bir içerik başlığında geçen `</script>`
+  metni) script etiketini kırıp XSS'e yol açabilir. Frontend, basmadan önce `<` karakterini
+  `<` olarak kaçışlamalıdır (JSON string değerleri içinde geçerli bir kaçıştır, JSON-LD
+  semantiğini değiştirmez).
+
+## 23.6 İçerik Revizyon Geçmişi (ADR-024 §4.6 — Faz 5)
+
+* **Anlık görüntüler yalnızca editöre görünen içerik alanlarını taşır:** `ContentItemRevision.
+  SnapshotJson` başlık, özet, gövde, SEO alanları, etiket/kategori kimlikleriyle sınırlıdır — hiçbir
+  kişisel veri (başvuru, kayıt, abone bilgisi) içermez; kapsam bilinçli olarak `PageLayout`,
+  `SiteSettings` ve `LegalDocument`'ı (zaten kendi sürümlemesi var) dışarıda bırakır.
+  Görüntüleme/karşılaştırma/geri yükleme `Website.Content.Manage` yetkisine bağlıdır.
+  Başvuru/etkinlik kaydı/abone görüntülemesinin aksine (`Website.Submissions.View`, §12.3/§22.1),
+  revizyon erişimi **auditlenmez** — içerdiği veri zaten editör tarafından yazılmış, kişisel veri
+  içermeyen yayın içeriğidir.
+* **Geri yüklemede gövde yeniden sanitize edilir:** `RestoreContentItemRevisionCommandHandler`,
+  anlık görüntüdeki `Body` HTML'ini doğrudan yazmaz — mevcut `IHtmlContentSanitizer` ile (§16)
+  yeniden geçirir; böylece eski bir revizyonun kaydedildiği andaki sanitizer politikasıyla değil,
+  **güncel** beyaz liste politikasıyla tutarlı kalır.
+* **Geri yükleme slug/durum/yolu değiştirmez:** bir revizyonu geri yüklemek içeriği yeniden
+  yayından kaldırmaz veya URL'sini değiştirmez; yalnızca seçilen dilin metin/SEO/etiket alanlarını
+  günceller ve yeni bir `Restored` revizyonu üretir.
+
 ---
 
 # 24. CORS

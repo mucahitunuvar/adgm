@@ -293,6 +293,23 @@ değerlendirilebilir.
 
 Search altyapısı eklemek mevcut database-per-module mimarisini bozmamalıdır.
 
+## 12.1 Website Genel Arama (ADR-024 §10 — Faz 5)
+
+`GET /api/v1/public/search`, `SearchDocument.NormalizedText` üzerinde her belirteç için
+`LIKE '%token%'` (`EF.Functions.Like`, baştaki `%` ile) uygular ve belirteçleri **AND**'ler.
+Baştaki joker karakter nedeniyle bu, `NormalizedText` üzerinde **indeks kullanamaz** —
+`(LanguageCode, TypeKey)` indeksi yalnızca eşitlik filtrelerine (dil/kaynak) yardım eder, asıl
+metin eşlemesi dil+kaynak filtresiyle sınırlanmış bir taramadır. Bu, ADR-024 §10'da "indeksli
+`LIKE`" olarak anılan ifadenin gerçekte ne anlama geldiğidir: sorgu *filtrelerle* (dil, kaynak,
+tür) daraltılmış bir tarama yapar, metnin kendisi için bir B-tree seek'i yoktur.
+
+**Ölçüm ve geçiş ölçütü:** `SearchDocument` satır sayısı küçükken (bu projenin içerik hacmiyle,
+onlarca-yüzlerce içerik + birkaç yüz ilan) bu kabul edilebilir bulunmuştur. Production'da arama
+gecikmesi (p95/p99) izlenmelidir; gecikme kullanıcı deneyimini etkileyecek düzeye çıkarsa (ör.
+p95 > 300ms) veya `SearchDocument` satır sayısı on binleri aşarsa, SQL Server full-text indexe
+geçiş **ölçümle kanıtlanmış ihtiyaç üzerine** değerlendirilmelidir — önceden, "daha hızlı olur"
+varsayımıyla eklenmemelidir (AGENTS.md §39, premature optimization).
+
 ---
 
 # 13. Database Index Strategy
