@@ -16,6 +16,7 @@ public sealed class UpdateContentItemTranslationCommandHandler(
     IHtmlContentSanitizer htmlContentSanitizer,
     ContentPathCascadeService contentPathCascadeService,
     ISearchIndexUpdater searchIndexUpdater,
+    IContentRevisionRecorder contentRevisionRecorder,
     ICurrentUserContext currentUserContext,
     ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
@@ -131,6 +132,12 @@ public sealed class UpdateContentItemTranslationCommandHandler(
         }
 
         await searchIndexUpdater.ReindexWithDescendantsAsync(contentItem, cancellationToken);
+
+        // ADR-024 §4 (Faz 5 Görev 7): Edited revision - skipped by the recorder itself if the resulting
+        // snapshot hashes identical to the previous one (a save with no real text/SEO/tag change).
+        await contentRevisionRecorder.RecordAsync(
+            contentItem, ContentItemRevisionKind.Edited, [languageCode], userId, now, cancellationToken);
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 

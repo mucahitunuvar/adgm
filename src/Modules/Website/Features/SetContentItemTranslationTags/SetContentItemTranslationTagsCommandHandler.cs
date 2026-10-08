@@ -14,6 +14,7 @@ public sealed class SetContentItemTranslationTagsCommandHandler(
     IContentItemRepository contentItemRepository,
     IContentTypeRepository contentTypeRepository,
     IContentTagRepository contentTagRepository,
+    IContentRevisionRecorder contentRevisionRecorder,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
     ICacheService cacheService,
@@ -103,6 +104,8 @@ public sealed class SetContentItemTranslationTagsCommandHandler(
         {
             return setResult;
         }
+
+        await contentRevisionRecorder.RecordAsync(contentItem, ContentItemRevisionKind.Edited, [languageCode], userId, now, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);

@@ -16,6 +16,7 @@ public sealed class CreateContentItemCommandHandler(
     IHtmlContentSanitizer htmlContentSanitizer,
     ContentPathCascadeService contentPathCascadeService,
     ISearchIndexUpdater searchIndexUpdater,
+    IContentRevisionRecorder contentRevisionRecorder,
     ICurrentUserContext currentUserContext,
     ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
@@ -101,6 +102,13 @@ public sealed class CreateContentItemCommandHandler(
 
         contentItemRepository.Add(contentItemResult.Value);
         await searchIndexUpdater.ReindexAsync(contentItemResult.Value, cancellationToken);
+
+        // ADR-024 §4 (Faz 5 Görev 7): this item's very first revision - always recorded, never
+        // hash-deduped (there is nothing earlier to compare against).
+        await contentRevisionRecorder.RecordAsync(
+            contentItemResult.Value, ContentItemRevisionKind.Created, [defaultLanguage.Code], currentUserContext.UserId!.Value,
+            DateTime.UtcNow, cancellationToken);
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 

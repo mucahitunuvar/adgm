@@ -395,6 +395,8 @@ if (!isTestingEnvironment)
         "website-cleanup-unused-content-tags", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
     RecurringJob.AddOrUpdate<PermanentlyDeleteExpiredTrashJob>(
         "website-permanently-delete-expired-trash", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
+    RecurringJob.AddOrUpdate<PruneContentItemRevisionsJob>(
+        "website-prune-content-item-revisions", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
     RecurringJob.AddOrUpdate<ArchiveClosedFormSubmissionsJob>(
         "website-archive-closed-form-submissions", job => job.ExecuteAsync(CancellationToken.None), Cron.Daily);
     RecurringJob.AddOrUpdate<AnonymizeExpiredFormSubmissionsJob>(

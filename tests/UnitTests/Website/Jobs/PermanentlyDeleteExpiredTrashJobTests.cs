@@ -31,6 +31,7 @@ public class PermanentlyDeleteExpiredTrashJobTests
     private readonly FakePageLayoutRepository _pageLayoutRepository = new();
     private readonly FakeEventScheduleRepository _eventScheduleRepository = new();
     private readonly FakeEventRegistrationUsageChecker _eventRegistrationUsageChecker = new();
+    private readonly FakeContentItemRevisionRepository _contentItemRevisionRepository = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
 
     private PermanentlyDeleteExpiredTrashJob CreateJob(DateTime now)
@@ -42,6 +43,7 @@ public class PermanentlyDeleteExpiredTrashJobTests
         services.AddSingleton<IPageLayoutRepository>(_pageLayoutRepository);
         services.AddSingleton<IEventScheduleRepository>(_eventScheduleRepository);
         services.AddSingleton<IEventRegistrationUsageChecker>(_eventRegistrationUsageChecker);
+        services.AddSingleton<IContentItemRevisionRepository>(_contentItemRevisionRepository);
         services.AddSingleton<ContentItemPermanentDeletionService>();
         services.AddSingleton<ILogger<ContentItemPermanentDeletionService>>(NullLogger<ContentItemPermanentDeletionService>.Instance);
         services.AddSingleton<ICacheService>(

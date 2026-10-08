@@ -21,6 +21,7 @@ public sealed class ContentItemPermanentDeletionService(
     IPageLayoutRepository pageLayoutRepository,
     IEventScheduleRepository eventScheduleRepository,
     IEventRegistrationUsageChecker eventRegistrationUsageChecker,
+    IContentItemRevisionRepository contentItemRevisionRepository,
     ILogger<ContentItemPermanentDeletionService> logger)
 {
     public async Task<Result> DeleteAsync(ContentItem contentItem, Guid actingUserId, DateTime now, CancellationToken cancellationToken)
@@ -89,6 +90,10 @@ public sealed class ContentItemPermanentDeletionService(
         }
 
         contentItemRepository.Remove(contentItem);
+
+        // ADR-024 §4 (Faz 5 Görev 7): "Kalıcı silme revizyonları siler" - unlike the trash itself, where
+        // "çöp kutusunda revizyonlar korunur" (MoveToTrash never touches revisions).
+        await contentItemRevisionRepository.DeleteAllForContentItemAsync(contentItem.Id, cancellationToken);
 
         return Result.Success();
     }

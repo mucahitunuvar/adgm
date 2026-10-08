@@ -86,8 +86,12 @@ using GenclikMerkezi.Modules.Website.Features.GetFormDefinitionById;
 using GenclikMerkezi.Modules.Website.Features.GetFormDefinitions;
 using GenclikMerkezi.Modules.Website.Features.GetFormSubmissionById;
 using GenclikMerkezi.Modules.Website.Features.GetFormSubmissions;
+using GenclikMerkezi.Modules.Website.Features.CompareContentItemRevisions;
 using GenclikMerkezi.Modules.Website.Features.GetContentItemById;
+using GenclikMerkezi.Modules.Website.Features.GetContentItemRevisionByNumber;
+using GenclikMerkezi.Modules.Website.Features.GetContentItemRevisions;
 using GenclikMerkezi.Modules.Website.Features.GetContentItems;
+using GenclikMerkezi.Modules.Website.Features.RestoreContentItemRevision;
 using GenclikMerkezi.Modules.Website.Features.GetContentLayout;
 using GenclikMerkezi.Modules.Website.Features.GetContentPreview;
 using GenclikMerkezi.Modules.Website.Features.GetContentTrash;
@@ -275,6 +279,13 @@ public static class WebsiteModuleEndpointExtensions
         RestoreContentItemEndpoint.Map(app);
         PermanentlyDeleteContentItemEndpoint.Map(app);
         DuplicateContentItemEndpoint.Map(app);
+
+        // ADR-024 §4 (Faz 5 Görev 7): content revision history.
+        GetContentItemRevisionsEndpoint.Map(app);
+        GetContentItemRevisionByNumberEndpoint.Map(app);
+        CompareContentItemRevisionsEndpoint.Map(app);
+        RestoreContentItemRevisionEndpoint.Map(app);
+
         CreateContentPreviewLinkEndpoint.Map(app);
         GetContentPreviewEndpoint.Map(app);
         GetPublicContentsEndpoint.Map(app);

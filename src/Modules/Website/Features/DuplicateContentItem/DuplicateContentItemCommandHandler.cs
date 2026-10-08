@@ -20,6 +20,7 @@ public sealed class DuplicateContentItemCommandHandler(
     IEventScheduleRepository eventScheduleRepository,
     ContentPathCascadeService contentPathCascadeService,
     ISearchIndexUpdater searchIndexUpdater,
+    IContentRevisionRecorder contentRevisionRecorder,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
     ICacheService cacheService,
@@ -191,6 +192,13 @@ public sealed class DuplicateContentItemCommandHandler(
         }
 
         await searchIndexUpdater.ReindexAsync(newItem, cancellationToken);
+
+        // ADR-024 §4 (Faz 5 Görev 7): "Kopyalama kopyanın ilk revizyonunu (Created) oluşturur" - every
+        // language the copy ended up with (not just the default one).
+        await contentRevisionRecorder.RecordAsync(
+            newItem, ContentItemRevisionKind.Created, newItem.Translations.Select(t => t.LanguageCode).ToList(), userId, now,
+            cancellationToken);
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 

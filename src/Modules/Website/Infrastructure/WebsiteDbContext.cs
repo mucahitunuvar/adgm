@@ -55,6 +55,7 @@ public sealed class WebsiteDbContext(DbContextOptions<WebsiteDbContext> options,
     public DbSet<EventRegistration> EventRegistrations => Set<EventRegistration>();
     public DbSet<SearchDocument> SearchDocuments => Set<SearchDocument>();
     public DbSet<SearchSourceState> SearchSourceStates => Set<SearchSourceState>();
+    public DbSet<ContentItemRevision> ContentItemRevisions => Set<ContentItemRevision>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -19,11 +19,12 @@ public class ContentItemPermanentDeletionServiceTests
     private readonly FakePageLayoutRepository _pageLayoutRepository = new();
     private readonly FakeEventScheduleRepository _eventScheduleRepository = new();
     private readonly FakeEventRegistrationUsageChecker _eventRegistrationUsageChecker = new();
+    private readonly FakeContentItemRevisionRepository _contentItemRevisionRepository = new();
 
     private ContentItemPermanentDeletionService CreateService() =>
         new(
             _contentItemRepository, _redirectRepository, _menuRepository, _pageLayoutRepository, _eventScheduleRepository,
-            _eventRegistrationUsageChecker, NullLogger<ContentItemPermanentDeletionService>.Instance);
+            _eventRegistrationUsageChecker, _contentItemRevisionRepository, NullLogger<ContentItemPermanentDeletionService>.Instance);
 
     private static ContentItem CreateItem(Guid? parentId = null, string slug = "haber") =>
         ContentItem.Create(

@@ -12,6 +12,7 @@ public sealed class PublishContentItemCommandHandler(
     IContentTypeRepository contentTypeRepository,
     ISiteLanguageRepository siteLanguageRepository,
     ISearchIndexUpdater searchIndexUpdater,
+    IContentRevisionRecorder contentRevisionRecorder,
     ICurrentUserContext currentUserContext,
     ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
@@ -56,15 +57,23 @@ public sealed class PublishContentItemCommandHandler(
             parentIsPublished = parent?.Status == ContentItemStatus.Published;
         }
 
+        var userId = currentUserContext.UserId!.Value;
+        var now = DateTime.UtcNow;
+
         var publishResult = contentItem.Publish(
-            request.PublishAtUtc, request.UnpublishAtUtc, contentType.IsActive, parentIsPublished, defaultLanguage.Code,
-            currentUserContext.UserId!.Value, DateTime.UtcNow);
+            request.PublishAtUtc, request.UnpublishAtUtc, contentType.IsActive, parentIsPublished, defaultLanguage.Code, userId, now);
         if (publishResult.IsFailure)
         {
             return publishResult;
         }
 
         await searchIndexUpdater.ReindexWithDescendantsAsync(contentItem, cancellationToken);
+
+        // ADR-024 §4 (Faz 5 Görev 7): "içerik yayınlandığı anda revizyon Kind = Published,
+        // IsPublishedSnapshot = true olur" - always recorded, even if byte-identical to the previous
+        // revision (ContentRevisionRecorder never hash-dedupes a Published snapshot).
+        await contentRevisionRecorder.RecordAsync(contentItem, ContentItemRevisionKind.Published, [], userId, now, cancellationToken);
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 

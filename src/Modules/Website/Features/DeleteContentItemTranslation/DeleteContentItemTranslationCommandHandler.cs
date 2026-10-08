@@ -11,6 +11,7 @@ public sealed class DeleteContentItemTranslationCommandHandler(
     IContentItemRepository contentItemRepository,
     ISiteLanguageRepository siteLanguageRepository,
     ISearchIndexUpdater searchIndexUpdater,
+    IContentRevisionRecorder contentRevisionRecorder,
     ICurrentUserContext currentUserContext,
     ICacheService cacheService,
     [FromKeyedServices(WebsiteModuleMarker.UnitOfWorkKey)] IUnitOfWork unitOfWork)
@@ -59,14 +60,22 @@ public sealed class DeleteContentItemTranslationCommandHandler(
                 $"Cannot delete: {childrenWithLanguage} child content item(s) still have a translation in language '{languageCodeResult.Value}'."));
         }
 
-        var removeResult = contentItem.RemoveTranslation(
-            languageCodeResult.Value, defaultLanguage.Code, currentUserContext.UserId!.Value, DateTime.UtcNow);
+        var userId = currentUserContext.UserId!.Value;
+        var now = DateTime.UtcNow;
+
+        var removeResult = contentItem.RemoveTranslation(languageCodeResult.Value, defaultLanguage.Code, userId, now);
         if (removeResult.IsFailure)
         {
             return removeResult;
         }
 
         await searchIndexUpdater.ReindexAsync(contentItem, cancellationToken);
+
+        // ADR-024 §4 (Faz 5 Görev 7): the snapshot now has one fewer language, so its hash differs from
+        // the previous revision's - this is never a no-op save.
+        await contentRevisionRecorder.RecordAsync(
+            contentItem, ContentItemRevisionKind.Edited, [languageCodeResult.Value], userId, now, cancellationToken);
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
 

@@ -3,6 +3,7 @@ using GenclikMerkezi.Modules.Website.Application.BlockTypes;
 using GenclikMerkezi.Modules.Website.Application.BlockTypes.Definitions;
 using GenclikMerkezi.Modules.Website.Application.BlockTypes.PublicResolution;
 using GenclikMerkezi.Modules.Website.Application.ContentPaths;
+using GenclikMerkezi.Modules.Website.Application.ContentRevisions;
 using GenclikMerkezi.Modules.Website.Application.Sitemap;
 using GenclikMerkezi.Modules.Website.Application.Events;
 using GenclikMerkezi.Modules.Website.Application.ImpactMetrics;
@@ -91,6 +92,13 @@ public static class WebsiteModuleServiceCollectionExtensions
         // alone does not change.
         services.AddScoped<ISearchDocumentRepository, SearchDocumentRepository>();
         services.AddScoped<ISearchSourceStateRepository, SearchSourceStateRepository>();
+
+        // ADR-024 §4 (Faz 5 Görev 7): content revision history - persistence plus the recorder every
+        // text/SEO/tag/category-mutating handler calls (mirrors ISearchIndexUpdater's own registration
+        // shape immediately above).
+        services.AddScoped<IContentItemRevisionRepository, ContentItemRevisionRepository>();
+        services.AddScoped<IContentRevisionRecorder, ContentRevisionRecorder>();
+        services.AddTransient<PruneContentItemRevisionsJob>();
 
         // ADR-024 §10 (Faz 5 Görev 2): registered under its own concrete type too (not just the
         // interface) since ContinueSearchIndexBatchJob resolves it directly to call the batch-

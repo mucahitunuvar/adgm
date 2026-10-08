@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
+using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
@@ -10,6 +11,7 @@ public sealed class SetContentItemCategoriesCommandHandler(
     IContentItemRepository contentItemRepository,
     IContentTypeRepository contentTypeRepository,
     IContentCategoryRepository contentCategoryRepository,
+    IContentRevisionRecorder contentRevisionRecorder,
     ICurrentUserContext currentUserContext,
     TimeProvider timeProvider,
     ICacheService cacheService,
@@ -54,11 +56,18 @@ public sealed class SetContentItemCategoriesCommandHandler(
             }
         }
 
-        var setResult = contentItem.SetCategories(distinctIds, currentUserContext.UserId!.Value, timeProvider.GetUtcNow().UtcDateTime);
+        var userId = currentUserContext.UserId!.Value;
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+
+        var setResult = contentItem.SetCategories(distinctIds, userId, now);
         if (setResult.IsFailure)
         {
             return setResult;
         }
+
+        // ADR-024 §4 (Faz 5 Görev 7): category is content-level, not language-specific, so
+        // ChangedLanguages is empty here.
+        await contentRevisionRecorder.RecordAsync(contentItem, ContentItemRevisionKind.Edited, [], userId, now, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         WebsiteCacheInvalidator.InvalidateAllPublic(cacheService);
