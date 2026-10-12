@@ -322,7 +322,7 @@ public class SitemapAndRobotsFlowTests : IClassFixture<SitemapTestFactory>
     }
 
     [Fact]
-    public async Task Robots_MaintenanceModeAndIndexingDisabled_DisallowsEverything()
+    public async Task Robots_IndexingDisabled_DisallowsEverything()
     {
         var accessToken = await LoginAsAdminAsync();
         await SetAllowSearchEngineIndexingAsync(accessToken, allowed: false);
@@ -334,8 +334,15 @@ public class SitemapAndRobotsFlowTests : IClassFixture<SitemapTestFactory>
         Assert.Contains("Disallow: /\n", body);
         Assert.DoesNotContain("Disallow: /api/", body);
 
-        await SetAllowSearchEngineIndexingAsync(accessToken, allowed: true);
         await SetMaintenanceModeAsync(accessToken, enabled: false);
+
+        var responseWithoutMaintenance = await _client.GetAsync("/robots.txt");
+        var bodyWithoutMaintenance = await responseWithoutMaintenance.Content.ReadAsStringAsync();
+
+        Assert.Contains("Disallow: /\n", bodyWithoutMaintenance);
+        Assert.DoesNotContain("Disallow: /api/", bodyWithoutMaintenance);
+
+        await SetAllowSearchEngineIndexingAsync(accessToken, allowed: true);
     }
 
     [Fact]

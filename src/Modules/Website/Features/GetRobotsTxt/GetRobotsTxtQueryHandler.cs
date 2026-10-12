@@ -22,10 +22,10 @@ public sealed class GetRobotsTxtQueryHandler(ISiteSettingsRepository siteSetting
         var builder = new StringBuilder();
         builder.Append("User-agent: *\n");
 
-        // ADR-024 §15: both conditions together, not either alone - a maintenance window with indexing
+        // ADR-024 §15: indexing being disabled is the only trigger - a maintenance window with indexing
         // otherwise allowed still lets crawlers see the normal disallow list (and the sitemap itself
         // returns the real content, maintenance mode never hides it from GetSitemapQueryHandler).
-        if (settings.MaintenanceModeEnabled && !settings.AllowSearchEngineIndexing)
+        if (!settings.AllowSearchEngineIndexing)
         {
             builder.Append("Disallow: /\n");
             return Result.Success(builder.ToString());
