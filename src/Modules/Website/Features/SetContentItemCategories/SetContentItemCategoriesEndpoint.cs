@@ -20,6 +20,13 @@ internal static class SetContentItemCategoriesEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("SetContentItemCategories")
             .WithTags("Website");
     }

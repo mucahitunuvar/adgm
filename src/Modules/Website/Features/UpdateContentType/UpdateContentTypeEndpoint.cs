@@ -25,6 +25,13 @@ internal static class UpdateContentTypeEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.StructureManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("UpdateContentType")
             .WithTags("Website");
     }

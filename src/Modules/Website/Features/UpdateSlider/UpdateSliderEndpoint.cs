@@ -19,6 +19,13 @@ internal static class UpdateSliderEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.DesignManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("UpdateSlider")
             .WithTags("Website");
     }

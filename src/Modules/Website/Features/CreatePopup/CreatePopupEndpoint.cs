@@ -26,6 +26,13 @@ internal static class CreatePopupEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.DesignManage)
             .RequireRateLimiting("authenticated")
+            .Produces<CreatePopupResponse>(StatusCodes.Status201Created)
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("CreatePopup")
             .WithTags("Website");
     }

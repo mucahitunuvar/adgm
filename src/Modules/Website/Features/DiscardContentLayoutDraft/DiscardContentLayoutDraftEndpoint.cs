@@ -19,6 +19,12 @@ internal static class DiscardContentLayoutDraftEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.DesignManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("DiscardContentLayoutDraft")
             .WithTags("Website");
     }

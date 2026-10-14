@@ -25,6 +25,11 @@ internal static class CreateThirdPartyScriptEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SettingsManage)
             .RequireRateLimiting("authenticated")
+            .Produces<CreateThirdPartyScriptResponse>(StatusCodes.Status201Created)
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("CreateThirdPartyScript")
             .WithTags("Website");
     }

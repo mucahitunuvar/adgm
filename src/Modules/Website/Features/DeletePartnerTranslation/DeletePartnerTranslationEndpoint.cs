@@ -26,6 +26,12 @@ internal static class DeletePartnerTranslationEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.DesignManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("DeletePartnerTranslation")
             .WithTags("Website");
     }

@@ -19,6 +19,11 @@ internal static class DiscardHomeLayoutDraftEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.DesignManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("DiscardHomeLayoutDraft")
             .WithTags("Website");
     }

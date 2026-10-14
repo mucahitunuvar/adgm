@@ -20,6 +20,12 @@ internal static class UpdateVideoTranslationEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("UpdateVideoTranslation")
             .WithTags("Website");
     }

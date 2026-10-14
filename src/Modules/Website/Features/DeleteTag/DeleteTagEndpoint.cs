@@ -19,6 +19,11 @@ internal static class DeleteTagEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("DeleteTag")
             .WithTags("Website");
     }

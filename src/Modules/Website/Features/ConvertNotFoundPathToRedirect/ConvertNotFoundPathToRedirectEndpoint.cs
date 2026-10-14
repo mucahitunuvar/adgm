@@ -21,6 +21,13 @@ internal static class ConvertNotFoundPathToRedirectEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.StructureManage)
             .RequireRateLimiting("authenticated")
+            .Produces<ConvertNotFoundPathToRedirectResponse>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("ConvertNotFoundPathToRedirect")
             .WithTags("Website");
     }

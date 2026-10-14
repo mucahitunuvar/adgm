@@ -19,6 +19,11 @@ internal static class DeletePartnerEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.DesignManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("DeletePartner")
             .WithTags("Website");
     }

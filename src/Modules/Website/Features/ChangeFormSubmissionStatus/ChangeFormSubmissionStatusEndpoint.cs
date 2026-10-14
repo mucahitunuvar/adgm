@@ -20,6 +20,12 @@ internal static class ChangeFormSubmissionStatusEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SubmissionsManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("ChangeFormSubmissionStatus")
             .WithTags("Website");
     }

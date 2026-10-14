@@ -47,6 +47,10 @@ internal static class ExportNewsletterSubscribersEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SubmissionsView)
             .RequireRateLimiting("authenticated")
+            .Produces<byte[]>(StatusCodes.Status200OK, "text/csv")
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("ExportNewsletterSubscribers")
             .WithTags("Website");
     }

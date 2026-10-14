@@ -22,6 +22,12 @@ internal static class UpdateSiteSettingsIdentityEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SettingsManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("UpdateSiteSettingsIdentity")
             .WithTags("Website");
     }

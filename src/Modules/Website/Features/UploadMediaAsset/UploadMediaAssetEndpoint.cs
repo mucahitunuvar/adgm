@@ -30,6 +30,11 @@ internal static class UploadMediaAssetEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentManage)
             .RequireRateLimiting("authenticated")
+            .Produces<UploadMediaAssetResponse>(StatusCodes.Status201Created)
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .DisableAntiforgery()
             .WithName("UploadMediaAsset")
             .WithTags("Website");

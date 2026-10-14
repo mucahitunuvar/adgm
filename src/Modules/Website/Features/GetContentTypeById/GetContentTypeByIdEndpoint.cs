@@ -19,6 +19,11 @@ internal static class GetContentTypeByIdEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.StructureManage)
             .RequireRateLimiting("authenticated")
+            .Produces<ContentTypeDetailResponse>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetContentTypeById")
             .WithTags("Website");
     }

@@ -19,6 +19,12 @@ internal static class DeleteEventScheduleEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("DeleteEventSchedule")
             .WithTags("Website");
     }

@@ -19,6 +19,12 @@ internal static class AdminCancelEventRegistrationEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SubmissionsManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("AdminCancelEventRegistration")
             .WithTags("Website");
     }

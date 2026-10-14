@@ -22,6 +22,11 @@ internal static class UpdateMediaAssetEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("UpdateMediaAsset")
             .WithTags("Website");
     }

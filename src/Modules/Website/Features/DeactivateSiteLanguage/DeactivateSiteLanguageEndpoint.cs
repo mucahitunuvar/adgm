@@ -19,6 +19,11 @@ internal static class DeactivateSiteLanguageEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.StructureManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("DeactivateSiteLanguage")
             .WithTags("Website");
     }

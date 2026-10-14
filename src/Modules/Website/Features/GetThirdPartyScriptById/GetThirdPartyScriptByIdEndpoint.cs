@@ -19,6 +19,11 @@ internal static class GetThirdPartyScriptByIdEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SettingsManage)
             .RequireRateLimiting("authenticated")
+            .Produces<ThirdPartyScriptDetailResponse>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetThirdPartyScriptById")
             .WithTags("Website");
     }

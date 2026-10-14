@@ -19,6 +19,12 @@ internal static class DeleteContentCategoryEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.StructureManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("DeleteContentCategory")
             .WithTags("Website");
     }

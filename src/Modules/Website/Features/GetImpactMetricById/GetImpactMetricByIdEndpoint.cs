@@ -19,6 +19,11 @@ internal static class GetImpactMetricByIdEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.DesignManage)
             .RequireRateLimiting("authenticated")
+            .Produces<ImpactMetricDetailResponse>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetImpactMetricById")
             .WithTags("Website");
     }

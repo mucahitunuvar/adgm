@@ -22,6 +22,11 @@ internal static class UpdateSiteSettingsContactEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SettingsManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("UpdateSiteSettingsContact")
             .WithTags("Website");
     }

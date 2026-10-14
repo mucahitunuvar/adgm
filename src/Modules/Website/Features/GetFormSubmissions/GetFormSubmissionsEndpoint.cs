@@ -39,6 +39,10 @@ internal static class GetFormSubmissionsEndpoint
             // endpoints below, no PersonalDataAccessLog entry is written for it.
             .RequireAuthorization(WebsitePolicies.SubmissionsView)
             .RequireRateLimiting("authenticated")
+            .Produces<PagedResult<FormSubmissionSummaryResponse>>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetFormSubmissions")
             .WithTags("Website");
     }

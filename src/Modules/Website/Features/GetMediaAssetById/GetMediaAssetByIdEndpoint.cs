@@ -19,6 +19,11 @@ internal static class GetMediaAssetByIdEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentManage)
             .RequireRateLimiting("authenticated")
+            .Produces<MediaAssetDetailResponse>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetMediaAssetById")
             .WithTags("Website");
     }

@@ -19,6 +19,11 @@ internal static class GetContentItemRevisionByNumberEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentManage)
             .RequireRateLimiting("authenticated")
+            .Produces<ContentItemRevisionDetailResponse>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetContentItemRevisionByNumber")
             .WithTags("Website");
     }

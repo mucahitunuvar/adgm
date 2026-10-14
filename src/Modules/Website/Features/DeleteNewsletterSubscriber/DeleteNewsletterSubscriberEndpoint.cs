@@ -19,6 +19,11 @@ internal static class DeleteNewsletterSubscriberEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SubmissionsManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("DeleteNewsletterSubscriber")
             .WithTags("Website");
     }

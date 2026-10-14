@@ -21,6 +21,11 @@ internal static class UpdateSiteSettingsThemeEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SettingsManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("UpdateSiteSettingsTheme")
             .WithTags("Website");
     }

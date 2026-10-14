@@ -19,6 +19,10 @@ internal static class GetSlidersEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.DesignManage)
             .RequireRateLimiting("authenticated")
+            .Produces<IReadOnlyList<SliderSummaryResponse>>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetSliders")
             .WithTags("Website");
     }

@@ -19,6 +19,10 @@ internal static class GetSiteLanguagesEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.StructureManage)
             .RequireRateLimiting("authenticated")
+            .Produces<GetSiteLanguagesResponse>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetSiteLanguages")
             .WithTags("Website");
     }

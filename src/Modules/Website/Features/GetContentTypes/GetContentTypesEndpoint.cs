@@ -19,6 +19,10 @@ internal static class GetContentTypesEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.StructureManage)
             .RequireRateLimiting("authenticated")
+            .Produces<IReadOnlyList<ContentTypeSummaryResponse>>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetContentTypes")
             .WithTags("Website");
     }

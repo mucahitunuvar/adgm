@@ -63,6 +63,12 @@ internal static class GetEventRegistrationsEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SubmissionsView)
             .RequireRateLimiting("authenticated")
+            .Produces<GetEventRegistrationsResponse>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetEventRegistrations")
             .WithTags("Website");
     }

@@ -20,6 +20,12 @@ internal static class AssignFormSubmissionEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SubmissionsManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("AssignFormSubmission")
             .WithTags("Website");
     }

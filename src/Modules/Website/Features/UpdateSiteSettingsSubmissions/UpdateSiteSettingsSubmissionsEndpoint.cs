@@ -20,6 +20,11 @@ internal static class UpdateSiteSettingsSubmissionsEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SettingsManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("UpdateSiteSettingsSubmissions")
             .WithTags("Website");
     }

@@ -25,6 +25,11 @@ internal static class GetContentItemRevisionsEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentManage)
             .RequireRateLimiting("authenticated")
+            .Produces<PagedResult<ContentItemRevisionSummaryResponse>>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetContentItemRevisions")
             .WithTags("Website");
     }

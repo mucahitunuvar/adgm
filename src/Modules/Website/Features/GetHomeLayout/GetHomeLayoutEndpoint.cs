@@ -19,6 +19,10 @@ internal static class GetHomeLayoutEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.DesignManage)
             .RequireRateLimiting("authenticated")
+            .Produces<GetHomeLayoutResponse>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetHomeLayout")
             .WithTags("Website");
     }

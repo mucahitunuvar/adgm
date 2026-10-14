@@ -19,6 +19,12 @@ internal static class ArchiveContentItemEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentPublish)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("ArchiveContentItem")
             .WithTags("Website");
     }

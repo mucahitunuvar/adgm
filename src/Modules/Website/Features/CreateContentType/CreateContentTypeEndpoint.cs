@@ -28,6 +28,12 @@ internal static class CreateContentTypeEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.StructureManage)
             .RequireRateLimiting("authenticated")
+            .Produces<CreateContentTypeResponse>(StatusCodes.Status201Created)
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("CreateContentType")
             .WithTags("Website");
     }

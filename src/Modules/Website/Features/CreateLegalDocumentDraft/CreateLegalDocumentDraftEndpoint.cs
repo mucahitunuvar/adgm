@@ -22,6 +22,12 @@ internal static class CreateLegalDocumentDraftEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SettingsManage)
             .RequireRateLimiting("authenticated")
+            .Produces<CreateLegalDocumentDraftResponse>(StatusCodes.Status201Created)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("CreateLegalDocumentDraft")
             .WithTags("Website");
     }

@@ -22,6 +22,11 @@ internal static class CreateSliderEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.DesignManage)
             .RequireRateLimiting("authenticated")
+            .Produces<CreateSliderResponse>(StatusCodes.Status201Created)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("CreateSlider")
             .WithTags("Website");
     }

@@ -19,6 +19,12 @@ internal static class GetMenuByLocationEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.DesignManage)
             .RequireRateLimiting("authenticated")
+            .Produces<MenuResponse>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetMenuByLocation")
             .WithTags("Website");
     }

@@ -1,4 +1,5 @@
 using GenclikMerkezi.BuildingBlocks.Infrastructure.Http;
+using GenclikMerkezi.Modules.Website.Features.GetMenuByLocation;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -19,6 +20,10 @@ internal static class GetMenusEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.DesignManage)
             .RequireRateLimiting("authenticated")
+            .Produces<IReadOnlyList<MenuResponse>>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetMenus")
             .WithTags("Website");
     }

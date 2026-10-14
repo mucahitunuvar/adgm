@@ -24,6 +24,10 @@ internal static class CreateImpactMetricEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.DesignManage)
             .RequireRateLimiting("authenticated")
+            .Produces<CreateImpactMetricResponse>(StatusCodes.Status201Created)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("CreateImpactMetric")
             .WithTags("Website");
     }

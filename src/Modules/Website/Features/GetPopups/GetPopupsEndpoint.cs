@@ -22,6 +22,11 @@ internal static class GetPopupsEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.DesignManage)
             .RequireRateLimiting("authenticated")
+            .Produces<PagedResult<PopupSummaryResponse>>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetPopups")
             .WithTags("Website");
     }

@@ -25,6 +25,10 @@ internal static class GetNotFoundPathsEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.StructureManage)
             .RequireRateLimiting("authenticated")
+            .Produces<PagedResult<NotFoundLogResponse>>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetNotFoundPaths")
             .WithTags("Website");
     }

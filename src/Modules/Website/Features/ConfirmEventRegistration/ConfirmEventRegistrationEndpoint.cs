@@ -19,6 +19,12 @@ internal static class ConfirmEventRegistrationEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SubmissionsManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("ConfirmEventRegistration")
             .WithTags("Website");
     }

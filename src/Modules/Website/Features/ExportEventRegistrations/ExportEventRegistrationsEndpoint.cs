@@ -54,6 +54,12 @@ internal static class ExportEventRegistrationsEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SubmissionsView)
             .RequireRateLimiting("authenticated")
+            .Produces<byte[]>(StatusCodes.Status200OK, "text/csv")
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("ExportEventRegistrations")
             .WithTags("Website");
     }

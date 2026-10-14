@@ -19,6 +19,10 @@ internal static class GetBlockTypesEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.DesignManage)
             .RequireRateLimiting("authenticated")
+            .Produces<IReadOnlyList<BlockTypeResponse>>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetBlockTypes")
             .WithTags("Website");
     }

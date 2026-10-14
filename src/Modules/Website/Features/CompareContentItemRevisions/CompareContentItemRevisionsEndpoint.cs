@@ -19,6 +19,12 @@ internal static class CompareContentItemRevisionsEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentManage)
             .RequireRateLimiting("authenticated")
+            .Produces<CompareContentItemRevisionsResponse>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("CompareContentItemRevisions")
             .WithTags("Website");
     }

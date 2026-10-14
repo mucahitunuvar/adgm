@@ -19,6 +19,10 @@ internal static class GetSiteSettingsEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SettingsManage)
             .RequireRateLimiting("authenticated")
+            .Produces<SiteSettingsResponse>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetSiteSettings")
             .WithTags("Website");
     }

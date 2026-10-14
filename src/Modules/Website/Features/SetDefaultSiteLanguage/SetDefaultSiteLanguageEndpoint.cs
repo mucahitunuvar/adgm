@@ -19,6 +19,11 @@ internal static class SetDefaultSiteLanguageEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.StructureManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("SetDefaultSiteLanguage")
             .WithTags("Website");
     }

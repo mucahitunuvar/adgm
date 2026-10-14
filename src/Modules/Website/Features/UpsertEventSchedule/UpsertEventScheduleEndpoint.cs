@@ -1,4 +1,5 @@
 using GenclikMerkezi.BuildingBlocks.Infrastructure.Http;
+using GenclikMerkezi.Modules.Website.Features.GetEventScheduleByContentItemId;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -23,6 +24,13 @@ internal static class UpsertEventScheduleEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentManage)
             .RequireRateLimiting("authenticated")
+            .Produces<EventScheduleDetailResponse>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("UpsertEventSchedule")
             .WithTags("Website");
     }

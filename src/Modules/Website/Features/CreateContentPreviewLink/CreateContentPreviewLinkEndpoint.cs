@@ -20,6 +20,11 @@ internal static class CreateContentPreviewLinkEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentManage)
             .RequireRateLimiting("authenticated")
+            .Produces<CreateContentPreviewLinkResponse>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("CreateContentPreviewLink")
             .WithTags("Website");
     }

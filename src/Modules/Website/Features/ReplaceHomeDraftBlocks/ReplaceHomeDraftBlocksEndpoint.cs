@@ -19,6 +19,11 @@ internal static class ReplaceHomeDraftBlocksEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.DesignManage)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("ReplaceHomeDraftBlocks")
             .WithTags("Website");
     }

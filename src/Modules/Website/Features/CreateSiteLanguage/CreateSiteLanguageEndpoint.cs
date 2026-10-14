@@ -22,6 +22,11 @@ internal static class CreateSiteLanguageEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.StructureManage)
             .RequireRateLimiting("authenticated")
+            .Produces<CreateSiteLanguageResponse>(StatusCodes.Status201Created)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("CreateSiteLanguage")
             .WithTags("Website");
     }

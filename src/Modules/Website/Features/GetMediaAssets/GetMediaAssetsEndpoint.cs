@@ -33,6 +33,11 @@ internal static class GetMediaAssetsEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentManage)
             .RequireRateLimiting("authenticated")
+            .Produces<PagedResult<MediaAssetSummaryResponse>>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetMediaAssets")
             .WithTags("Website");
     }

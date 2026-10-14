@@ -19,6 +19,11 @@ internal static class GetEventScheduleByContentItemIdEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentManage)
             .RequireRateLimiting("authenticated")
+            .Produces<EventScheduleDetailResponse>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetEventScheduleByContentItemId")
             .WithTags("Website");
     }

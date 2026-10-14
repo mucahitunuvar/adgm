@@ -26,6 +26,10 @@ internal static class GetPersonalDataAccessLogEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SettingsManage)
             .RequireRateLimiting("authenticated")
+            .Produces<PagedResult<PersonalDataAccessLogResponse>>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetPersonalDataAccessLog")
             .WithTags("Website");
     }

@@ -21,6 +21,12 @@ internal static class DuplicateContentItemEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentManage)
             .RequireRateLimiting("authenticated")
+            .Produces<DuplicateContentItemResponse>(StatusCodes.Status201Created)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("DuplicateContentItem")
             .WithTags("Website");
     }

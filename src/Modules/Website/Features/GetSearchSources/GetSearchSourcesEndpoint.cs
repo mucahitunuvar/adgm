@@ -19,6 +19,11 @@ internal static class GetSearchSourcesEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SettingsManage)
             .RequireRateLimiting("authenticated")
+            .Produces<IReadOnlyList<SearchSourceSummaryResponse>>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("GetSearchSources")
             .WithTags("Website");
     }

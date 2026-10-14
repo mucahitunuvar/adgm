@@ -19,6 +19,10 @@ internal static class GetMediaAssetFoldersEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentManage)
             .RequireRateLimiting("authenticated")
+            .Produces<GetMediaAssetFoldersResponse>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetMediaAssetFolders")
             .WithTags("Website");
     }

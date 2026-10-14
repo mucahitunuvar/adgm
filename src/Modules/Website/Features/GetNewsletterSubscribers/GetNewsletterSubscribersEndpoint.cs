@@ -59,6 +59,10 @@ internal static class GetNewsletterSubscribersEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SubmissionsView)
             .RequireRateLimiting("authenticated")
+            .Produces<PagedResult<NewsletterSubscriberSummaryResponse>>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetNewsletterSubscribers")
             .WithTags("Website");
     }

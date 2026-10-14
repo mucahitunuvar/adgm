@@ -25,6 +25,10 @@ internal static class GetContentTrashEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentManage)
             .RequireRateLimiting("authenticated")
+            .Produces<PagedResult<ContentItemTrashSummaryResponse>>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetContentTrash")
             .WithTags("Website");
     }

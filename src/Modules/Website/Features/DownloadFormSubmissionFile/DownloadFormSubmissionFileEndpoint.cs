@@ -45,7 +45,11 @@ internal static class DownloadFormSubmissionFileEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SubmissionsView)
             .RequireRateLimiting("authenticated")
-            .Produces(StatusCodes.Status200OK)
+            .Produces<byte[]>(StatusCodes.Status200OK, "application/octet-stream")
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("DownloadFormSubmissionFile")
             .WithTags("Website");
     }

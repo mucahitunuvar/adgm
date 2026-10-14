@@ -19,6 +19,12 @@ internal static class PermanentlyDeleteContentItemEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentPublish)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("PermanentlyDeleteContentItem")
             .WithTags("Website");
     }

@@ -20,6 +20,12 @@ internal static class ScheduleContentItemEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.ContentPublish)
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("ScheduleContentItem")
             .WithTags("Website");
     }

@@ -19,6 +19,10 @@ internal static class GetLegalDocumentsEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SettingsManage)
             .RequireRateLimiting("authenticated")
+            .Produces<IReadOnlyList<LegalDocumentSummaryResponse>>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetLegalDocuments")
             .WithTags("Website");
     }

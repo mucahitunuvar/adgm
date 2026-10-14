@@ -19,6 +19,10 @@ internal static class GetCookieConsentSummaryEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SettingsManage)
             .RequireRateLimiting("authenticated")
+            .Produces<CookieConsentSummaryResponse>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetCookieConsentSummary")
             .WithTags("Website");
     }

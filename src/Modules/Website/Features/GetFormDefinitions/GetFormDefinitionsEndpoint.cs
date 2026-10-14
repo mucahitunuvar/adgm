@@ -19,6 +19,10 @@ internal static class GetFormDefinitionsEndpoint
                 })
             .RequireAuthorization(WebsitePolicies.SettingsManage)
             .RequireRateLimiting("authenticated")
+            .Produces<IReadOnlyList<FormDefinitionSummaryResponse>>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("GetFormDefinitions")
             .WithTags("Website");
     }
