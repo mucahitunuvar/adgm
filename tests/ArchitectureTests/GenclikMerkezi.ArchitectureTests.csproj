@@ -20,6 +20,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- EnumContractTests.cs: docs/api/enums.v1.json'un çalışan kopyası. -->
+    <Content Include="..\..\docs\api\enums.v1.json" Link="TestData\enums.v1.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\BuildingBlocks\SharedKernel\GenclikMerkezi.SharedKernel.csproj" />
     <ProjectReference Include="..\..\src\BuildingBlocks\Infrastructure\GenclikMerkezi.BuildingBlocks.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Host\GenclikMerkezi.Api\GenclikMerkezi.Api.csproj" />

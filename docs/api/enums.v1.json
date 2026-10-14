@@ -1,0 +1,225 @@
+{
+  "Identity": {
+    "AdminActionType": {
+      "Deactivated": 2,
+      "ManuallyUnlocked": 1,
+      "Reactivated": 3,
+      "RoleChanged": 0
+    },
+    "UserRole": {
+      "Admin": 0,
+      "Candidate": 2,
+      "CareerAdvisor": 3,
+      "Employer": 1
+    },
+    "UserStatus": {
+      "Active": 1,
+      "Deleted": 5,
+      "Disabled": 4,
+      "Locked": 3,
+      "Pending": 0,
+      "Suspended": 2
+    }
+  },
+  "Website": {
+    "BankAccountCurrency": {
+      "EUR": 2,
+      "TRY": 0,
+      "USD": 1
+    },
+    "ContentItemRevisionKind": {
+      "Created": 0,
+      "Edited": 1,
+      "Published": 2,
+      "Restored": 3
+    },
+    "ContentItemStatus": {
+      "Archived": 3,
+      "Draft": 0,
+      "Published": 1,
+      "Unpublished": 2
+    },
+    "ContentSchemaKind": {
+      "Article": 1,
+      "FaqPage": 3,
+      "NewsArticle": 2,
+      "None": 0
+    },
+    "ContentTypeSortMode": {
+      "EventDateAsc": 2,
+      "Manual": 0,
+      "PublishDateDesc": 1
+    },
+    "CookieConsentAction": {
+      "AcceptAll": 0,
+      "Custom": 2,
+      "RejectAll": 1
+    },
+    "EventCapacityDecision": {
+      "Applied": 0,
+      "Confirmed": 1,
+      "Waitlisted": 2
+    },
+    "EventFormat": {
+      "Hybrid": 2,
+      "InPerson": 0,
+      "Online": 1
+    },
+    "EventRegistrationCancelOutcome": {
+      "AlreadyCancelled": 0,
+      "ReleasedConfirmedSlot": 1,
+      "ReleasedNoSlot": 3,
+      "ReleasedWaitlistSlot": 2
+    },
+    "EventRegistrationCancelledBy": {
+      "Admin": 1,
+      "Event": 2,
+      "Participant": 0
+    },
+    "EventRegistrationState": {
+      "Cancelled": 5,
+      "Closed": 4,
+      "Full": 2,
+      "NotOpen": 0,
+      "Open": 1,
+      "WaitlistOpen": 3
+    },
+    "EventRegistrationStatus": {
+      "Applied": 1,
+      "Attended": 6,
+      "Cancelled": 5,
+      "Confirmed": 2,
+      "NoShow": 7,
+      "PendingVerification": 0,
+      "Rejected": 4,
+      "Waitlisted": 3
+    },
+    "EventTimeWindow": {
+      "All": 2,
+      "Past": 1,
+      "Upcoming": 0
+    },
+    "FormFieldAllowedFileType": {
+      "Docx": 1,
+      "Jpg": 2,
+      "Pdf": 0,
+      "Png": 3
+    },
+    "FormFieldType": {
+      "Checkbox": 6,
+      "Date": 7,
+      "Email": 1,
+      "File": 8,
+      "MultiSelect": 5,
+      "Phone": 2,
+      "Select": 4,
+      "Text": 0,
+      "Textarea": 3
+    },
+    "FormSubmissionStatus": {
+      "Approved": 3,
+      "AwaitingInfo": 2,
+      "Completed": 5,
+      "InReview": 1,
+      "New": 0,
+      "Rejected": 4
+    },
+    "LegalDocumentKind": {
+      "CookiePolicy": 2,
+      "ExplicitConsent": 1,
+      "Other": 4,
+      "PrivacyNotice": 0,
+      "TermsOfUse": 3
+    },
+    "LegalDocumentVersionStatus": {
+      "Draft": 0,
+      "Published": 1,
+      "Superseded": 2
+    },
+    "LinkTargetKind": {
+      "Content": 1,
+      "ContentTypeListing": 2,
+      "ExternalUrl": 4,
+      "InternalPath": 3,
+      "None": 0
+    },
+    "MediaAssetKind": {
+      "Document": 1,
+      "Image": 0
+    },
+    "MenuLocation": {
+      "Footer": 2,
+      "Header": 0,
+      "Utility": 1
+    },
+    "NewsletterSubscriberStatus": {
+      "Active": 1,
+      "PendingConfirmation": 0,
+      "Unsubscribed": 2
+    },
+    "PageLayoutTargetKind": {
+      "Content": 1,
+      "Home": 0
+    },
+    "PersonalDataAccessAction": {
+      "DownloadFile": 1,
+      "Export": 2,
+      "View": 0
+    },
+    "PersonalDataEntityType": {
+      "EventRegistration": 2,
+      "FormSubmission": 0,
+      "NewsletterSubscriber": 1
+    },
+    "PopupDeviceTarget": {
+      "All": 0,
+      "Desktop": 1,
+      "Mobile": 2
+    },
+    "PopupDisplayMode": {
+      "Banner": 1,
+      "Modal": 0
+    },
+    "PopupFrequency": {
+      "EveryNDays": 2,
+      "EveryVisit": 0,
+      "OncePerSession": 1
+    },
+    "PopupTargetingKind": {
+      "AllPages": 0,
+      "Contents": 2,
+      "HomeOnly": 1,
+      "Paths": 3
+    },
+    "RedirectStatusCode": {
+      "Found": 302,
+      "MovedPermanently": 301
+    },
+    "RedirectTargetKind": {
+      "ContentItem": 0,
+      "Path": 1
+    },
+    "RouteResolutionKind": {
+      "Detail": 1,
+      "Home": 0,
+      "Listing": 2,
+      "NotFound": 4,
+      "Redirect": 3
+    },
+    "ThirdPartyScriptCategory": {
+      "Analytics": 1,
+      "Marketing": 2,
+      "Necessary": 0
+    },
+    "ThirdPartyScriptPlacement": {
+      "BodyEnd": 1,
+      "Head": 0
+    },
+    "ThirdPartyScriptProviderKind": {
+      "ExternalScript": 3,
+      "GoogleAnalytics4": 0,
+      "GoogleTagManager": 1,
+      "MetaPixel": 2
+    }
+  }
+}

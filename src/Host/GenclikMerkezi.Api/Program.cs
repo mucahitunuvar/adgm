@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using GenclikMerkezi.Admin;
 using GenclikMerkezi.Api;
 using GenclikMerkezi.Api.Hangfire;
+using GenclikMerkezi.Api.OpenApi;
 using GenclikMerkezi.Api.Website;
 using GenclikMerkezi.BuildingBlocks.Infrastructure.DependencyInjection;
 using GenclikMerkezi.BuildingBlocks.Infrastructure.ExceptionHandling;
@@ -53,7 +54,7 @@ var builder = WebApplication.CreateBuilder(args);
 // App_Data (SECURITY.md §23.2 / ADR-024 §4.5).
 var isTestingEnvironment = builder.Environment.IsEnvironment("Testing");
 
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options => options.AddSchemaTransformer<EnumNamesSchemaTransformer>());
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
