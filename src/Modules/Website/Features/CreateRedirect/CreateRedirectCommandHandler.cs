@@ -1,6 +1,7 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,13 +24,13 @@ public sealed class CreateRedirectCommandHandler(
             return Result.Failure<CreateRedirectResponse>(languageCodeResult.Error);
         }
 
-        if (!Enum.TryParse<RedirectTargetKind>(request.TargetKind, ignoreCase: true, out var targetKind))
+        if (!EnumParsing.TryParseDefined<RedirectTargetKind>(request.TargetKind, out var targetKind))
         {
             return Result.Failure<CreateRedirectResponse>(Error.Validation(
                 "Redirect.InvalidTargetKind", $"'{request.TargetKind}' is not a recognized target kind."));
         }
 
-        if (!Enum.TryParse<RedirectStatusCode>(request.StatusCode, ignoreCase: true, out var statusCode))
+        if (!EnumParsing.TryParseDefined<RedirectStatusCode>(request.StatusCode, out var statusCode))
         {
             return Result.Failure<CreateRedirectResponse>(Error.Validation(
                 "Redirect.InvalidStatusCode", $"'{request.StatusCode}' is not a recognized status code."));

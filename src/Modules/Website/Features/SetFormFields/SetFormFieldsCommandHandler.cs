@@ -1,6 +1,7 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -59,7 +60,7 @@ public sealed class SetFormFieldsCommandHandler(
 
     private static Result<FormField> BuildField(FormFieldInput input)
     {
-        if (!Enum.TryParse<FormFieldType>(input.Type, ignoreCase: true, out var type))
+        if (!EnumParsing.TryParseDefined<FormFieldType>(input.Type, out var type))
         {
             return Result.Failure<FormField>(Error.Validation(
                 "FormField.InvalidType", $"'{input.Type}' is not a recognized field type."));
@@ -86,7 +87,7 @@ public sealed class SetFormFieldsCommandHandler(
         var allowedFileTypes = new List<FormFieldAllowedFileType>();
         foreach (var allowedFileType in input.AllowedFileTypes)
         {
-            if (!Enum.TryParse<FormFieldAllowedFileType>(allowedFileType, ignoreCase: true, out var parsed))
+            if (!EnumParsing.TryParseDefined<FormFieldAllowedFileType>(allowedFileType, out var parsed))
             {
                 return Result.Failure<FormField>(Error.Validation(
                     "FormField.InvalidAllowedFileType", $"'{allowedFileType}' is not a recognized allowed file type."));

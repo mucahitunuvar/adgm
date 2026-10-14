@@ -2,6 +2,7 @@ using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Application.Media;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 
@@ -62,7 +63,7 @@ public sealed class GetPublicEventsQueryHandler(
         EventFormat? format = null;
         if (!string.IsNullOrWhiteSpace(request.Format))
         {
-            if (!Enum.TryParse(request.Format, ignoreCase: true, out EventFormat parsedFormat))
+            if (!EnumParsing.TryParseDefined(request.Format, out EventFormat parsedFormat))
             {
                 return Result.Failure<PagedResult<PublicEventListItemResponse>>(
                     Error.Validation("Event.InvalidFormat", "Format must be 'InPerson', 'Online' or 'Hybrid'."));

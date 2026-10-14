@@ -1,6 +1,7 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Application.LinkTargets;
 using GenclikMerkezi.Modules.Website.Domain;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 
@@ -15,7 +16,7 @@ public sealed class GetMenuByLocationQueryHandler(
 {
     public async Task<Result<MenuResponse>> Handle(GetMenuByLocationQuery request, CancellationToken cancellationToken)
     {
-        if (!Enum.TryParse<MenuLocation>(request.Location, ignoreCase: true, out var location))
+        if (!EnumParsing.TryParseDefined<MenuLocation>(request.Location, out var location))
         {
             return Result.Failure<MenuResponse>(Error.Validation(
                 "Menu.LocationInvalid", "Location must be one of 'Header', 'Utility' or 'Footer'."));

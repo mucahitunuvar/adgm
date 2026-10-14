@@ -1,5 +1,6 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 
@@ -13,7 +14,7 @@ public sealed class GetContentItemsQueryHandler(IContentItemRepository contentIt
         ContentItemStatus? status = null;
         if (!string.IsNullOrWhiteSpace(request.Status))
         {
-            if (!Enum.TryParse<ContentItemStatus>(request.Status, ignoreCase: true, out var parsedStatus))
+            if (!EnumParsing.TryParseDefined<ContentItemStatus>(request.Status, out var parsedStatus))
             {
                 return Result.Failure<PagedResult<ContentItemSummaryResponse>>(Error.Validation(
                     "ContentItem.InvalidStatusFilter", $"'{request.Status}' is not a recognized content item status."));

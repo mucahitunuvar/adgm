@@ -1,5 +1,6 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 
@@ -14,7 +15,7 @@ public sealed class GetThirdPartyScriptsQueryHandler(IThirdPartyScriptRepository
         ThirdPartyScriptCategory? category = null;
         if (!string.IsNullOrWhiteSpace(request.Category))
         {
-            if (!Enum.TryParse<ThirdPartyScriptCategory>(request.Category, out var parsedCategory))
+            if (!EnumParsing.TryParseDefined<ThirdPartyScriptCategory>(request.Category, out var parsedCategory, ignoreCase: false))
             {
                 return Result.Failure<PagedResult<ThirdPartyScriptSummaryResponse>>(
                     Error.Validation("ThirdPartyScript.CategoryInvalid", "Category must be one of 'Necessary', 'Analytics', 'Marketing'."));

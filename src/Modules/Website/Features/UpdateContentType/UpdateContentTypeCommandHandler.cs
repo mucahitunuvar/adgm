@@ -1,6 +1,7 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,14 +31,14 @@ public sealed class UpdateContentTypeCommandHandler(
                 "ContentType.ConcurrencyConflict", "The content type was changed by someone else. Reload and try again."));
         }
 
-        if (!Enum.TryParse<ContentTypeSortMode>(request.SortMode, ignoreCase: true, out var sortMode))
+        if (!EnumParsing.TryParseDefined<ContentTypeSortMode>(request.SortMode, out var sortMode))
         {
             return Result.Failure(Error.Validation(
                 "ContentType.InvalidSortMode", $"'{request.SortMode}' is not a recognized sort mode."));
         }
 
         var schemaKind = ContentSchemaKind.None;
-        if (!string.IsNullOrWhiteSpace(request.SchemaKind) && !Enum.TryParse(request.SchemaKind, ignoreCase: true, out schemaKind))
+        if (!string.IsNullOrWhiteSpace(request.SchemaKind) && !EnumParsing.TryParseDefined(request.SchemaKind, out schemaKind))
         {
             return Result.Failure(Error.Validation(
                 "ContentType.InvalidSchemaKind", $"'{request.SchemaKind}' is not a recognized schema kind."));

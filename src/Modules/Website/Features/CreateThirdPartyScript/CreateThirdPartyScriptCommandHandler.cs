@@ -2,6 +2,7 @@ using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Application.ThirdPartyScripts;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,13 +38,13 @@ public sealed class CreateThirdPartyScriptCommandHandler(
             return Result.Failure<CreateThirdPartyScriptResponse>(providerResult.Error);
         }
 
-        if (!Enum.TryParse<ThirdPartyScriptCategory>(request.Category, out var category))
+        if (!EnumParsing.TryParseDefined<ThirdPartyScriptCategory>(request.Category, out var category, ignoreCase: false))
         {
             return Result.Failure<CreateThirdPartyScriptResponse>(Error.Validation(
                 "ThirdPartyScript.CategoryInvalid", "Category must be one of 'Necessary', 'Analytics', 'Marketing'."));
         }
 
-        if (!Enum.TryParse<ThirdPartyScriptPlacement>(request.Placement, out var placement))
+        if (!EnumParsing.TryParseDefined<ThirdPartyScriptPlacement>(request.Placement, out var placement, ignoreCase: false))
         {
             return Result.Failure<CreateThirdPartyScriptResponse>(Error.Validation(
                 "ThirdPartyScript.PlacementInvalid", "Placement must be one of 'Head', 'BodyEnd'."));

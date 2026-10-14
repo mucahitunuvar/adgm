@@ -1,5 +1,6 @@
 using FluentValidation;
 using GenclikMerkezi.Modules.Website.Domain;
+using GenclikMerkezi.SharedKernel.Parsing;
 
 namespace GenclikMerkezi.Modules.Website.Features.UpdateSiteSettingsBankAccounts;
 
@@ -14,7 +15,7 @@ public sealed class UpdateSiteSettingsBankAccountsCommandValidator : AbstractVal
             account.RuleFor(a => a.Iban).NotEmpty();
             account.RuleFor(a => a.BankName).NotEmpty().MaximumLength(BankAccount.MaxBankNameLength);
             account.RuleFor(a => a.AccountHolder).NotEmpty().MaximumLength(BankAccount.MaxAccountHolderLength);
-            account.RuleFor(a => a.Currency).Must(c => Enum.TryParse<BankAccountCurrency>(c, out _))
+            account.RuleFor(a => a.Currency).Must(c => EnumParsing.TryParseDefined<BankAccountCurrency>(c, out _, ignoreCase: false))
                 .WithMessage("Currency must be one of: TRY, USD, EUR.");
             account.RuleFor(a => a.Description).MaximumLength(BankAccount.MaxDescriptionLength);
         });

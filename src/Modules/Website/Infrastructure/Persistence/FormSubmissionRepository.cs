@@ -1,6 +1,7 @@
 using GenclikMerkezi.BuildingBlocks.Infrastructure.Persistence;
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using Microsoft.EntityFrameworkCore;
 
@@ -35,7 +36,7 @@ public sealed class FormSubmissionRepository(WebsiteDbContext dbContext) : IForm
         FormSubmissionStatus? status = null;
         if (!string.IsNullOrWhiteSpace(filter.Status))
         {
-            if (!Enum.TryParse<FormSubmissionStatus>(filter.Status, out var parsedStatus))
+            if (!EnumParsing.TryParseDefined<FormSubmissionStatus>(filter.Status, out var parsedStatus, ignoreCase: false))
             {
                 return new PagedResult<FormSubmissionListItem>([], 0, pagedRequest.Page, pagedRequest.PageSize);
             }

@@ -1,5 +1,6 @@
 using FluentValidation;
 using GenclikMerkezi.Modules.Identity.Domain;
+using GenclikMerkezi.SharedKernel.Parsing;
 
 namespace GenclikMerkezi.Modules.Identity.Features.ChangeUserRole;
 
@@ -12,7 +13,7 @@ public sealed class ChangeUserRoleCommandValidator : AbstractValidator<ChangeUse
 
         RuleFor(c => c.NewRole)
             .NotEmpty()
-            .Must(role => Enum.TryParse<UserRole>(role, ignoreCase: true, out _))
+            .Must(role => EnumParsing.TryParseDefined<UserRole>(role, out _))
             .WithMessage("NewRole must be a valid role.");
     }
 }

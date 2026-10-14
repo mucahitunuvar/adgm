@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Website.Domain;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 
 namespace GenclikMerkezi.Modules.Website.Application.Popups;
@@ -9,7 +10,7 @@ internal static class PopupTargetingInputMapper
 {
     public static Result<PopupTargeting> ToTargeting(PopupTargetingInput input)
     {
-        if (!Enum.TryParse<PopupTargetingKind>(input.Kind, ignoreCase: true, out var kind))
+        if (!EnumParsing.TryParseDefined<PopupTargetingKind>(input.Kind, out var kind))
         {
             return Result.Failure<PopupTargeting>(Error.Validation("Popup.TargetingKindInvalid", $"Unknown targeting kind '{input.Kind}'."));
         }

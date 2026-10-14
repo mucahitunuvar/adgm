@@ -1,6 +1,7 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,7 +25,7 @@ public sealed class ReplaceMenuItemsCommandHandler(
 {
     public async Task<Result> Handle(ReplaceMenuItemsCommand request, CancellationToken cancellationToken)
     {
-        if (!Enum.TryParse<MenuLocation>(request.Location, ignoreCase: true, out var location))
+        if (!EnumParsing.TryParseDefined<MenuLocation>(request.Location, out var location))
         {
             return Result.Failure(Error.Validation("Menu.LocationInvalid", "Location must be one of 'Header', 'Utility' or 'Footer'."));
         }
@@ -139,7 +140,7 @@ public sealed class ReplaceMenuItemsCommandHandler(
             return LinkTarget.CreateEmpty();
         }
 
-        if (!Enum.TryParse<LinkTargetKind>(link.Kind, ignoreCase: true, out var kind))
+        if (!EnumParsing.TryParseDefined<LinkTargetKind>(link.Kind, out var kind))
         {
             return Result.Failure<LinkTarget>(Error.Validation("MenuItem.LinkKindInvalid", $"Unknown link kind '{link.Kind}'."));
         }

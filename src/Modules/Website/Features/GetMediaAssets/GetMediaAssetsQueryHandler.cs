@@ -1,6 +1,7 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 
@@ -14,7 +15,7 @@ public sealed class GetMediaAssetsQueryHandler(IMediaAssetRepository mediaAssetR
         MediaAssetKind? kind = null;
         if (!string.IsNullOrWhiteSpace(request.Kind))
         {
-            if (!Enum.TryParse<MediaAssetKind>(request.Kind, ignoreCase: true, out var parsedKind))
+            if (!EnumParsing.TryParseDefined<MediaAssetKind>(request.Kind, out var parsedKind))
             {
                 return Result.Failure<PagedResult<MediaAssetSummaryResponse>>(Error.Validation(
                     "MediaAsset.InvalidKindFilter", $"'{request.Kind}' is not a recognized media kind."));

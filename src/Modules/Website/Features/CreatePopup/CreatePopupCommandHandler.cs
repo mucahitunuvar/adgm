@@ -3,6 +3,7 @@ using GenclikMerkezi.Modules.Website.Application.BlockTypes;
 using GenclikMerkezi.Modules.Website.Application.Popups;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,17 +24,17 @@ public sealed class CreatePopupCommandHandler(
 {
     public async Task<Result<CreatePopupResponse>> Handle(CreatePopupCommand request, CancellationToken cancellationToken)
     {
-        if (!Enum.TryParse<PopupDisplayMode>(request.DisplayMode, ignoreCase: true, out var displayMode))
+        if (!EnumParsing.TryParseDefined<PopupDisplayMode>(request.DisplayMode, out var displayMode))
         {
             return Result.Failure<CreatePopupResponse>(Error.Validation("Popup.DisplayModeInvalid", $"Unknown display mode '{request.DisplayMode}'."));
         }
 
-        if (!Enum.TryParse<PopupDeviceTarget>(request.DeviceTarget, ignoreCase: true, out var deviceTarget))
+        if (!EnumParsing.TryParseDefined<PopupDeviceTarget>(request.DeviceTarget, out var deviceTarget))
         {
             return Result.Failure<CreatePopupResponse>(Error.Validation("Popup.DeviceTargetInvalid", $"Unknown device target '{request.DeviceTarget}'."));
         }
 
-        if (!Enum.TryParse<PopupFrequency>(request.Frequency, ignoreCase: true, out var frequency))
+        if (!EnumParsing.TryParseDefined<PopupFrequency>(request.Frequency, out var frequency))
         {
             return Result.Failure<CreatePopupResponse>(Error.Validation("Popup.FrequencyInvalid", $"Unknown frequency '{request.Frequency}'."));
         }

@@ -1,5 +1,6 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 
@@ -13,7 +14,7 @@ public sealed class GetPopupsQueryHandler(IPopupRepository popupRepository, ISit
         PopupDisplayMode? displayMode = null;
         if (!string.IsNullOrWhiteSpace(request.DisplayMode))
         {
-            if (!Enum.TryParse<PopupDisplayMode>(request.DisplayMode, ignoreCase: true, out var parsed))
+            if (!EnumParsing.TryParseDefined<PopupDisplayMode>(request.DisplayMode, out var parsed))
             {
                 return Result.Failure<PagedResult<PopupSummaryResponse>>(
                     Error.Validation("Popup.DisplayModeInvalid", $"Unknown display mode '{request.DisplayMode}'."));

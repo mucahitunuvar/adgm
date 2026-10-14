@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Website.Domain;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 
 namespace GenclikMerkezi.Modules.Website.Application.ThirdPartyScripts;
@@ -20,7 +21,7 @@ public static class ThirdPartyScriptProviderResolver
         bool defer,
         IReadOnlyList<string> allowedScriptHosts)
     {
-        if (!Enum.TryParse<ThirdPartyScriptProviderKind>(providerKind, out var kind))
+        if (!EnumParsing.TryParseDefined<ThirdPartyScriptProviderKind>(providerKind, out var kind, ignoreCase: false))
         {
             return Result.Failure<ThirdPartyScriptProvider>(Error.Validation(
                 "ThirdPartyScript.ProviderInvalid", "Provider must be one of 'GoogleAnalytics4', 'GoogleTagManager', 'MetaPixel', 'ExternalScript'."));

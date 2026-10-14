@@ -1,4 +1,5 @@
 using GenclikMerkezi.Modules.Website.Domain;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 
 namespace GenclikMerkezi.Modules.Website.Application.BlockTypes;
@@ -15,7 +16,7 @@ internal static class LinkTargetDtoMapper
             return LinkTarget.CreateEmpty();
         }
 
-        if (!Enum.TryParse<LinkTargetKind>(dto.Kind, ignoreCase: true, out var kind))
+        if (!EnumParsing.TryParseDefined<LinkTargetKind>(dto.Kind, out var kind))
         {
             return Result.Failure<LinkTarget>(Error.Validation("BlockType.LinkKindInvalid", $"Unknown link kind '{dto.Kind}'."));
         }

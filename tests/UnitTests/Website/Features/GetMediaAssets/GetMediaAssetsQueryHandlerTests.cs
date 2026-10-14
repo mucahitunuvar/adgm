@@ -53,4 +53,15 @@ public class GetMediaAssetsQueryHandlerTests
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.Error.Type);
     }
+
+    [Theory]
+    [InlineData("999")]
+    [InlineData("Image,Document")] // 0|1 = 1 = Document - would otherwise silently alias.
+    public async Task Handle_WithNumericOrCombinedKind_Fails(string kind)
+    {
+        var result = await CreateHandler().Handle(new GetMediaAssetsQuery(kind, null, null, null), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("MediaAsset.InvalidKindFilter", result.Error.Code);
+    }
 }

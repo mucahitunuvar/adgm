@@ -1,6 +1,7 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,7 +49,7 @@ public sealed class CreateCookieConsentRecordCommandHandler(
                 "PublicSubmission.LegalVersionChanged", "The legal document you accepted has since changed. Please review and accept the current version."));
         }
 
-        if (!Enum.TryParse<CookieConsentAction>(request.Action, out var action))
+        if (!EnumParsing.TryParseDefined<CookieConsentAction>(request.Action, out var action, ignoreCase: false))
         {
             return Result.Failure(Error.Validation(
                 "CookieConsent.ActionInvalid", "Action must be one of 'AcceptAll', 'RejectAll', 'Custom'."));
@@ -57,7 +58,7 @@ public sealed class CreateCookieConsentRecordCommandHandler(
         var categories = new List<ThirdPartyScriptCategory>();
         foreach (var raw in request.Categories ?? [])
         {
-            if (!Enum.TryParse<ThirdPartyScriptCategory>(raw, out var category))
+            if (!EnumParsing.TryParseDefined<ThirdPartyScriptCategory>(raw, out var category, ignoreCase: false))
             {
                 return Result.Failure(Error.Validation(
                     "CookieConsent.CategoryInvalid", "Categories must each be one of 'Necessary', 'Analytics', 'Marketing'."));

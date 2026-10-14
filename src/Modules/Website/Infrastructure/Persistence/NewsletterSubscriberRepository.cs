@@ -1,6 +1,7 @@
 using GenclikMerkezi.BuildingBlocks.Infrastructure.Persistence;
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using Microsoft.EntityFrameworkCore;
 
@@ -83,7 +84,7 @@ public sealed class NewsletterSubscriberRepository(WebsiteDbContext dbContext) :
     {
         if (!string.IsNullOrWhiteSpace(status))
         {
-            if (!Enum.TryParse<NewsletterSubscriberStatus>(status, out var parsedStatus))
+            if (!EnumParsing.TryParseDefined<NewsletterSubscriberStatus>(status, out var parsedStatus, ignoreCase: false))
             {
                 return Result.Failure<IQueryable<NewsletterSubscriber>>(Error.Validation("NewsletterSubscriber.InvalidStatusFilter", "Invalid status."));
             }

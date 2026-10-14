@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using GenclikMerkezi.Modules.Identity.Application.Abstractions;
 using GenclikMerkezi.Modules.Identity.Domain;
+using GenclikMerkezi.SharedKernel.Parsing;
 using Microsoft.AspNetCore.Http;
 
 namespace GenclikMerkezi.Modules.Identity.Infrastructure.Security;
@@ -25,7 +26,7 @@ public sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor)
         get
         {
             var value = Principal?.FindFirst(ClaimTypes.Role)?.Value;
-            return Enum.TryParse<UserRole>(value, out var role) ? role : null;
+            return EnumParsing.TryParseDefined<UserRole>(value, out var role, ignoreCase: false) ? role : null;
         }
     }
 }

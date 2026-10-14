@@ -2,6 +2,7 @@ using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.Modules.Website.Features.GetEventScheduleByContentItemId;
 using GenclikMerkezi.SharedKernel.Abstractions;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,7 +49,7 @@ public sealed class UpsertEventScheduleCommandHandler(
                 "Event.ContentTypeDoesNotSupportEvent", "This content item's content type does not support events."));
         }
 
-        if (!Enum.TryParse<EventFormat>(request.Format, ignoreCase: true, out var format))
+        if (!EnumParsing.TryParseDefined<EventFormat>(request.Format, out var format))
         {
             return Result.Failure<EventScheduleDetailResponse>(
                 Error.Validation("EventSchedule.InvalidFormat", $"'{request.Format}' is not a recognized event format."));

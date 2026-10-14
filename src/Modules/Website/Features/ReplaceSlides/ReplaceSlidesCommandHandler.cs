@@ -1,6 +1,7 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -124,7 +125,7 @@ public sealed class ReplaceSlidesCommandHandler(
             return LinkTarget.CreateEmpty();
         }
 
-        if (!Enum.TryParse<LinkTargetKind>(link.Kind, ignoreCase: true, out var kind))
+        if (!EnumParsing.TryParseDefined<LinkTargetKind>(link.Kind, out var kind))
         {
             return Result.Failure<LinkTarget>(Error.Validation("Slide.LinkKindInvalid", $"Unknown link kind '{link.Kind}'."));
         }

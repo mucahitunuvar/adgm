@@ -1,6 +1,7 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,7 +26,7 @@ public sealed class CreateLegalDocumentCommandHandler(
                 Error.Failure("LegalDocument.NoDefaultLanguage", "No default site language is configured."));
         }
 
-        if (!Enum.TryParse<LegalDocumentKind>(request.Kind, ignoreCase: true, out var kind))
+        if (!EnumParsing.TryParseDefined<LegalDocumentKind>(request.Kind, out var kind))
         {
             return Result.Failure<CreateLegalDocumentResponse>(Error.Validation(
                 "LegalDocument.InvalidKind", $"'{request.Kind}' is not a recognized legal document kind."));

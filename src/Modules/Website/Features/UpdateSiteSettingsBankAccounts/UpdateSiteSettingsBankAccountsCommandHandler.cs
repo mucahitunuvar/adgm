@@ -1,6 +1,7 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.SharedKernel.Abstractions;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,7 +36,7 @@ public sealed class UpdateSiteSettingsBankAccountsCommandHandler(
                 return ibanResult;
             }
 
-            if (!Enum.TryParse<BankAccountCurrency>(input.Currency, out var currency))
+            if (!EnumParsing.TryParseDefined<BankAccountCurrency>(input.Currency, out var currency, ignoreCase: false))
             {
                 return Result.Failure(Error.Validation("BankAccount.InvalidCurrency", $"Currency '{input.Currency}' is not supported."));
             }

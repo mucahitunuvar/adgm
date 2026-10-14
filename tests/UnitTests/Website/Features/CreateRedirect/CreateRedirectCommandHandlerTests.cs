@@ -100,4 +100,30 @@ public class CreateRedirectCommandHandlerTests
         Assert.True(result.IsFailure);
         Assert.Equal("Redirect.InvalidTargetKind", result.Error.Code);
     }
+
+    [Theory]
+    [InlineData("999")]
+    [InlineData("Path,ContentItem")] // 0|1 = 1 = ContentItem - would otherwise silently alias.
+    public async Task Handle_WithNumericOrCombinedTargetKind_Fails(string targetKind)
+    {
+        var command = new CreateRedirectCommand("tr", "eski-yol", targetKind, null, "yeni-yol", "MovedPermanently");
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Redirect.InvalidTargetKind", result.Error.Code);
+    }
+
+    [Theory]
+    [InlineData("999")]
+    [InlineData("MovedPermanently,Found")] // 301|302 = 303, not a defined member - still correctly rejected.
+    public async Task Handle_WithNumericOrCombinedStatusCode_Fails(string statusCode)
+    {
+        var command = new CreateRedirectCommand("tr", "eski-yol", "Path", null, "yeni-yol", statusCode);
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Redirect.InvalidStatusCode", result.Error.Code);
+    }
 }
