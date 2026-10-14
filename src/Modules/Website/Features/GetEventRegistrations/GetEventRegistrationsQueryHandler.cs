@@ -1,5 +1,6 @@
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
 using GenclikMerkezi.Modules.Website.Domain;
+using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 
@@ -15,6 +16,18 @@ public sealed class GetEventRegistrationsQueryHandler(
     public async Task<Result<GetEventRegistrationsResponse>> Handle(
         GetEventRegistrationsQuery request, CancellationToken cancellationToken)
     {
+        EventRegistrationStatus? status = null;
+        if (!string.IsNullOrWhiteSpace(request.Status))
+        {
+            if (!EnumParsing.TryParseDefined<EventRegistrationStatus>(request.Status, out var parsedStatus))
+            {
+                return Result.Failure<GetEventRegistrationsResponse>(Error.Validation(
+                    "EventRegistration.InvalidStatusFilter", $"'{request.Status}' is not a recognized event registration status."));
+            }
+
+            status = parsedStatus;
+        }
+
         var eventSchedule = await eventScheduleRepository.GetByContentItemIdAsync(request.ContentItemId, cancellationToken);
         if (eventSchedule is null)
         {
@@ -22,7 +35,7 @@ public sealed class GetEventRegistrationsQueryHandler(
         }
 
         var paged = await eventRegistrationRepository.SearchAsync(
-            request.ContentItemId, request.Status, request.Search, request, cancellationToken);
+            request.ContentItemId, status, request.Search, request, cancellationToken);
         var statusCounts = await eventRegistrationRepository.GetStatusCountsAsync(request.ContentItemId, cancellationToken);
 
         var counters = new EventRegistrationCountersResponse(
@@ -33,8 +46,8 @@ public sealed class GetEventRegistrationsQueryHandler(
 
         var items = paged.Items
             .Select(i => new EventRegistrationSummaryResponse(
-                i.Id, i.FirstName, i.LastName, i.Email, i.Phone, i.Status, i.CreatedAtUtc, i.VerifiedAtUtc, i.WaitlistedAtUtc,
-                i.RowVersion))
+                i.Id, i.FirstName, i.LastName, i.Email, i.Phone, i.Status.ToString(), i.CreatedAtUtc, i.VerifiedAtUtc,
+                i.WaitlistedAtUtc, i.RowVersion))
             .ToList();
 
         var response = new GetEventRegistrationsResponse(

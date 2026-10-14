@@ -1,5 +1,3 @@
-using GenclikMerkezi.Modules.Website.Domain;
-
 namespace GenclikMerkezi.Modules.Website.Features.GetEventRegistrationById;
 
 public sealed record EventRegistrationDetailResponse(
@@ -12,7 +10,7 @@ public sealed record EventRegistrationDetailResponse(
     string? Phone,
     Guid? UserId,
     string LanguageCode,
-    EventRegistrationStatus Status,
+    string Status,
     string AcceptedPrivacyNoticeKey,
     int AcceptedPrivacyNoticeVersion,
     DateTime CreatedAtUtc,

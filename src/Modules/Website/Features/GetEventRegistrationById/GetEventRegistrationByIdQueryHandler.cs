@@ -35,7 +35,7 @@ public sealed class GetEventRegistrationByIdQueryHandler(IEventRegistrationRepos
             registration.Phone,
             registration.UserId,
             registration.LanguageCode.Value,
-            registration.Status,
+            registration.Status.ToString(),
             registration.AcceptedPrivacyNoticeKey.Value,
             registration.AcceptedPrivacyNoticeVersion,
             registration.CreatedAtUtc,

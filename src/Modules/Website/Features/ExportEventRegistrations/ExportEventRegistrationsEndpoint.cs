@@ -1,7 +1,6 @@
 using GenclikMerkezi.BuildingBlocks.Infrastructure.Http;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.Modules.Website.Features.RecordPersonalDataAccess;
-using GenclikMerkezi.SharedKernel.Parsing;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -20,11 +19,7 @@ internal static class ExportEventRegistrationsEndpoint
                     Guid contentItemId, string? status, ISender sender, ILogger<ExportEventRegistrationsQuery> logger,
                     CancellationToken cancellationToken) =>
                 {
-                    var parsedStatus = status is not null && EnumParsing.TryParseDefined<EventRegistrationStatus>(status, out var s)
-                        ? s
-                        : (EventRegistrationStatus?)null;
-
-                    var result = await sender.Send(new ExportEventRegistrationsQuery(contentItemId, parsedStatus), cancellationToken);
+                    var result = await sender.Send(new ExportEventRegistrationsQuery(contentItemId, status), cancellationToken);
                     if (result.IsFailure)
                     {
                         return result.ToProblem();

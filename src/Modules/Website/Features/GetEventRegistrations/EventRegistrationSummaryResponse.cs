@@ -1,5 +1,3 @@
-using GenclikMerkezi.Modules.Website.Domain;
-
 namespace GenclikMerkezi.Modules.Website.Features.GetEventRegistrations;
 
 public sealed record EventRegistrationSummaryResponse(
@@ -8,7 +6,7 @@ public sealed record EventRegistrationSummaryResponse(
     string LastName,
     string Email,
     string? Phone,
-    EventRegistrationStatus Status,
+    string Status,
     DateTime CreatedAtUtc,
     DateTime? VerifiedAtUtc,
     DateTime? WaitlistedAtUtc,

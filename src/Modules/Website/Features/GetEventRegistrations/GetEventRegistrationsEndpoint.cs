@@ -1,7 +1,6 @@
 using GenclikMerkezi.BuildingBlocks.Infrastructure.Http;
 using GenclikMerkezi.Modules.Website.Domain;
 using GenclikMerkezi.Modules.Website.Features.RecordPersonalDataAccess;
-using GenclikMerkezi.SharedKernel.Parsing;
 using GenclikMerkezi.SharedKernel.Results;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
@@ -27,8 +26,7 @@ internal static class GetEventRegistrationsEndpoint
                     ILogger<GetEventRegistrationsQuery> logger,
                     CancellationToken cancellationToken) =>
                 {
-                    var parsedStatus = status is not null && EnumParsing.TryParseDefined<EventRegistrationStatus>(status, out var s) ? s : (EventRegistrationStatus?)null;
-                    var query = new GetEventRegistrationsQuery(contentItemId, parsedStatus, search)
+                    var query = new GetEventRegistrationsQuery(contentItemId, status, search)
                     {
                         Page = page ?? 1,
                         PageSize = pageSize ?? PagedRequest.DefaultPageSize,
