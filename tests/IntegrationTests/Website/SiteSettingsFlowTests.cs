@@ -336,6 +336,36 @@ public class SiteSettingsFlowTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task UpdateFeatures_TwiceInARow_InvalidatesThePublicSiteCacheOnEachMutation()
+    {
+        // ADR-017: reproduces the real-world shape of the stale-cache bug report at the HTTP level -
+        // a PUT that changes a cached public value, read back correctly, then a SECOND PUT that
+        // reverts it, which must ALSO be reflected - two invalidations of the SAME cached
+        // website:public-site:* entry in a row, not just the first one. Does not assume a particular
+        // starting value for GlobalSearchEnabled: SiteSettings is a singleton row this test class
+        // shares across every [Fact] (see the class remarks above), and other tests here already
+        // flip this same flag without reverting it.
+        var accessToken = await LoginAsAdminAsync();
+
+        var before = await (await _client.GetAsync("/api/v1/public/site")).Content.ReadFromJsonAsync<PublicSiteResponse>();
+        var originalValue = before!.GlobalSearchEnabled;
+
+        var rowVersion = await GetCurrentRowVersionAsync(accessToken);
+        var firstUpdate = await PutFeaturesAsync(accessToken, rowVersion, globalSearchEnabled: !originalValue);
+        Assert.Equal(HttpStatusCode.NoContent, firstUpdate.StatusCode);
+
+        var afterFirstToggle = await (await _client.GetAsync("/api/v1/public/site")).Content.ReadFromJsonAsync<PublicSiteResponse>();
+        Assert.Equal(!originalValue, afterFirstToggle!.GlobalSearchEnabled);
+
+        rowVersion = await GetCurrentRowVersionAsync(accessToken);
+        var secondUpdate = await PutFeaturesAsync(accessToken, rowVersion, globalSearchEnabled: originalValue);
+        Assert.Equal(HttpStatusCode.NoContent, secondUpdate.StatusCode);
+
+        var afterRevert = await (await _client.GetAsync("/api/v1/public/site")).Content.ReadFromJsonAsync<PublicSiteResponse>();
+        Assert.Equal(originalValue, afterRevert!.GlobalSearchEnabled);
+    }
+
+    [Fact]
     public async Task GetPublicSite_WithUnknownLang_FallsBackToTheDefaultLanguage()
     {
         var response = await _client.GetAsync("/api/v1/public/site?lang=xx");
