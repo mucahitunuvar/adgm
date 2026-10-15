@@ -75,7 +75,7 @@ export function ContentTypeDetailPage() {
       ),
     },
     ...(detail.supportsCategories
-      ? [{ key: 'categories', label: 'Kategoriler', content: <ContentCategoriesPanel contentTypeId={contentTypeId} /> }]
+      ? [{ key: 'categories', label: 'Kategoriler', content: <ContentCategoriesPanel contentTypeId={contentTypeId} languages={languageOptions} /> }]
       : []),
   ];
 

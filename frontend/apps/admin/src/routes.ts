@@ -22,4 +22,5 @@ export const ROUTES = {
   websiteMedia: '/site-yonetimi/medya',
   websiteContentItems: '/site-yonetimi/icerikler',
   websiteContentItemDetail: (contentItemId: string) => `/site-yonetimi/icerikler/${contentItemId}`,
+  websiteContentTrash: '/site-yonetimi/icerikler/cop-kutusu',
 } as const;

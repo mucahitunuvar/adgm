@@ -9,21 +9,29 @@ import {
   type ContentCategoryTreeItemResponse,
 } from '@gm/api-client';
 import { useAuth } from '@gm/auth';
-import { Button, EmptyState, ErrorState, LoadingState, StatusBadge, TextField, TreeList, type TreeListNode, useToast } from '@gm/ui';
+import { Button, EmptyState, ErrorState, LoadingState, StatusBadge, TextField, TreeList, type TranslationLanguage, type TreeListNode, useToast } from '@gm/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { CreateCategoryDialog, type CreateCategoryDialogInput } from './CreateCategoryDialog';
+import { EditCategoryTranslationDialog } from './EditCategoryTranslationDialog';
 
 function toTreeNodes(items: readonly ContentCategoryTreeItemResponse[]): Array<TreeListNode<ContentCategoryTreeItemResponse>> {
   return items.map((item) => ({ id: item.id, data: item, children: toTreeNodes(item.children) }));
 }
 
-export function ContentCategoriesPanel({ contentTypeId }: { contentTypeId: string }) {
+export function ContentCategoriesPanel({
+  contentTypeId,
+  languages,
+}: {
+  contentTypeId: string;
+  languages: readonly TranslationLanguage[];
+}) {
   const { client } = useAuth();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
   const queryKey = ['website-content-categories', contentTypeId] as const;
   const [createParentId, setCreateParentId] = useState<string | null | undefined>(undefined);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({ queryKey, queryFn: () => getContentCategoriesByType(client, contentTypeId) });
 
@@ -68,11 +76,6 @@ export function ContentCategoriesPanel({ contentTypeId }: { contentTypeId: strin
 
   return (
     <div>
-      <p className="field-hint">
-        Çeviri ve SEO alanları düzenlemesi şu an desteklenmiyor: backend kategori için çeviri bazlı okuma ucu (
-        <code>GetContentCategoryById</code> benzeri) yayınlamıyor; yalnız yazma (PUT) ucu var. Körlemesine yazmak var olan
-        SEO verisinin üzerine boş değer yazabileceğinden bu ekrana eklenmedi (bkz. tamamlama raporu, madde a).
-      </p>
       {nodes.length === 0 && <EmptyState title="Henüz kategori yok" description="Bu içerik tipi için kök kategori ekleyin." />}
       <TreeList
         nodes={nodes}
@@ -81,6 +84,7 @@ export function ContentCategoriesPanel({ contentTypeId }: { contentTypeId: strin
             contentTypeId={contentTypeId}
             category={category}
             onAddChild={() => setCreateParentId(category.id)}
+            onEditTranslation={() => setEditingCategoryId(category.id)}
             onMutated={onMutated}
             onMutationError={onMutationError}
           />
@@ -96,6 +100,13 @@ export function ContentCategoriesPanel({ contentTypeId }: { contentTypeId: strin
         onConfirm={(input) => createMutation.mutate(input)}
         onCancel={() => setCreateParentId(undefined)}
       />
+      <EditCategoryTranslationDialog
+        open={editingCategoryId !== null}
+        contentTypeId={contentTypeId}
+        categoryId={editingCategoryId}
+        languages={languages}
+        onClose={() => setEditingCategoryId(null)}
+      />
     </div>
   );
 }
@@ -104,12 +115,14 @@ function CategoryRow({
   contentTypeId,
   category,
   onAddChild,
+  onEditTranslation,
   onMutated,
   onMutationError,
 }: {
   contentTypeId: string;
   category: ContentCategoryTreeItemResponse;
   onAddChild: () => void;
+  onEditTranslation: () => void;
   onMutated: (message: string) => void;
   onMutationError: (error: unknown) => void;
 }) {
@@ -167,6 +180,9 @@ function CategoryRow({
       )}
       <Button type="button" tone="quiet" onClick={onAddChild}>
         Alt kategori ekle
+      </Button>
+      <Button type="button" tone="quiet" onClick={onEditTranslation}>
+        Çeviri/SEO düzenle
       </Button>
       <Button
         type="button"

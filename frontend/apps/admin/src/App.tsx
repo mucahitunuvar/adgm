@@ -22,6 +22,7 @@ import { MediaLibraryPage } from './features/media/MediaLibraryPage';
 import { SettingsPage } from './features/website/settings/SettingsPage';
 import { TagsListPage } from './features/website/tags/TagsListPage';
 import { ContentItemsListPage } from './features/website/contentItems/ContentItemsListPage';
+import { ContentTrashPage } from './features/website/contentItems/ContentTrashPage';
 import { ROUTES } from './routes';
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ export function App() {
                     <Route path={ROUTES.websiteTags} element={<TagsListPage />} />
                     <Route path={ROUTES.websiteMedia} element={<MediaLibraryPage />} />
                     <Route path={ROUTES.websiteContentItems} element={<ContentItemsListPage />} />
+                    <Route path={ROUTES.websiteContentTrash} element={<ContentTrashPage />} />
                     <Route
                       path="/site-yonetimi/icerikler/:contentItemId"
                       element={
