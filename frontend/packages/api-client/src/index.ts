@@ -299,6 +299,26 @@ export {
   type UpdatePopupTranslationRequest,
   type ListPopupsParams,
 } from './adminWebsitePopups';
+export { getBlockTypes, type BlockTypeResponse, type BlockTypeFieldDescriptor } from './adminWebsiteBlockTypes';
+export {
+  getHomeLayout,
+  getHomeLayoutPreview,
+  replaceHomeDraftBlocks,
+  publishHomeLayout,
+  discardHomeLayoutDraft,
+  getContentLayout,
+  replaceContentDraftBlocks,
+  publishContentLayout,
+  discardContentLayoutDraft,
+  type LayoutBlockResponse,
+  type LayoutBlockInput,
+  type GetHomeLayoutResponse,
+  type GetHomeLayoutPreviewResponse,
+  type PublicLayoutBlockResponse,
+  type GetContentLayoutResponse,
+  type ReplaceHomeDraftBlocksRequest,
+  type ReplaceContentDraftBlocksRequest,
+} from './adminWebsiteLayouts';
 export type { paths, operations, components } from './schema';
 export * from './enums.generated';
 export { parseEnum } from './parseEnum';

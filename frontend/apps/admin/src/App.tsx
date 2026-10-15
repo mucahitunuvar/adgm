@@ -34,8 +34,13 @@ import { ROUTES } from './routes';
 const queryClient = new QueryClient();
 
 // A11 §1: zengin metin düzenleyici (@gm/rich-text, Tiptap/ProseMirror) ağırlıklıdır - panelin ilk
-// yüküne eklenmez, yalnız bu sayfaya girildiğinde ayrı bir parça (chunk) olarak indirilir.
+// yüküne eklenmez, yalnız bu sayfalara girildiğinde ayrı bir parça (chunk) olarak indirilir.
+// `HomeLayoutPage`/`ContentItemDetailPage` (ikincisi `ContentLayoutPanel` üzerinden) ikisi de
+// `BlockFieldRenderer`'ın `rich-text` bloğu için kullandığı `RichTextEditor`'a ulaşıyor - ikisi de
+// lazy olmazsa bu ağır bağımlılık ana pakete (eager import zinciri) sızıyordu (ölçüldü: 945 kB/282 kB
+// gzip ana paket - bkz. FRONTEND-ACIK-MADDELER.md A11).
 const ContentItemDetailPage = lazy(() => import('./features/website/contentItems/ContentItemDetailPage'));
+const HomeLayoutPage = lazy(() => import('./features/website/layouts/HomeLayoutPage'));
 
 export function App() {
   return (
@@ -76,6 +81,14 @@ export function App() {
                     <Route path={ROUTES.websiteImpactMetrics} element={<ImpactMetricsPage />} />
                     <Route path={ROUTES.websitePopups} element={<PopupsListPage />} />
                     <Route path="/site-yonetimi/popup/:id" element={<PopupDetailPage />} />
+                    <Route
+                      path={ROUTES.websiteHomeLayout}
+                      element={
+                        <Suspense fallback={<LoadingState />}>
+                          <HomeLayoutPage />
+                        </Suspense>
+                      }
+                    />
                     <Route
                       path="/site-yonetimi/icerikler/:contentItemId"
                       element={

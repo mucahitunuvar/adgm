@@ -1,0 +1,1133 @@
+[
+  {
+    "key": "content-list",
+    "allowedTargets": [
+      "Home",
+      "Content"
+    ],
+    "settingsFields": [
+      {
+        "name": "contentTypeKey",
+        "type": "string",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "count",
+        "type": "int",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "featuredOnly",
+        "type": "boolean",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "categoryId",
+        "type": "guid",
+        "isRequired": false,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "view",
+        "type": "string",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ],
+    "textsFields": [
+      {
+        "name": "title",
+        "type": "string",
+        "isRequired": true,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "moreLabel",
+        "type": "string",
+        "isRequired": false,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ]
+  },
+  {
+    "key": "cta",
+    "allowedTargets": [
+      "Home",
+      "Content"
+    ],
+    "settingsFields": [
+      {
+        "name": "buttons",
+        "type": "array<object>",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": [
+          {
+            "name": "link",
+            "type": "object",
+            "isRequired": true,
+            "isLanguageDependent": false,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": [
+              {
+                "name": "kind",
+                "type": "string",
+                "isRequired": true,
+                "isLanguageDependent": false,
+                "minLength": null,
+                "maxLength": null,
+                "min": null,
+                "max": null,
+                "fields": null
+              },
+              {
+                "name": "contentItemId",
+                "type": "guid",
+                "isRequired": false,
+                "isLanguageDependent": false,
+                "minLength": null,
+                "maxLength": null,
+                "min": null,
+                "max": null,
+                "fields": null
+              },
+              {
+                "name": "contentTypeId",
+                "type": "guid",
+                "isRequired": false,
+                "isLanguageDependent": false,
+                "minLength": null,
+                "maxLength": null,
+                "min": null,
+                "max": null,
+                "fields": null
+              },
+              {
+                "name": "internalPath",
+                "type": "string",
+                "isRequired": false,
+                "isLanguageDependent": false,
+                "minLength": null,
+                "maxLength": null,
+                "min": null,
+                "max": null,
+                "fields": null
+              },
+              {
+                "name": "externalUrl",
+                "type": "string",
+                "isRequired": false,
+                "isLanguageDependent": false,
+                "minLength": null,
+                "maxLength": null,
+                "min": null,
+                "max": null,
+                "fields": null
+              }
+            ]
+          },
+          {
+            "name": "style",
+            "type": "string",
+            "isRequired": true,
+            "isLanguageDependent": false,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          }
+        ]
+      }
+    ],
+    "textsFields": [
+      {
+        "name": "eyebrow",
+        "type": "string",
+        "isRequired": false,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "isRequired": true,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "buttons",
+        "type": "array<object>",
+        "isRequired": true,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": [
+          {
+            "name": "label",
+            "type": "string",
+            "isRequired": true,
+            "isLanguageDependent": true,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "faq",
+    "allowedTargets": [
+      "Home",
+      "Content"
+    ],
+    "settingsFields": [
+      {
+        "name": "contentTypeKey",
+        "type": "string",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "categoryId",
+        "type": "guid",
+        "isRequired": false,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "count",
+        "type": "int",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ],
+    "textsFields": [
+      {
+        "name": "title",
+        "type": "string",
+        "isRequired": false,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ]
+  },
+  {
+    "key": "feature-mosaic",
+    "allowedTargets": [
+      "Home",
+      "Content"
+    ],
+    "settingsFields": [
+      {
+        "name": "items",
+        "type": "array<object>",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": [
+          {
+            "name": "imageMediaId",
+            "type": "guid",
+            "isRequired": false,
+            "isLanguageDependent": false,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          },
+          {
+            "name": "link",
+            "type": "object",
+            "isRequired": true,
+            "isLanguageDependent": false,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": [
+              {
+                "name": "kind",
+                "type": "string",
+                "isRequired": true,
+                "isLanguageDependent": false,
+                "minLength": null,
+                "maxLength": null,
+                "min": null,
+                "max": null,
+                "fields": null
+              },
+              {
+                "name": "contentItemId",
+                "type": "guid",
+                "isRequired": false,
+                "isLanguageDependent": false,
+                "minLength": null,
+                "maxLength": null,
+                "min": null,
+                "max": null,
+                "fields": null
+              },
+              {
+                "name": "contentTypeId",
+                "type": "guid",
+                "isRequired": false,
+                "isLanguageDependent": false,
+                "minLength": null,
+                "maxLength": null,
+                "min": null,
+                "max": null,
+                "fields": null
+              },
+              {
+                "name": "internalPath",
+                "type": "string",
+                "isRequired": false,
+                "isLanguageDependent": false,
+                "minLength": null,
+                "maxLength": null,
+                "min": null,
+                "max": null,
+                "fields": null
+              },
+              {
+                "name": "externalUrl",
+                "type": "string",
+                "isRequired": false,
+                "isLanguageDependent": false,
+                "minLength": null,
+                "maxLength": null,
+                "min": null,
+                "max": null,
+                "fields": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "textsFields": [
+      {
+        "name": "items",
+        "type": "array<object>",
+        "isRequired": true,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": [
+          {
+            "name": "eyebrow",
+            "type": "string",
+            "isRequired": false,
+            "isLanguageDependent": true,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          },
+          {
+            "name": "title",
+            "type": "string",
+            "isRequired": true,
+            "isLanguageDependent": true,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "gallery",
+    "allowedTargets": [
+      "Home",
+      "Content"
+    ],
+    "settingsFields": [
+      {
+        "name": "mediaIds",
+        "type": "array<guid>",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ],
+    "textsFields": [
+      {
+        "name": "title",
+        "type": "string",
+        "isRequired": false,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ]
+  },
+  {
+    "key": "hero-slider",
+    "allowedTargets": [
+      "Home",
+      "Content"
+    ],
+    "settingsFields": [
+      {
+        "name": "sliderId",
+        "type": "guid",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ],
+    "textsFields": []
+  },
+  {
+    "key": "image-text",
+    "allowedTargets": [
+      "Home",
+      "Content"
+    ],
+    "settingsFields": [
+      {
+        "name": "imageMediaId",
+        "type": "guid",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "imagePosition",
+        "type": "string",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "link",
+        "type": "object",
+        "isRequired": false,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": [
+          {
+            "name": "kind",
+            "type": "string",
+            "isRequired": true,
+            "isLanguageDependent": false,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          },
+          {
+            "name": "contentItemId",
+            "type": "guid",
+            "isRequired": false,
+            "isLanguageDependent": false,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          },
+          {
+            "name": "contentTypeId",
+            "type": "guid",
+            "isRequired": false,
+            "isLanguageDependent": false,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          },
+          {
+            "name": "internalPath",
+            "type": "string",
+            "isRequired": false,
+            "isLanguageDependent": false,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          },
+          {
+            "name": "externalUrl",
+            "type": "string",
+            "isRequired": false,
+            "isLanguageDependent": false,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          }
+        ]
+      }
+    ],
+    "textsFields": [
+      {
+        "name": "title",
+        "type": "string",
+        "isRequired": true,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "body",
+        "type": "string",
+        "isRequired": true,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "linkLabel",
+        "type": "string",
+        "isRequired": false,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ]
+  },
+  {
+    "key": "impact-stats",
+    "allowedTargets": [
+      "Home",
+      "Content"
+    ],
+    "settingsFields": [
+      {
+        "name": "metricIds",
+        "type": "array<guid>",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ],
+    "textsFields": [
+      {
+        "name": "title",
+        "type": "string",
+        "isRequired": false,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ]
+  },
+  {
+    "key": "job-list",
+    "allowedTargets": [
+      "Home"
+    ],
+    "settingsFields": [
+      {
+        "name": "count",
+        "type": "int",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ],
+    "textsFields": [
+      {
+        "name": "title",
+        "type": "string",
+        "isRequired": true,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "moreLabel",
+        "type": "string",
+        "isRequired": false,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ]
+  },
+  {
+    "key": "logo-strip",
+    "allowedTargets": [
+      "Home",
+      "Content"
+    ],
+    "settingsFields": [
+      {
+        "name": "maxItems",
+        "type": "int",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ],
+    "textsFields": [
+      {
+        "name": "title",
+        "type": "string",
+        "isRequired": false,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ]
+  },
+  {
+    "key": "process-steps",
+    "allowedTargets": [
+      "Home",
+      "Content"
+    ],
+    "settingsFields": [
+      {
+        "name": "stepCount",
+        "type": "int",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ],
+    "textsFields": [
+      {
+        "name": "title",
+        "type": "string",
+        "isRequired": true,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "steps",
+        "type": "array<object>",
+        "isRequired": true,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": [
+          {
+            "name": "title",
+            "type": "string",
+            "isRequired": true,
+            "isLanguageDependent": true,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          },
+          {
+            "name": "text",
+            "type": "string",
+            "isRequired": true,
+            "isLanguageDependent": true,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "quick-links",
+    "allowedTargets": [
+      "Home",
+      "Content"
+    ],
+    "settingsFields": [
+      {
+        "name": "items",
+        "type": "array<object>",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": [
+          {
+            "name": "iconKey",
+            "type": "string",
+            "isRequired": true,
+            "isLanguageDependent": false,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          },
+          {
+            "name": "link",
+            "type": "object",
+            "isRequired": true,
+            "isLanguageDependent": false,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": [
+              {
+                "name": "kind",
+                "type": "string",
+                "isRequired": true,
+                "isLanguageDependent": false,
+                "minLength": null,
+                "maxLength": null,
+                "min": null,
+                "max": null,
+                "fields": null
+              },
+              {
+                "name": "contentItemId",
+                "type": "guid",
+                "isRequired": false,
+                "isLanguageDependent": false,
+                "minLength": null,
+                "maxLength": null,
+                "min": null,
+                "max": null,
+                "fields": null
+              },
+              {
+                "name": "contentTypeId",
+                "type": "guid",
+                "isRequired": false,
+                "isLanguageDependent": false,
+                "minLength": null,
+                "maxLength": null,
+                "min": null,
+                "max": null,
+                "fields": null
+              },
+              {
+                "name": "internalPath",
+                "type": "string",
+                "isRequired": false,
+                "isLanguageDependent": false,
+                "minLength": null,
+                "maxLength": null,
+                "min": null,
+                "max": null,
+                "fields": null
+              },
+              {
+                "name": "externalUrl",
+                "type": "string",
+                "isRequired": false,
+                "isLanguageDependent": false,
+                "minLength": null,
+                "maxLength": null,
+                "min": null,
+                "max": null,
+                "fields": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "textsFields": [
+      {
+        "name": "items",
+        "type": "array<object>",
+        "isRequired": true,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": [
+          {
+            "name": "label",
+            "type": "string",
+            "isRequired": true,
+            "isLanguageDependent": true,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "isRequired": false,
+            "isLanguageDependent": true,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "rich-text",
+    "allowedTargets": [
+      "Home",
+      "Content"
+    ],
+    "settingsFields": [],
+    "textsFields": [
+      {
+        "name": "body",
+        "type": "string",
+        "isRequired": true,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ]
+  },
+  {
+    "key": "upcoming-events",
+    "allowedTargets": [
+      "Home",
+      "Content"
+    ],
+    "settingsFields": [
+      {
+        "name": "contentTypeKeys",
+        "type": "array<string>",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "count",
+        "type": "int",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ],
+    "textsFields": [
+      {
+        "name": "title",
+        "type": "string",
+        "isRequired": true,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "moreLabel",
+        "type": "string",
+        "isRequired": false,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ]
+  },
+  {
+    "key": "video-feature",
+    "allowedTargets": [
+      "Home",
+      "Content"
+    ],
+    "settingsFields": [
+      {
+        "name": "videoId",
+        "type": "guid",
+        "isRequired": true,
+        "isLanguageDependent": false,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ],
+    "textsFields": [
+      {
+        "name": "eyebrow",
+        "type": "string",
+        "isRequired": false,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "isRequired": true,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "text",
+        "type": "string",
+        "isRequired": false,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      },
+      {
+        "name": "link",
+        "type": "object",
+        "isRequired": false,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": [
+          {
+            "name": "kind",
+            "type": "string",
+            "isRequired": true,
+            "isLanguageDependent": true,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          },
+          {
+            "name": "contentItemId",
+            "type": "guid",
+            "isRequired": false,
+            "isLanguageDependent": true,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          },
+          {
+            "name": "contentTypeId",
+            "type": "guid",
+            "isRequired": false,
+            "isLanguageDependent": true,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          },
+          {
+            "name": "internalPath",
+            "type": "string",
+            "isRequired": false,
+            "isLanguageDependent": true,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          },
+          {
+            "name": "externalUrl",
+            "type": "string",
+            "isRequired": false,
+            "isLanguageDependent": true,
+            "minLength": null,
+            "maxLength": null,
+            "min": null,
+            "max": null,
+            "fields": null
+          }
+        ]
+      },
+      {
+        "name": "linkLabel",
+        "type": "string",
+        "isRequired": false,
+        "isLanguageDependent": true,
+        "minLength": null,
+        "maxLength": null,
+        "min": null,
+        "max": null,
+        "fields": null
+      }
+    ]
+  }
+]

@@ -7,6 +7,7 @@ import {
   Globe,
   Image,
   LayoutDashboard,
+  LayoutPanelTop,
   LayoutTemplate,
   ListTree,
   MessageSquareWarning,
@@ -68,6 +69,7 @@ export function AdminShell() {
           { to: ROUTES.websiteSliders, label: "Slider'lar", icon: SlidersHorizontal },
           { to: ROUTES.websiteImpactMetrics, label: 'Rakamlar şeridi', icon: BarChart3 },
           { to: ROUTES.websitePopups, label: 'Pop-up / Banner', icon: MessageSquareWarning },
+          { to: ROUTES.websiteHomeLayout, label: 'Ana sayfa düzeni', icon: LayoutPanelTop },
         ]
       : []),
     { to: ROUTES.account, label: 'Hesabım', icon: User },

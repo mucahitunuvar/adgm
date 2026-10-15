@@ -15,6 +15,7 @@ import { ContentItemLifecycleActions } from './ContentItemLifecycleActions';
 import { ContentItemRelatedContentPanel } from './ContentItemRelatedContentPanel';
 import { ContentItemRevisionsPanel } from './ContentItemRevisionsPanel';
 import { ContentItemVideosPanel } from './ContentItemVideosPanel';
+import { ContentLayoutPanel } from '../layouts/ContentLayoutPanel';
 
 export function ContentItemDetailPage() {
   const { contentItemId } = useParams<{ contentItemId: string }>();
@@ -104,6 +105,9 @@ export function ContentItemDetailPage() {
   }
   if (contentType.supportsEvent) {
     tabs.push({ key: 'event', label: 'Etkinlik', content: <ContentItemEventPanel contentItemId={contentItemId} languages={languageOptions} /> });
+  }
+  if (contentType.supportsBlockLayout) {
+    tabs.push({ key: 'layout', label: 'Düzen', content: <ContentLayoutPanel contentItemId={contentItemId} /> });
   }
   tabs.push({
     key: 'revisions',
