@@ -1,0 +1,30 @@
+{
+  "name": "@gm/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint app proxy.ts --max-warnings 0",
+    "test": "echo no-tests"
+  },
+  "dependencies": {
+    "@fontsource/manrope": "5.3.0",
+    "@fontsource/poppins": "5.3.0",
+    "@gm/api-client": "workspace:*",
+    "@gm/design-tokens": "workspace:*",
+    "@gm/ui": "workspace:*",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "typescript": "6.0.3"
+  }
+}
