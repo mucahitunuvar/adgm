@@ -21,6 +21,9 @@ internal static class ResendVerificationEmailEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("auth")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesRateLimited()
             .WithName("ResendVerificationEmail")
             .WithTags("Auth");
     }

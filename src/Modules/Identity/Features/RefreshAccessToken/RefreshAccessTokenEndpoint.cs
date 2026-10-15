@@ -1,4 +1,5 @@
 using GenclikMerkezi.BuildingBlocks.Infrastructure.Http;
+using GenclikMerkezi.Modules.Identity.Features.Login;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -21,6 +22,11 @@ internal static class RefreshAccessTokenEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("authenticated")
+            .Produces<LoginResponse>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesUnauthorizedProblem()
+            .ProducesForbiddenProblem()
+            .ProducesRateLimited()
             .WithName("RefreshAccessToken")
             .WithTags("Auth");
     }

@@ -43,6 +43,10 @@ internal static class AdminGetUsersEndpoint
             .RequireAuthorization(policy => policy.RequireRole(nameof(UserRole.Admin)))
             .RequireRateLimiting("authenticated")
             .Produces<AdminGetUsersResponse>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("AdminGetUsers")
             .WithTags("Auth");
     }

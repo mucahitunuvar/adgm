@@ -18,6 +18,10 @@ internal static class LogoutEndpoint
                 return result.ToNoContentOrProblem();
             })
             .RequireAuthorization()
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesForbiddenProblem()
             .WithName("Logout")
             .WithTags("Auth");
     }

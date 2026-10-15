@@ -41,6 +41,10 @@ internal static class AdminGetAuditLogEndpoint
             .RequireAuthorization(policy => policy.RequireRole(nameof(UserRole.Admin)))
             .RequireRateLimiting("authenticated")
             .Produces<AdminGetAuditLogResponse>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesRateLimited()
             .WithName("AdminGetAuditLog")
             .WithTags("Auth");
     }

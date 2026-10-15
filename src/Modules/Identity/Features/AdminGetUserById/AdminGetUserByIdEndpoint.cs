@@ -21,6 +21,11 @@ internal static class AdminGetUserByIdEndpoint
                 })
             .RequireAuthorization(policy => policy.RequireRole(nameof(UserRole.Admin)))
             .RequireRateLimiting("authenticated")
+            .Produces<AdminUserDetailResponse>(StatusCodes.Status200OK)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("AdminGetUserById")
             .WithTags("Auth");
     }

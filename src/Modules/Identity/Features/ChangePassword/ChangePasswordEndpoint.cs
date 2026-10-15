@@ -19,6 +19,11 @@ internal static class ChangePasswordEndpoint
             })
             .RequireAuthorization()
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesUnauthorizedProblem()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("ChangePassword")
             .WithTags("Auth");
     }

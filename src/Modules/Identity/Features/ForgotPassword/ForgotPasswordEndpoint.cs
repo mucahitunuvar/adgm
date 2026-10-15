@@ -19,6 +19,9 @@ internal static class ForgotPasswordEndpoint
             })
             .AllowAnonymous()
             .RequireRateLimiting("auth")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesRateLimited()
             .WithName("ForgotPassword")
             .WithTags("Auth");
     }

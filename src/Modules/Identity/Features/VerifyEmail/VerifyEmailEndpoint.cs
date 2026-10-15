@@ -19,6 +19,10 @@ internal static class VerifyEmailEndpoint
             })
             .AllowAnonymous()
             .RequireRateLimiting("auth")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesUnauthorizedProblem()
+            .ProducesRateLimited()
             .WithName("VerifyEmailByLink")
             .WithTags("Auth");
 
@@ -32,6 +36,10 @@ internal static class VerifyEmailEndpoint
             })
             .AllowAnonymous()
             .RequireRateLimiting("auth")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesUnauthorizedProblem()
+            .ProducesRateLimited()
             .WithName("VerifyEmail")
             .WithTags("Auth");
     }

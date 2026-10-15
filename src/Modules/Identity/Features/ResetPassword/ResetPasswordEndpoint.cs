@@ -19,6 +19,10 @@ internal static class ResetPasswordEndpoint
             })
             .AllowAnonymous()
             .RequireRateLimiting("auth")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesUnauthorizedProblem()
+            .ProducesRateLimited()
             .WithName("ResetPassword")
             .WithTags("Auth");
     }

@@ -22,6 +22,10 @@ internal static class RegisterUserEndpoint
             })
             .AllowAnonymous()
             .RequireRateLimiting("auth")
+            .Produces<RegisterUserResponse>(StatusCodes.Status201Created)
+            .ProducesValidationProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("RegisterUser")
             .WithTags("Auth");
     }

@@ -21,6 +21,11 @@ internal static class AdminReactivateUserEndpoint
                 })
             .RequireAuthorization(policy => policy.RequireRole(nameof(UserRole.Admin)))
             .RequireRateLimiting("authenticated")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesUnauthenticated()
+            .ProducesRoleForbidden()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("AdminReactivateUser")
             .WithTags("Auth");
     }

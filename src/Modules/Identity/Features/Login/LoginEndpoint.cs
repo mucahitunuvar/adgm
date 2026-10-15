@@ -19,6 +19,11 @@ internal static class LoginEndpoint
             })
             .AllowAnonymous()
             .RequireRateLimiting("auth")
+            .Produces<LoginResponse>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesUnauthorizedProblem()
+            .ProducesForbiddenProblem()
+            .ProducesRateLimited()
             .WithName("Login")
             .WithTags("Auth");
     }

@@ -1152,6 +1152,30 @@ Docker kullanılacaksa geliştirme deneyimini kolaylaştırmak amacıyla kullan�
 
 Docker mimarinin zorunlu bir parçası değildir.
 
+## 44.1 Geliştirmede ilk Admin kullanıcısı
+
+Backend'de bir Admin seed/bootstrap mekanizması **yoktur**: `POST /api/v1/auth/register` yalnız
+`Candidate`/`Employer` rolüne izin verir (`RegisterUserCommandValidator`), rol yükseltme
+(`PUT /api/v1/auth/admin/users/{userId}/role`) zaten Admin rolü ister (tavuk-yumurta), ve
+`CreateStaffUserCommand`'ın HTTP ucu yoktur (yalnız `CreateCareerAdvisor` iç akışında kullanılır).
+
+Yerel geliştirme LocalDB'sine (`GenclikMerkezi.Identity`) 14 Ekim 2026'da, kullanıcı onayıyla, bir
+defaya mahsus doğrudan satır eklendi (`User.Register` + `IssueEmailVerificationToken` +
+`ConfirmEmail` domain akışı — `tests/IntegrationTests/Identity/CustomWebApplicationFactory.cs`'nin
+`SeedAdminUserAsync` deseniyle aynı, geçici bir test dosyasıyla bir kez çalıştırılıp silindi).
+Bu bir migration/seed **değildir**; LocalDB veritabanı sıfırlanırsa (`dotnet ef database drop` vb.)
+bu satır da kaybolur ve işlem tekrarlanmalıdır.
+
+```text
+E-posta : admin@dev.local
+Parola  : <yerel geliştiricinin kendi LocalDB'sinde belirlediği parola - repoya yazılmaz>
+Rol     : Admin (emailConfirmed: true)
+```
+
+Sadece yerel geliştirme LocalDB'si içindir, üretim/test ortamlarında kullanılmaz ve commit'lenen
+hiçbir yapılandırma dosyasında geçmez. Kalıcı bir çözüm (Development-gated bootstrap veya migration
+seed) için bkz. `docs/frontend/FRONTEND-ACIK-MADDELER.md` A9.
+
 ---
 
 # 45. Debugging

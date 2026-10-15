@@ -18,6 +18,10 @@ internal static class GetCurrentUserEndpoint
             })
             .RequireAuthorization()
             .RequireRateLimiting("authenticated")
+            .Produces<GetCurrentUserResponse>(StatusCodes.Status200OK)
+            .ProducesUnauthorizedProblem()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetCurrentUser")
             .WithTags("Auth");
     }
