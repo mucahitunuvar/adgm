@@ -1,0 +1,10 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+minimumReleaseAgeExclude:
+  - lucide-react@1.57.0
+
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
