@@ -19,9 +19,118 @@ public sealed class FakeContentItemRepository : IContentItemRepository
         Task.FromResult<IReadOnlyList<ContentItem>>(_contentItems.Where(c => ids.Contains(c.Id)).ToList());
 
     public Task<PagedResult<ContentItemListItem>> SearchAsync(
-        Guid? contentTypeId, ContentItemStatus? status, LanguageCode languageCode, bool requireLanguage, string? search,
-        bool? isFeatured, Guid? parentId, PagedRequest pagedRequest, CancellationToken cancellationToken = default) =>
-        Task.FromResult(new PagedResult<ContentItemListItem>([], 0, pagedRequest.Page, pagedRequest.PageSize));
+        Guid? contentTypeId,
+        ContentItemStatus? status,
+        LanguageCode languageCode,
+        bool requireLanguage,
+        string? search,
+        bool? isFeatured,
+        Guid? parentId,
+        IReadOnlyList<Guid>? categoryIds,
+        Guid? tagId,
+        DateTime? publishedFromUtc,
+        DateTime? publishedToUtc,
+        DateTime? createdFromUtc,
+        DateTime? createdToUtc,
+        ContentItemSortField? orderBy,
+        ContentItemSortDirection direction,
+        PagedRequest pagedRequest,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _contentItems.Where(c => c.ParentId == parentId && c.DeletedAtUtc is null);
+
+        if (contentTypeId is not null)
+        {
+            query = query.Where(c => c.ContentTypeId == contentTypeId.Value);
+        }
+
+        if (status is not null)
+        {
+            query = query.Where(c => c.Status == status.Value);
+        }
+
+        if (isFeatured is not null)
+        {
+            query = query.Where(c => c.IsFeatured == isFeatured.Value);
+        }
+
+        if (categoryIds is not null)
+        {
+            query = categoryIds.Count == 0 ? [] : query.Where(c => c.CategoryIds.Any(categoryIds.Contains));
+        }
+
+        if (tagId is not null)
+        {
+            query = query.Where(c => c.Translations.Any(t => t.LanguageCode == languageCode && t.TagIds.Contains(tagId.Value)));
+        }
+
+        if (publishedFromUtc is not null)
+        {
+            query = query.Where(c => (c.PublishAtUtc ?? c.PublishedAtUtc) >= publishedFromUtc.Value);
+        }
+
+        if (publishedToUtc is not null)
+        {
+            query = query.Where(c => (c.PublishAtUtc ?? c.PublishedAtUtc) < publishedToUtc.Value);
+        }
+
+        if (createdFromUtc is not null)
+        {
+            query = query.Where(c => c.CreatedAtUtc >= createdFromUtc.Value);
+        }
+
+        if (createdToUtc is not null)
+        {
+            query = query.Where(c => c.CreatedAtUtc < createdToUtc.Value);
+        }
+
+        var projected = query.Select(c => new
+        {
+            Item = c,
+            Title = c.Translations.Where(t => t.LanguageCode == languageCode).Select(t => t.Title).FirstOrDefault(),
+            EffectivePublishAtUtc = c.PublishAtUtc ?? c.PublishedAtUtc,
+        });
+
+        if (requireLanguage)
+        {
+            projected = projected.Where(x => x.Title != null);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            projected = projected.Where(x => x.Title != null && x.Title.Contains(search, StringComparison.Ordinal));
+        }
+
+        var ordered = (orderBy, direction) switch
+        {
+            (ContentItemSortField.Title, ContentItemSortDirection.Desc) => projected.OrderByDescending(x => x.Title),
+            (ContentItemSortField.Title, _) => projected.OrderBy(x => x.Title),
+            (ContentItemSortField.CreatedAt, ContentItemSortDirection.Desc) => projected.OrderByDescending(x => x.Item.CreatedAtUtc),
+            (ContentItemSortField.CreatedAt, _) => projected.OrderBy(x => x.Item.CreatedAtUtc),
+            (ContentItemSortField.UpdatedAt, ContentItemSortDirection.Desc) =>
+                projected.OrderBy(x => x.Item.UpdatedAtUtc is null).ThenByDescending(x => x.Item.UpdatedAtUtc),
+            (ContentItemSortField.UpdatedAt, _) => projected.OrderBy(x => x.Item.UpdatedAtUtc is null).ThenBy(x => x.Item.UpdatedAtUtc),
+            (ContentItemSortField.PublishAt, ContentItemSortDirection.Desc) =>
+                projected.OrderBy(x => x.EffectivePublishAtUtc is null).ThenByDescending(x => x.EffectivePublishAtUtc),
+            (ContentItemSortField.PublishAt, _) =>
+                projected.OrderBy(x => x.EffectivePublishAtUtc is null).ThenBy(x => x.EffectivePublishAtUtc),
+            (ContentItemSortField.SortOrder, ContentItemSortDirection.Desc) => projected.OrderByDescending(x => x.Item.SortOrder),
+            (ContentItemSortField.SortOrder, _) => projected.OrderBy(x => x.Item.SortOrder),
+            (null, _) => projected.OrderBy(x => x.Item.SortOrder),
+            _ => throw new ArgumentOutOfRangeException(nameof(orderBy), orderBy, "Unrecognized content item sort field."),
+        };
+
+        var items = ordered.ThenBy(x => x.Item.Id).ToList();
+        var page = items
+            .Skip((pagedRequest.Page - 1) * pagedRequest.PageSize)
+            .Take(pagedRequest.PageSize)
+            .Select(x => new ContentItemListItem(
+                x.Item.Id, x.Item.ContentTypeId, x.Item.ParentId, x.Title ?? string.Empty, x.Item.Status.ToString(), x.Item.SortOrder,
+                x.Item.IsFeatured, x.Item.PublishAtUtc, x.Item.UnpublishAtUtc, x.Item.RowVersion))
+            .ToList();
+
+        return Task.FromResult(new PagedResult<ContentItemListItem>(page, items.Count, pagedRequest.Page, pagedRequest.PageSize));
+    }
 
     public Task<bool> FullPathExistsAsync(LanguageCode languageCode, string fullPath, Guid? excludeId, CancellationToken cancellationToken = default) =>
         Task.FromResult(FullPathExistsResult);

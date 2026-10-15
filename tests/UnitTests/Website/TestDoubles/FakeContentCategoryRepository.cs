@@ -29,6 +29,10 @@ public sealed class FakeContentCategoryRepository : IContentCategoryRepository
     public Task<int> CountChildrenAsync(Guid categoryId, CancellationToken cancellationToken = default) =>
         Task.FromResult(_categories.Count(c => c.ParentId == categoryId));
 
+    public Task<IReadOnlyList<Guid>> GetSelfAndChildrenIdsAsync(Guid categoryId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<Guid>>(
+            _categories.Where(c => c.Id == categoryId || c.ParentId == categoryId).Select(c => c.Id).ToList());
+
     public void Add(ContentCategory category) => _categories.Add(category);
 
     public void Remove(ContentCategory category) => _categories.RemoveAll(c => c.Id == category.Id);
