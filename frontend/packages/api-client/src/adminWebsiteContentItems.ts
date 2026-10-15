@@ -47,15 +47,25 @@ export interface ListContentItemsParams {
   search?: string;
   isFeatured?: boolean;
   parentId?: string;
+  categoryId?: string;
+  tagId?: string;
+  publishedFromUtc?: string;
+  publishedToUtc?: string;
+  createdFromUtc?: string;
+  createdToUtc?: string;
+  orderBy?: string;
+  direction?: string;
   page?: number;
   pageSize?: number;
 }
 
 /**
- * `GET /api/v1/admin/website/contents`. Backend bu filtreleri desteklemiyor: kategori, etiket,
- * tarih aralığı, açık sıralama (orderBy) - bkz. FRONTEND-ACIK-MADDELER.md §B. Sayfalamalı bir
- * sonuç üzerinde bunları istemci tarafında taklit etmek yanlış/eksik sonuç üretir, bu yüzden
- * yapılmadı.
+ * `GET /api/v1/admin/website/contents`. `categoryId` kendisi + doğrudan alt kategorilerini kapsar
+ * (backend genişletir, kategoriler en fazla 2 seviye - ADR-024 §4.1); `tagId` çözümlenen dile göre
+ * kapsamlanır. `publishedFromUtc`/`publishedToUtc` ve `createdFromUtc`/`createdToUtc` yarı açık
+ * aralıktır (`>= from`, `< to`). `orderBy` (`Title`/`CreatedAt`/`UpdatedAt`/`PublishAt`/`SortOrder`)
+ * ve `direction` (`Asc`/`Desc`) tanımsız bir değerde 400 döner; `orderBy` verilmezse varsayılan
+ * sıralama (`SortOrder` sonra `Id`) değişmez.
  */
 export function getContentItems(client: ApiClient, params: ListContentItemsParams = {}): Promise<PagedResultOfContentItemSummaryResponse> {
   const query: Record<string, string | number | boolean | undefined> = { ...params };

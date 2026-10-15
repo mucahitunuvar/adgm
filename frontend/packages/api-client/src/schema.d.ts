@@ -15768,6 +15768,14 @@ export interface operations {
                 search?: string;
                 isFeatured?: boolean;
                 parentId?: string;
+                categoryId?: string;
+                tagId?: string;
+                publishedFromUtc?: string;
+                publishedToUtc?: string;
+                createdFromUtc?: string;
+                createdToUtc?: string;
+                orderBy?: string;
+                direction?: string;
                 page?: number | string;
                 pageSize?: number | string;
             };
