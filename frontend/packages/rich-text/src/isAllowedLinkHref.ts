@@ -1,4 +1,12 @@
-const ALLOWED_SCHEMES = new Set(['http', 'https', 'mailto', 'tel']);
+/**
+ * Backend'in Website VE Employer `HtmlWhitelistPolicy.AllowedHrefSchemes`'i (ikisi de aynı değer -
+ * `docs/api/html-whitelist.v1.json`, `schema.contract.test.ts` bu eşitliği doğrular). Tek kaynak:
+ * `LinkMark.ts`'in `protocols` seçeneği de bu listeyi kullanır - iki yerde elle yazılmış aynı liste
+ * olmasın diye.
+ */
+export const ALLOWED_LINK_SCHEMES: readonly string[] = ['http', 'https', 'mailto', 'tel'];
+
+const ALLOWED_SCHEMES = new Set(ALLOWED_LINK_SCHEMES);
 
 /**
  * Backend'in `HtmlSanitizerContentSanitizer.ProcessAnchor` ve `AllowedSchemes` kuralının birebir
