@@ -6,8 +6,19 @@ const ADMIN_URL = 'http://localhost:5173/admin/';
 const ADMIN_EMAIL = 'admin@dev.local';
 const ADMIN_PASSWORD = 'DevAdmin#2026';
 
+const BACKEND_URL = 'http://localhost:5016';
+
 async function setTheme(page: Page, theme: 'light' | 'dark') {
   await page.emulateMedia({ colorScheme: theme });
+}
+
+// admin-rich-text.spec.ts'teki ile aynı desen: UI'ı hiç kullanmadan backend'e doğrudan istek.
+async function loginForApiToken(request: Page['request']): Promise<string> {
+  const response = await request.post(`${BACKEND_URL}/api/v1/auth/login`, {
+    data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
+  });
+  const body = (await response.json()) as { accessToken: string };
+  return body.accessToken;
 }
 
 async function expectNoAxeViolations(page: Page) {
@@ -98,7 +109,12 @@ test.describe('admin: site yönetimi (CMS, Faz 2 Dilim 2a-1) - gerçek backend',
     await expect(page).toHaveURL(/\/site-yonetimi\/icerik-tipleri\/[0-9a-fA-F-]{36}$/);
     // Yeni oluşturulduysa zaten etkindir; yeniden kullanılan tip önceki koşunun sonunda
     // pasifleştirilmiş olabilir - her iki durumda da "Pasifleştir" görünür hale gelmeli.
+    // Önce sayfanın (asenkron `getContentTypeById` sorgusuyla) yüklenmesini bekler: aksi halde
+    // `isVisible()` tek seferlik kontrolü `isLoading` durumundayken çalışıp her iki düğmeyi de
+    // "görünür değil" bulabilir, aktivasyonu atlar ve test yarış koşuluyla düşer.
     const activateButton = page.getByRole('button', { name: 'Etkinleştir' });
+    const deactivateButtonProbe = page.getByRole('button', { name: 'Pasifleştir' });
+    await expect(activateButton.or(deactivateButtonProbe)).toBeVisible();
     if (await activateButton.isVisible().catch(() => false)) {
       await activateButton.click();
       await expect(page.getByText('İçerik tipi etkinleştirildi.').last()).toBeVisible();
@@ -123,5 +139,61 @@ test.describe('admin: site yönetimi (CMS, Faz 2 Dilim 2a-1) - gerçek backend',
     await page.getByRole('tab', { name: 'Genel' }).click();
     await page.getByRole('button', { name: 'Pasifleştir' }).click();
     await expect(page.getByText('İçerik tipi pasifleştirildi.').last()).toBeVisible();
+  });
+
+  // Regresyon testi: 7689ef3 ("fix(caching): close the RemoveByPrefix vs repopulate race in
+  // MemoryCacheService") öncesinde `PUT /admin/website/settings/*` sonrası `GET /public/site`
+  // (ICacheService önbelleği) eski değeri döndürüyordu - yukarıdaki testin NOT'u bu yüzden kasıtlı
+  // olarak admin'in kendi GET'ini kontrol ediyordu. Düzeltme sonrası zinciri uçtan uca (public
+  // uç dahil) doğrular; bir yarış koşulu olduğundan art arda iki kez çalıştırılır.
+  test('ayar değişikliği GET /public/site önbelleğine hemen yansır, geri alınca da (art arda iki kez)', async ({
+    request,
+  }) => {
+    const token = await loginForApiToken(request);
+    const headers = { Authorization: `Bearer ${token}` };
+
+    interface FeatureSettings {
+      rowVersion: string;
+      globalSearchEnabled: boolean;
+      newsletterEnabled: boolean;
+      publicJobListingsEnabled: boolean;
+      donationPageEnabled: boolean;
+      allowSearchEngineIndexing: boolean;
+    }
+
+    async function getFeatureSettings(): Promise<FeatureSettings> {
+      const response = await request.get(`${BACKEND_URL}/api/v1/admin/website/settings`, { headers });
+      expect(response.status()).toBe(200);
+      return (await response.json()) as FeatureSettings;
+    }
+
+    async function putNewsletterEnabled(current: FeatureSettings, newsletterEnabled: boolean): Promise<void> {
+      const response = await request.put(`${BACKEND_URL}/api/v1/admin/website/settings/features`, {
+        headers,
+        data: { ...current, newsletterEnabled },
+      });
+      expect(response.status()).toBe(204);
+    }
+
+    async function getPublicNewsletterEnabled(): Promise<boolean> {
+      const response = await request.get(`${BACKEND_URL}/api/v1/public/site`);
+      expect(response.status()).toBe(200);
+      const body = (await response.json()) as { newsletterEnabled: boolean };
+      return body.newsletterEnabled;
+    }
+
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      const original = await getFeatureSettings();
+      const toggled = !original.newsletterEnabled;
+
+      await putNewsletterEnabled(original, toggled);
+      expect(await getPublicNewsletterEnabled()).toBe(toggled);
+
+      // Geri al: test ortamı kalıcı olarak değiştirilmez. RowVersion'ı yeniden okur (PUT sonrası
+      // artmıştır), elde eskisini tekrar göndermek 409 Conflict ile düşer.
+      const afterToggle = await getFeatureSettings();
+      await putNewsletterEnabled(afterToggle, original.newsletterEnabled);
+      expect(await getPublicNewsletterEnabled()).toBe(original.newsletterEnabled);
+    }
   });
 });
