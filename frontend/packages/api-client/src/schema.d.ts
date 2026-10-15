@@ -3654,7 +3654,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["GetContentCategoryById"];
         put: operations["UpdateContentCategory"];
         post?: never;
         delete: operations["DeleteContentCategory"];
@@ -5494,6 +5494,37 @@ export interface components {
             email: string;
             whatsApp: string;
             mapEmbedUrl: string;
+        };
+        ContentCategoryDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            contentTypeId: string;
+            /** Format: uuid */
+            parentId: null | string;
+            /** Format: int32 */
+            sortOrder: number | string;
+            isActive: boolean;
+            /** Format: byte */
+            rowVersion: string;
+            translations: components["schemas"]["ContentCategoryTranslationResponse"][];
+        };
+        ContentCategorySeoResponse: {
+            metaTitle: string;
+            metaDescription: string;
+            metaKeywords: string;
+            ogTitle: string;
+            ogDescription: string;
+            /** Format: uuid */
+            ogImageMediaId: null | string;
+            canonicalUrl: null | string;
+            noIndex: boolean;
+        };
+        ContentCategoryTranslationResponse: {
+            languageCode: string;
+            name: string;
+            slug: string;
+            seo: components["schemas"]["ContentCategorySeoResponse"];
         };
         ContentCategoryTreeItemResponse: {
             /** Format: uuid */
@@ -19263,6 +19294,59 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetContentCategoryById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                typeId: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentCategoryDetailResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
