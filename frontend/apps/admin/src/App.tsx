@@ -31,7 +31,33 @@ import { PopupsListPage } from './features/website/popups/PopupsListPage';
 import { PopupDetailPage } from './features/website/popups/PopupDetailPage';
 import { ROUTES } from './routes';
 
-const queryClient = new QueryClient();
+/**
+ * Dışa açık: `queryClientFocus.test.tsx` gerçek uygulamanın kullandığı aynı varsayımları (30 sn
+ * staleTime, odak yeniden sorgusu kapalı) ayrı bir kopyada üretip sınar - burada kullanılan örnekle
+ * tesadüfen aynı değerler olduğunu varsaymak yerine. `staleTimeMs` yalnız o testin, verinin TAZE
+ * kaldığı için değil `refetchOnWindowFocus: false` sayesinde yeniden sorgu atılmadığını ayrıca
+ * (staleTime'ı sıfıra indirip) kanıtlayabilmesi için var - uygulamanın kendisi hiçbir yerde override
+ * vermez, her zaman 30 sn'lik varsayılanı kullanır.
+ */
+export function createQueryClient(options?: { staleTimeMs?: number }): QueryClient {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        // Panel ekranlarının çoğu tek bir yöneticinin art arda birkaç saniye içinde yaptığı okuma/
+        // yazmalardan oluşuyor; pencere odağı değiştiğinde (başka sekme/uygulamaya geçip dönmek)
+        // mevcut tüm sorguları yeniden ateşlemek gerçek bir ihtiyaçtan değil varsayılan davranıştan
+        // kaynaklanıyordu - ölçülen ekranlarda (ana sayfa düzeni, içerik detayı, medya kütüphanesi)
+        // 20+ istek yoktu ama "authenticated" limiti (60/dk) odak değişimlerinin birikmesiyle
+        // tüketilebiliyordu. Kaydetmeden önceki taze okuma (409 kontrolü) zaten doğrudan api-client
+        // çağrısı olduğu için (bu cache'i hiç kullanmıyor) bu değişiklik o akışları etkilemiyor.
+        staleTime: options?.staleTimeMs ?? 30_000,
+        refetchOnWindowFocus: false,
+      },
+    },
+  });
+}
+
+const queryClient = createQueryClient();
 
 // A11 §1: zengin metin düzenleyici (@gm/rich-text, Tiptap/ProseMirror) ağırlıklıdır - panelin ilk
 // yüküne eklenmez, yalnız bu sayfalara girildiğinde ayrı bir parça (chunk) olarak indirilir.
