@@ -29,6 +29,18 @@ import { LayoutBlockEditor } from './LayoutBlockEditor';
 import { draftBlocksFromResponse, draftBlocksToInput, newDraftBlock, type DraftBlock } from './layoutTypes';
 
 export function HomeLayoutPage() {
+  return (
+    <div className="container section">
+      <PageHeader eyebrow="Site yönetimi" title="Ana sayfa düzeni" />
+      <HomeLayoutEditor />
+    </div>
+  );
+}
+
+// `PageHeader` (ve dolayısıyla sayfanın tek h1'i) üstteki `HomeLayoutPage`'te KOŞULSUZ render edilir -
+// yükleme/hata durumunda bile sayfada bir başlık bulunsun diye (axe `page-has-heading-one` bunu
+// yakaladı: bu bileşen eskiden doğrudan `return <LoadingState />` yapıyordu, `PageHeader`'dan ÖNCE).
+function HomeLayoutEditor() {
   const { client } = useAuth();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -140,8 +152,7 @@ export function HomeLayoutPage() {
   }
 
   return (
-    <div className="container section">
-      <PageHeader eyebrow="Site yönetimi" title="Ana sayfa düzeni" />
+    <div>
       <UnsavedChangesGuard isDirty={isDirty} />
 
       <div className="field-row" style={{ alignItems: 'center' }}>

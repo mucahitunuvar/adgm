@@ -72,6 +72,29 @@ function draftFromDetail(detail: PopupDetailResponse): SettingsDraft {
 
 export function PopupDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { client } = useAuth();
+  const { data } = useQuery({
+    queryKey: ['website-popup', id],
+    queryFn: () => getPopupById(client, id!),
+    enabled: Boolean(id),
+  });
+  const title = data ? data.translations[0]?.title || data.translations[0]?.body.slice(0, 40) || '(başlıksız)' : null;
+
+  return (
+    <div className="container section">
+      <PageHeader eyebrow="Site yönetimi" title={title ? `Pop-up: ${title}` : 'Pop-up'} />
+      <PopupDetailEditor />
+    </div>
+  );
+}
+
+// Üstteki `PopupDetailPage`'in kendi ayrı `useQuery` çağrısı yalnız başlık içindir - TanStack Query
+// aynı `queryKey` için önbelleği paylaştığından bu ikinci bir ağ isteği anlamına gelmez. `PageHeader`
+// (sayfanın tek h1'i) böylece yükleme/hata durumunda bile KOŞULSUZ render edilir (axe
+// `page-has-heading-one` bunu yakaladı: bu bileşen eskiden doğrudan `return <LoadingState />` yapıyordu,
+// `PageHeader`'dan ÖNCE).
+function PopupDetailEditor() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { client } = useAuth();
   const { showToast } = useToast();
@@ -181,8 +204,7 @@ export function PopupDetailPage() {
   }
 
   return (
-    <div className="container section">
-      <PageHeader eyebrow="Site yönetimi" title={`Pop-up: ${popup.translations[0]?.title || popup.translations[0]?.body.slice(0, 40) || '(başlıksız)'}`} />
+    <div>
       <UnsavedChangesGuard isDirty={isDirty} />
 
       <section>

@@ -30,6 +30,28 @@ import { draftSlidesFromResponse, draftSlidesToInput, newDraftSlide, type DraftS
 
 export function SliderDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { client } = useAuth();
+  const { data } = useQuery({
+    queryKey: ['website-slider', id],
+    queryFn: () => getSliderById(client, id!),
+    enabled: Boolean(id),
+  });
+
+  return (
+    <div className="container section">
+      <PageHeader eyebrow="Site yönetimi" title={data ? `Slider: ${data.key}` : 'Slider'} />
+      <SliderDetailEditor />
+    </div>
+  );
+}
+
+// Üstteki `SliderDetailPage`'in kendi ayrı `useQuery` çağrısı yalnız başlık içindir - TanStack Query
+// aynı `queryKey` için önbelleği paylaştığından bu ikinci bir ağ isteği anlamına gelmez. `PageHeader`
+// (sayfanın tek h1'i) böylece yükleme/hata durumunda bile KOŞULSUZ render edilir (axe
+// `page-has-heading-one` bunu yakaladı: bu bileşen eskiden doğrudan `return <LoadingState />` yapıyordu,
+// `PageHeader`'dan ÖNCE).
+function SliderDetailEditor() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { client } = useAuth();
   const { showToast } = useToast();
@@ -141,8 +163,7 @@ export function SliderDetailPage() {
   const editingSlide = editingTempKey ? currentSlides.find((s) => s.tempKey === editingTempKey) ?? null : null;
 
   return (
-    <div className="container section">
-      <PageHeader eyebrow="Site yönetimi" title={`Slider: ${data.key}`} />
+    <div>
       <UnsavedChangesGuard isDirty={slidesDirty || namesDirty} />
 
       <section>

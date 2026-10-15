@@ -42,6 +42,22 @@ const queryClient = new QueryClient();
 const ContentItemDetailPage = lazy(() => import('./features/website/contentItems/ContentItemDetailPage'));
 const HomeLayoutPage = lazy(() => import('./features/website/layouts/HomeLayoutPage'));
 
+/**
+ * `<Suspense>`'in parça (chunk) indirilirken gösterdiği geçici hal - yalnız `LoadingState` kullanmak
+ * axe'ın `page-has-heading-one` kuralını düşürüyordu: parça indirilene kadar sayfada HİÇ h1 yok
+ * (gerçek bir kullanıcı için de geçerli, yalnız test bulgusu değil - yavaş bir ağda bu birkaç saniye
+ * sürebilir). Her rota kendi gerçek başlığını kendi `PageHeader`'ıyla yükledikten sonra basar; bu
+ * geçici an için görsel olmayan (sr-only) bir başlık yeterli.
+ */
+function RouteLoadingFallback() {
+  return (
+    <div className="container section">
+      <h1 className="sr-only">Yükleniyor</h1>
+      <LoadingState />
+    </div>
+  );
+}
+
 export function App() {
   return (
     // Tarayıcıdan her zaman kendi origin'ine (`/api/...`) gidilir: geliştirmede Vite'ın
@@ -84,7 +100,7 @@ export function App() {
                     <Route
                       path={ROUTES.websiteHomeLayout}
                       element={
-                        <Suspense fallback={<LoadingState />}>
+                        <Suspense fallback={<RouteLoadingFallback />}>
                           <HomeLayoutPage />
                         </Suspense>
                       }
@@ -92,7 +108,7 @@ export function App() {
                     <Route
                       path="/site-yonetimi/icerikler/:contentItemId"
                       element={
-                        <Suspense fallback={<LoadingState />}>
+                        <Suspense fallback={<RouteLoadingFallback />}>
                           <ContentItemDetailPage />
                         </Suspense>
                       }
