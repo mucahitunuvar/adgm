@@ -19,7 +19,10 @@ export function ProtectedRoute({
   const location = useLocation();
 
   if (isLoading) return null;
-  if (!user) return <Navigate to={signInTo} replace state={{ from: location.pathname }} />;
+  // `location.search` dahil: aksi halde paylaşılan bir filtre/sayfa URL'si (ör. sorgu
+  // parametreleriyle bir liste görünümü) giriş akışından sonra sorgu dizesini kaybeder - login
+  // sonrası yönlendirme yalnız yola (`pathname`) döner, ekrandaki filtreler sıfırlanır.
+  if (!user) return <Navigate to={signInTo} replace state={{ from: `${location.pathname}${location.search}` }} />;
   if (!roles.includes(user.role)) return <Navigate to={unauthorizedTo} replace />;
   return <Outlet />;
 }
