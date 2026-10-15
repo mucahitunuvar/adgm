@@ -16,6 +16,14 @@ public interface IContentItemRepository
     // that language are returned) and picks which language's title is projected. When requireLanguage
     // is false, languageCode is the resolved default site language - every item structurally has a
     // translation in it (ContentItem.Create/RemoveTranslation guarantee this), so no filter is needed.
+    //
+    // categoryIds (already expanded to self + direct children by the caller, mirroring
+    // SearchPublicListAsync's own categoryIds parameter) and tagId narrow further when given - tagId
+    // is scoped to languageCode (tags are per-translation, ADR-024 §4.1), same as the public list's
+    // tagId filter. publishedFromUtc/publishedToUtc filter on the effective publish date
+    // (PublishAtUtc ?? PublishedAtUtc, half-open: >= from, < to); createdFromUtc/createdToUtc filter
+    // on CreatedAtUtc the same way. orderBy/direction pick the sort; orderBy == null keeps today's
+    // default (SortOrder then Id) unchanged, direction is ignored when orderBy is null.
     Task<PagedResult<ContentItemListItem>> SearchAsync(
         Guid? contentTypeId,
         ContentItemStatus? status,
@@ -24,6 +32,14 @@ public interface IContentItemRepository
         string? search,
         bool? isFeatured,
         Guid? parentId,
+        IReadOnlyList<Guid>? categoryIds,
+        Guid? tagId,
+        DateTime? publishedFromUtc,
+        DateTime? publishedToUtc,
+        DateTime? createdFromUtc,
+        DateTime? createdToUtc,
+        ContentItemSortField? orderBy,
+        ContentItemSortDirection direction,
         PagedRequest pagedRequest,
         CancellationToken cancellationToken = default);
 

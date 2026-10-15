@@ -23,6 +23,16 @@ public interface IContentCategoryRepository
     // "içerik atanmışsa" half is IContentItemRepository.CountByCategoryIdAsync).
     Task<int> CountChildrenAsync(Guid categoryId, CancellationToken cancellationToken = default);
 
+    // GetContentItemsQueryHandler's `categoryId` filter expansion - categoryId itself plus its direct
+    // children, the same "include the category's own subtree" rule GetPublicContentsQueryHandler
+    // already applies to the public list's `category` filter. Safe to stop at one level: ADR-024
+    // §4.1 caps categories at exactly 2 levels (CreateContentCategoryCommandHandler rejects a parent
+    // that already has a parent of its own), so a category's children can never have children of
+    // their own. Empty when categoryId does not exist - the caller then filters on an empty set
+    // rather than treating a bad id as "no filter" or a 404 (no other admin list filter here
+    // validates id existence either, e.g. contentTypeId/parentId).
+    Task<IReadOnlyList<Guid>> GetSelfAndChildrenIdsAsync(Guid categoryId, CancellationToken cancellationToken = default);
+
     void Add(ContentCategory category);
 
     void Remove(ContentCategory category);

@@ -107,7 +107,9 @@ public sealed class SearchIndexUpdater(
         {
             var result = await contentItemRepository.SearchAsync(
                 contentTypeId, status: null, context.DefaultLanguage.Code, requireLanguage: false, search: null,
-                isFeatured: null, parentId: null, new PagedRequest { Page = currentPage, PageSize = PageSize }, cancellationToken);
+                isFeatured: null, parentId: null, categoryIds: null, tagId: null, publishedFromUtc: null, publishedToUtc: null,
+                createdFromUtc: null, createdToUtc: null, orderBy: null, direction: ContentItemSortDirection.Asc,
+                new PagedRequest { Page = currentPage, PageSize = PageSize }, cancellationToken);
 
             foreach (var row in result.Items)
             {
@@ -140,7 +142,9 @@ public sealed class SearchIndexUpdater(
         {
             var result = await contentItemRepository.SearchAsync(
                 contentTypeId: null, status: null, languageCode, requireLanguage: true, search: null, isFeatured: null,
-                parentId: null, new PagedRequest { Page = currentPage, PageSize = PageSize }, cancellationToken);
+                parentId: null, categoryIds: null, tagId: null, publishedFromUtc: null, publishedToUtc: null, createdFromUtc: null,
+                createdToUtc: null, orderBy: null, direction: ContentItemSortDirection.Asc,
+                new PagedRequest { Page = currentPage, PageSize = PageSize }, cancellationToken);
 
             foreach (var row in result.Items)
             {

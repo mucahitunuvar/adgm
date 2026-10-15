@@ -31,6 +31,12 @@ public sealed class ContentCategoryRepository(WebsiteDbContext dbContext) : ICon
     public Task<int> CountChildrenAsync(Guid categoryId, CancellationToken cancellationToken = default) =>
         dbContext.ContentCategories.CountAsync(c => c.ParentId == categoryId, cancellationToken);
 
+    public async Task<IReadOnlyList<Guid>> GetSelfAndChildrenIdsAsync(Guid categoryId, CancellationToken cancellationToken = default) =>
+        await dbContext.ContentCategories
+            .Where(c => c.Id == categoryId || c.ParentId == categoryId)
+            .Select(c => c.Id)
+            .ToListAsync(cancellationToken);
+
     public void Add(ContentCategory category) => dbContext.ContentCategories.Add(category);
 
     public void Remove(ContentCategory category) => dbContext.ContentCategories.Remove(category);

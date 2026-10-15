@@ -32,6 +32,14 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
         string? search,
         bool? isFeatured,
         Guid? parentId,
+        IReadOnlyList<Guid>? categoryIds,
+        Guid? tagId,
+        DateTime? publishedFromUtc,
+        DateTime? publishedToUtc,
+        DateTime? createdFromUtc,
+        DateTime? createdToUtc,
+        ContentItemSortField? orderBy,
+        ContentItemSortDirection direction,
         PagedRequest pagedRequest,
         CancellationToken cancellationToken = default)
     {
@@ -53,6 +61,44 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
             query = query.Where(ci => ci.IsFeatured == isFeatured.Value);
         }
 
+        // categoryIds is non-null exactly when request.CategoryId was given (GetContentItemsQueryHandler
+        // expands it to self+children first) - an empty (but non-null) list means the requested
+        // categoryId matched no category, which must narrow to zero rows, not "no filter".
+        if (categoryIds is not null)
+        {
+            query = categoryIds.Count == 0
+                ? query.Where(_ => false)
+                : query.Where(ci => ci.CategoryIds.Any(c => categoryIds.Contains(c)));
+        }
+
+        if (tagId is not null)
+        {
+            query = query.Where(ci => ci.Translations.Any(t => t.LanguageCode == languageCode && t.TagIds.Contains(tagId.Value)));
+        }
+
+        // Half-open ([from, to)): matches the task's explicit contract, not the closed-interval
+        // ([from, to]) convention some older filters elsewhere in this module use (e.g.
+        // PersonalDataAccessLogRepository.SearchAsync).
+        if (publishedFromUtc is not null)
+        {
+            query = query.Where(ci => (ci.PublishAtUtc ?? ci.PublishedAtUtc) >= publishedFromUtc.Value);
+        }
+
+        if (publishedToUtc is not null)
+        {
+            query = query.Where(ci => (ci.PublishAtUtc ?? ci.PublishedAtUtc) < publishedToUtc.Value);
+        }
+
+        if (createdFromUtc is not null)
+        {
+            query = query.Where(ci => ci.CreatedAtUtc >= createdFromUtc.Value);
+        }
+
+        if (createdToUtc is not null)
+        {
+            query = query.Where(ci => ci.CreatedAtUtc < createdToUtc.Value);
+        }
+
         var projected = query.Select(ci => new
         {
             ci.Id,
@@ -63,8 +109,13 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
             ci.IsFeatured,
             ci.PublishAtUtc,
             ci.UnpublishAtUtc,
+            ci.CreatedAtUtc,
+            ci.UpdatedAtUtc,
             ci.RowVersion,
             Title = ci.Translations.Where(t => t.LanguageCode == languageCode).Select(t => t.Title).FirstOrDefault(),
+            // Same "effective publish date" SearchPublicListAsync's EffectivePublishDate already
+            // computes - an immediately-published item only ever has PublishedAtUtc set.
+            EffectivePublishAtUtc = ci.PublishAtUtc ?? ci.PublishedAtUtc,
         });
 
         if (requireLanguage)
@@ -77,8 +128,34 @@ public sealed class ContentItemRepository(WebsiteDbContext dbContext) : IContent
             projected = projected.Where(x => x.Title != null && x.Title.Contains(search));
         }
 
-        var paged = await projected
-            .OrderBy(x => x.SortOrder).ThenBy(x => x.Id)
+        // orderBy == null keeps today's default (SortOrder then Id) unchanged; every branch adds its
+        // own deterministic ThenBy(Id) tiebreaker for stable pagination. Nullable sort keys
+        // (UpdatedAtUtc, EffectivePublishAtUtc) always sort null-last via a `== null` primary key,
+        // regardless of direction - the same pattern SearchPublicListAsync's EventDateAsc sort uses.
+        var ordered = (orderBy, direction) switch
+        {
+            (ContentItemSortField.Title, ContentItemSortDirection.Desc) => projected.OrderByDescending(x => x.Title),
+            (ContentItemSortField.Title, _) => projected.OrderBy(x => x.Title),
+            (ContentItemSortField.CreatedAt, ContentItemSortDirection.Desc) => projected.OrderByDescending(x => x.CreatedAtUtc),
+            (ContentItemSortField.CreatedAt, _) => projected.OrderBy(x => x.CreatedAtUtc),
+            (ContentItemSortField.UpdatedAt, ContentItemSortDirection.Desc) =>
+                projected.OrderBy(x => x.UpdatedAtUtc == null).ThenByDescending(x => x.UpdatedAtUtc),
+            (ContentItemSortField.UpdatedAt, _) => projected.OrderBy(x => x.UpdatedAtUtc == null).ThenBy(x => x.UpdatedAtUtc),
+            (ContentItemSortField.PublishAt, ContentItemSortDirection.Desc) =>
+                projected.OrderBy(x => x.EffectivePublishAtUtc == null).ThenByDescending(x => x.EffectivePublishAtUtc),
+            (ContentItemSortField.PublishAt, _) =>
+                projected.OrderBy(x => x.EffectivePublishAtUtc == null).ThenBy(x => x.EffectivePublishAtUtc),
+            (ContentItemSortField.SortOrder, ContentItemSortDirection.Desc) => projected.OrderByDescending(x => x.SortOrder),
+            (ContentItemSortField.SortOrder, _) => projected.OrderBy(x => x.SortOrder),
+            (null, _) => projected.OrderBy(x => x.SortOrder),
+            // Unreachable: GetContentItemsQueryHandler only ever passes a value EnumParsing.TryParseDefined
+            // accepted. The switch is over a public enum (not a closed union), so the compiler still
+            // requires this arm for exhaustiveness.
+            _ => throw new ArgumentOutOfRangeException(nameof(orderBy), orderBy, "Unrecognized content item sort field."),
+        };
+
+        var paged = await ordered
+            .ThenBy(x => x.Id)
             .ToPagedResultAsync(pagedRequest, cancellationToken);
 
         var items = paged.Items
