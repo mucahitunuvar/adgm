@@ -78,6 +78,7 @@ using GenclikMerkezi.Modules.Website.Features.ExportEventRegistrations;
 using GenclikMerkezi.Modules.Website.Features.ExportNewsletterSubscribers;
 using GenclikMerkezi.Modules.Website.Features.GetBlockTypes;
 using GenclikMerkezi.Modules.Website.Features.GetContentCategoriesByType;
+using GenclikMerkezi.Modules.Website.Features.GetContentCategoryById;
 using GenclikMerkezi.Modules.Website.Features.GetCookieConsentSummary;
 using GenclikMerkezi.Modules.Website.Features.GetEventRegistrationById;
 using GenclikMerkezi.Modules.Website.Features.GetEventRegistrations;
@@ -354,6 +355,7 @@ public static class WebsiteModuleEndpointExtensions
         DeactivateContentCategoryEndpoint.Map(app);
         DeleteContentCategoryEndpoint.Map(app);
         GetContentCategoriesByTypeEndpoint.Map(app);
+        GetContentCategoryByIdEndpoint.Map(app);
 
         GetTagsEndpoint.Map(app);
         UpdateTagEndpoint.Map(app);

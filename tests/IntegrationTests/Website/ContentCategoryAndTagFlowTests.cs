@@ -10,6 +10,7 @@ using GenclikMerkezi.Modules.Website.Features.CreateContentType;
 using GenclikMerkezi.Modules.Website.Features.DeactivateContentCategory;
 using GenclikMerkezi.Modules.Website.Features.DeleteContentCategoryTranslation;
 using GenclikMerkezi.Modules.Website.Features.GetContentCategoriesByType;
+using GenclikMerkezi.Modules.Website.Features.GetContentCategoryById;
 using GenclikMerkezi.Modules.Website.Features.GetContentItemById;
 using GenclikMerkezi.Modules.Website.Features.GetContentTypes;
 using GenclikMerkezi.Modules.Website.Features.GetTags;
@@ -152,6 +153,93 @@ public class ContentCategoryAndTagFlowTests : IClassFixture<CustomWebApplication
         Assert.Equal(rootName, rootNode.Name);
         Assert.Equal(1, rootNode.AssignedContentCount);
         Assert.Single(rootNode.Children, c => c.Name == childName);
+    }
+
+    [Fact]
+    public async Task GetCategoryById_ReturnsFullTranslationsSeoAndParent()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var newsTypeId = await GetContentTypeIdByKeyAsync(accessToken, "news");
+        var rootName = $"Kök-{Guid.NewGuid():N}";
+        var root = await CreateCategoryAsync(accessToken, newsTypeId, name: rootName);
+        var childName = $"Alt-{Guid.NewGuid():N}";
+        var child = await CreateCategoryAsync(accessToken, newsTypeId, root.Id, childName);
+
+        // Fill in the translation's SEO fields the way the admin UI would before reading it back,
+        // mirroring exactly what PUT .../translations/{languageCode} requires as input (Görev 2's
+        // whole point: the frontend cannot prefill that form without a GET that returns this seo
+        // object).
+        var seo = new UpdateContentCategoryTranslationSeoInput(
+            "Alt Kategori Başlığı", "Açıklama", "anahtar,kelime", "OG Başlık", "OG Açıklama", null, "https://example.org/alt", true);
+        var childRowVersion = (await GetCategoryTreeAsync(accessToken, newsTypeId)).Single(c => c.Id == root.Id).Children.Single(c => c.Id == child.Id).RowVersion;
+        var updateResponse = await _client.SendAsync(Authorized(
+            HttpMethod.Put, $"/api/v1/admin/website/content-types/{newsTypeId}/categories/{child.Id}/translations/tr", accessToken,
+            new UpdateContentCategoryTranslationRequest(childRowVersion, childName, "alt-kategori-slug", seo)));
+        Assert.Equal(HttpStatusCode.NoContent, updateResponse.StatusCode);
+
+        var response = await _client.SendAsync(
+            Authorized(HttpMethod.Get, $"/api/v1/admin/website/content-types/{newsTypeId}/categories/{child.Id}", accessToken));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<ContentCategoryDetailResponse>();
+        Assert.Equal(child.Id, body!.Id);
+        Assert.Equal(newsTypeId, body.ContentTypeId);
+        Assert.Equal(root.Id, body.ParentId);
+        Assert.True(body.IsActive);
+        Assert.NotEmpty(body.RowVersion);
+
+        var trTranslation = Assert.Single(body.Translations, t => t.LanguageCode == "tr");
+        Assert.Equal(childName, trTranslation.Name);
+        Assert.Equal("alt-kategori-slug", trTranslation.Slug);
+        Assert.Equal("Alt Kategori Başlığı", trTranslation.Seo.MetaTitle);
+        Assert.Equal("https://example.org/alt", trTranslation.Seo.CanonicalUrl);
+        Assert.True(trTranslation.Seo.NoIndex);
+    }
+
+    [Fact]
+    public async Task GetCategoryById_ForUnknownId_ReturnsNotFound()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var newsTypeId = await GetContentTypeIdByKeyAsync(accessToken, "news");
+
+        var response = await _client.SendAsync(
+            Authorized(HttpMethod.Get, $"/api/v1/admin/website/content-types/{newsTypeId}/categories/{Guid.NewGuid()}", accessToken));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCategoryById_WithCategoryFromAnotherType_ReturnsNotFound()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var newsTypeId = await GetContentTypeIdByKeyAsync(accessToken, "news");
+        var teamTypeId = await GetContentTypeIdByKeyAsync(accessToken, "team");
+        var teamCategory = await CreateCategoryAsync(accessToken, teamTypeId, name: $"Ekip-{Guid.NewGuid():N}");
+
+        var response = await _client.SendAsync(
+            Authorized(HttpMethod.Get, $"/api/v1/admin/website/content-types/{newsTypeId}/categories/{teamCategory.Id}", accessToken));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCategoryById_AsNonAdmin_ReturnsForbidden()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var newsTypeId = await GetContentTypeIdByKeyAsync(accessToken, "news");
+        var category = await CreateCategoryAsync(accessToken, newsTypeId, name: $"Kategori-{Guid.NewGuid():N}");
+
+        var email = $"aday-{Guid.NewGuid():N}@example.com";
+        await _client.PostAsJsonAsync(
+            "/api/v1/auth/register",
+            new { email, password = "Sifre123", firstName = "Test", lastName = "User", role = "Candidate" });
+        var loginResponse = await _client.PostAsJsonAsync("/api/v1/auth/login", new { email, password = "Sifre123" });
+        var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+
+        var response = await _client.SendAsync(
+            Authorized(HttpMethod.Get, $"/api/v1/admin/website/content-types/{newsTypeId}/categories/{category.Id}", login!.AccessToken));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]
