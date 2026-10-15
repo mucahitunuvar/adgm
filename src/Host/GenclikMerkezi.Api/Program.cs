@@ -187,11 +187,19 @@ builder.Services.AddMessaging<IdentityDbContext>(builder.Configuration, builder.
 
 // The "Testing" environment (integration tests) shares a single in-process host across many
 // requests from multiple test cases; the production limits would cause unrelated test failures.
-// PublicReadPermitLimit is additionally configuration-driven (rather than a plain ternary like the
-// other two) so a dedicated test can override just this one policy's limit to something small and
-// deterministic (e.g. to prove X-Forwarded-For partitioning) without touching the shared "Testing"
-// default every other integration test relies on.
-var credentialEndpointPermitLimit = isTestingEnvironment ? 1000 : 5;
+// PublicReadPermitLimit is additionally configuration-driven (rather than a plain ternary like
+// authenticatedEndpointPermitLimit) so a dedicated test can override just this one policy's limit to
+// something small and deterministic (e.g. to prove X-Forwarded-For partitioning) without touching
+// the shared "Testing" default every other integration test relies on.
+//
+// credentialEndpointPermitLimit is configuration-driven for the same reason, plus a second one:
+// appsettings.Development.json raises it (GÖREV B) so Playwright's e2e suite - which runs against a
+// real "Development" host, not "Testing" - doesn't share the 5/min production budget across every
+// e2e spec that touches login/register/password-reset. Production has no appsettings.Production.json
+// override, so it keeps today's 5/min default; "Testing" is untouched since the ternary default
+// already gives it 1000/min and no appsettings.Testing.json exists to override it either.
+var credentialEndpointPermitLimit = builder.Configuration.GetValue(
+    "RateLimiting:AuthPermitLimit", isTestingEnvironment ? 1000 : 5);
 var authenticatedEndpointPermitLimit = isTestingEnvironment ? 1000 : 60;
 var publicReadEndpointPermitLimit = builder.Configuration.GetValue(
     "RateLimiting:PublicReadPermitLimit", isTestingEnvironment ? 1000 : 300);

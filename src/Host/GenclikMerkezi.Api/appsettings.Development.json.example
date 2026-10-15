@@ -19,5 +19,8 @@
       "TurnstileSecretKey": "your-cloudflare-turnstile-secret-key",
       "AllowedHostnames": ["your-website-domain.com"]
     }
+  },
+  "RateLimiting": {
+    "AuthPermitLimit": 1000
   }
 }
