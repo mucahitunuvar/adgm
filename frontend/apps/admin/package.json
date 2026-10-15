@@ -17,6 +17,7 @@
     "@gm/api-client": "workspace:*",
     "@gm/auth": "workspace:*",
     "@gm/design-tokens": "workspace:*",
+    "@gm/rich-text": "workspace:*",
     "@gm/ui": "workspace:*",
     "@tanstack/react-query": "5.104.2",
     "lucide-react": "1.57.0",

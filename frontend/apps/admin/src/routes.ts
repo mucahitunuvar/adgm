@@ -19,4 +19,7 @@ export const ROUTES = {
   websiteContentTypes: '/site-yonetimi/icerik-tipleri',
   websiteContentTypeDetail: (contentTypeId: string) => `/site-yonetimi/icerik-tipleri/${contentTypeId}`,
   websiteTags: '/site-yonetimi/etiketler',
+  websiteMedia: '/site-yonetimi/medya',
+  websiteContentItems: '/site-yonetimi/icerikler',
+  websiteContentItemDetail: (contentItemId: string) => `/site-yonetimi/icerikler/${contentItemId}`,
 } as const;

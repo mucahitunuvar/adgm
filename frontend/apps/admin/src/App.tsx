@@ -1,6 +1,7 @@
 import { AuthProvider, ProtectedRoute } from '@gm/auth';
-import { ToastProvider } from '@gm/ui';
+import { LoadingState, ToastProvider } from '@gm/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AdminShell } from './AdminShell';
 import { AccountPage } from './features/account/AccountPage';
@@ -17,11 +18,17 @@ import { UsersListPage } from './features/users/UsersListPage';
 import { ContentTypeDetailPage } from './features/website/contentTypes/ContentTypeDetailPage';
 import { ContentTypesListPage } from './features/website/contentTypes/ContentTypesListPage';
 import { LanguagesPage } from './features/website/languages/LanguagesPage';
+import { MediaLibraryPage } from './features/media/MediaLibraryPage';
 import { SettingsPage } from './features/website/settings/SettingsPage';
 import { TagsListPage } from './features/website/tags/TagsListPage';
+import { ContentItemsListPage } from './features/website/contentItems/ContentItemsListPage';
 import { ROUTES } from './routes';
 
 const queryClient = new QueryClient();
+
+// A11 §1: zengin metin düzenleyici (@gm/rich-text, Tiptap/ProseMirror) ağırlıklıdır - panelin ilk
+// yüküne eklenmez, yalnız bu sayfaya girildiğinde ayrı bir parça (chunk) olarak indirilir.
+const ContentItemDetailPage = lazy(() => import('./features/website/contentItems/ContentItemDetailPage'));
 
 export function App() {
   return (
@@ -53,6 +60,16 @@ export function App() {
                     <Route path={ROUTES.websiteContentTypes} element={<ContentTypesListPage />} />
                     <Route path="/site-yonetimi/icerik-tipleri/:contentTypeId" element={<ContentTypeDetailPage />} />
                     <Route path={ROUTES.websiteTags} element={<TagsListPage />} />
+                    <Route path={ROUTES.websiteMedia} element={<MediaLibraryPage />} />
+                    <Route path={ROUTES.websiteContentItems} element={<ContentItemsListPage />} />
+                    <Route
+                      path="/site-yonetimi/icerikler/:contentItemId"
+                      element={
+                        <Suspense fallback={<LoadingState />}>
+                          <ContentItemDetailPage />
+                        </Suspense>
+                      }
+                    />
                   </Route>
                 </Route>
               </Route>

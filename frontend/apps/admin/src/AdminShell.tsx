@@ -1,7 +1,7 @@
 import { resendVerificationEmail } from '@gm/api-client';
 import { useAuth } from '@gm/auth';
 import { Brand, Button, useToast } from '@gm/ui';
-import { Globe, LayoutDashboard, LayoutTemplate, ScrollText, Settings, Tag, User, Users } from 'lucide-react';
+import { FileText, Globe, Image, LayoutDashboard, LayoutTemplate, ScrollText, Settings, Tag, User, Users } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { ROUTES } from './routes';
@@ -46,6 +46,8 @@ export function AdminShell() {
           { to: ROUTES.websiteSettings, label: 'Site ayarları', icon: Settings },
           { to: ROUTES.websiteLanguages, label: 'Diller', icon: Globe },
           { to: ROUTES.websiteContentTypes, label: 'İçerik tipleri', icon: LayoutTemplate },
+          { to: ROUTES.websiteContentItems, label: 'İçerikler', icon: FileText },
+          { to: ROUTES.websiteMedia, label: 'Medya kütüphanesi', icon: Image },
           { to: ROUTES.websiteTags, label: 'Etiketler', icon: Tag },
         ]
       : []),

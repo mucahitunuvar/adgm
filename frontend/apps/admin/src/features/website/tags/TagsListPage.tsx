@@ -121,14 +121,14 @@ export function TagsListPage() {
       {data && <Pagination page={page} pageSize={PAGE_SIZE} totalCount={Number(data.totalCount)} onPageChange={setPage} />}
 
       <EditTagDialog
-        key={editingTag?.id ?? 'none'}
+        key={`editing-${editingTag?.id ?? 'none'}`}
         tag={editingTag}
         isSubmitting={updateMutation.isPending}
         onConfirm={(name) => editingTag && updateMutation.mutate({ id: editingTag.id, name })}
         onCancel={() => setEditingTag(null)}
       />
       <MergeTagDialog
-        key={mergingTag?.id ?? 'none'}
+        key={`merging-${mergingTag?.id ?? 'none'}`}
         sourceTag={mergingTag}
         isSubmitting={mergeMutation.isPending}
         onConfirm={(targetId) => mergingTag && mergeMutation.mutate({ sourceId: mergingTag.id, targetId })}

@@ -17,6 +17,7 @@ import {
 } from '@gm/ui';
 import { useMutation } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
+import { MediaPickerField } from '../../media/MediaPickerField';
 import { mergeTranslations } from '../mergeTranslations';
 
 type Translation = UpdateSiteSettingsIdentityTranslationInput;
@@ -100,40 +101,33 @@ export function IdentitySettingsForm({
   return (
     <form onSubmit={handleSubmit}>
       <UnsavedChangesGuard isDirty={isDirty} />
-      <FormSection
-        title="Logo ve görseller"
-        description="Medya kütüphanesi (Dilim 2a-2) eklenene kadar mevcut bir medya varlığının kimliği (UUID) elle yapıştırılır."
-      >
+      <FormSection title="Logo ve görseller" description="Medya kütüphanesinden seçilir; serbest URL girilmez.">
         <FieldRow>
-          <TextField
-            id="identity-logo-light"
-            label="Açık tema logosu (medya kimliği)"
+          <MediaPickerField
+            label="Açık tema logosu"
             value={mediaIds.logoLightMediaAssetId}
-            onChange={(event) => setMediaIds((prev) => ({ ...prev, logoLightMediaAssetId: event.target.value }))}
-            hint={settings.logoLightUrl ?? 'Henüz ayarlanmamış.'}
+            previewUrl={settings.logoLightUrl}
+            onChange={(id) => setMediaIds((prev) => ({ ...prev, logoLightMediaAssetId: id }))}
           />
-          <TextField
-            id="identity-logo-dark"
-            label="Koyu tema logosu (medya kimliği)"
+          <MediaPickerField
+            label="Koyu tema logosu"
             value={mediaIds.logoDarkMediaAssetId}
-            onChange={(event) => setMediaIds((prev) => ({ ...prev, logoDarkMediaAssetId: event.target.value }))}
-            hint={settings.logoDarkUrl ?? 'Henüz ayarlanmamış.'}
+            previewUrl={settings.logoDarkUrl}
+            onChange={(id) => setMediaIds((prev) => ({ ...prev, logoDarkMediaAssetId: id }))}
           />
         </FieldRow>
         <FieldRow>
-          <TextField
-            id="identity-favicon"
-            label="Favicon (medya kimliği)"
+          <MediaPickerField
+            label="Favicon"
             value={mediaIds.faviconMediaAssetId}
-            onChange={(event) => setMediaIds((prev) => ({ ...prev, faviconMediaAssetId: event.target.value }))}
-            hint={settings.faviconUrl ?? 'Henüz ayarlanmamış.'}
+            previewUrl={settings.faviconUrl}
+            onChange={(id) => setMediaIds((prev) => ({ ...prev, faviconMediaAssetId: id }))}
           />
-          <TextField
-            id="identity-og-image"
-            label="Varsayılan paylaşım görseli (medya kimliği)"
+          <MediaPickerField
+            label="Varsayılan paylaşım görseli"
             value={mediaIds.defaultOgImageMediaId}
-            onChange={(event) => setMediaIds((prev) => ({ ...prev, defaultOgImageMediaId: event.target.value }))}
-            hint={settings.defaultOgImageUrl ?? 'Henüz ayarlanmamış.'}
+            previewUrl={settings.defaultOgImageUrl}
+            onChange={(id) => setMediaIds((prev) => ({ ...prev, defaultOgImageMediaId: id }))}
           />
         </FieldRow>
       </FormSection>
