@@ -1,0 +1,61 @@
+# Açık Maddeler (güncel liste)
+
+Her faz sonunda güncellenir. Kapanan madde silinmez, "Kapandı: tarih, karar" olarak işaretlenir.
+
+## A. Karar bekleyenler
+
+| # | Konu | Durum / öneri |
+|---|---|---|
+| A1 | Glass efekti: istiyor musunuz? | Varsayılan kapalı (yalnız sticky header bulanıklığı). İstenirse token olarak eklenir. |
+| A2 | Kalıcı oturum modeli | Ertelendi (K-07). **Faz 1 sonu güncellemesi (14 Ekim):** admin panelini gerçek backend'e karşı uçtan uca test ettim (bkz. `e2e/admin-auth.spec.ts`) — bellek modeli beklendiği gibi çalışıyor, ama `F5`/sayfa yenileme veya yanlışlıkla sekme kapatma oturumu anında sıfırlıyor; Admin/CareerAdvisor günlük kullanımda (çok sekmeli çalışma, uzun form doldurma) bu gerçek bir sürtünme. Önerim değişmedi, teyit ediyorum: access token bellekte, refresh **HttpOnly+Secure+SameSite=Strict** çerez olarak taşınsın; `login`/`refresh-token`/`logout` backend uçları `Set-Cookie` eklesin (gövdede `refreshToken` dönmeyi bırakmasa da olur, geriye dönük uyumluluk tartışılır). Küçük backend değişikliği + CSRF değerlendirmesi (SECURITY.md §26 — çerez state-changing isteklerde taşınacağı için `SameSite=Strict` + özel bir CSRF token/header kombinasyonu önerilir) + `FRONTEND-GUVENLIK.md` §2 güncellemesi gerekir. Bu değişikliğin kapsamı Identity modülünde (backend) + `packages/auth`'ta (frontend) sınırlı; diğer ekranlara yayılmaz (K-07'nin amacı buydu). |
+| A3 | Gerçek logo ve kurumsal kimlik | Gelene kadar `Brand` yer tutucusu; renk/tipografi bundan etkilenmez (tokenlar değişir, bileşen yapısı kalır). |
+| A4 | Windows servis sarmalayıcı (Next standalone) | WinSW mi NSSM mi; Turhost paket tipi (düz Windows Server doğrulandı) kesinleşince Faz 7'de. |
+| A5 | Stok fotoğraf kaynağı ve lisansı, görsel slot oranları | Demodaki 2 fotoğrafın lisansı belirsiz; geçici. Yüz içeren görsellerde izin takibi. |
+| A6 | GA4 ölçüm kimliği ve nereden verileceği | Yönetimden mi (`ThirdPartyScript`) ortam değişkeninden mi. |
+| A7 | Turnstile site anahtarı ve ortamlar | Yalnız **site** anahtarı frontend'e girer; gizli anahtar backend'de. |
+| A8 | `manager` / `systemAdministrator` ayrımı | **Kapandı (14 Ekim, Faz 0):** backend'de yok; `Admin` altında birleşir. Bkz. K-08. |
+| A9 | Geliştirmede ilk Admin kullanıcısı | **Kapandı (14 Ekim, Faz 1 başı):** Backend'de otomatik yol yok (register Candidate/Employer'a kapalı, rol yükseltme Admin ister, CreateStaffUser'ın ucu yok). Kullanıcı onayıyla LocalDB'ye bir defaya mahsus doğrudan satır eklendi. Kimlik bilgisi ve detay: `docs/DEVELOPMENT.md` §44.1. Kalıcı çözüm (bootstrap/migration seed) hâlâ açık. |
+| A10 | Aday portalı başvuru adresi | Public "Başvur" bağlantısı hangi portal yoluna gider; ilana başvuru backend'de açık iş (aşağıda B1). |
+| A11 | Zengin metin düzenleyici | Lisans MIT/Apache, backend sanitizer ile uyumlu çıktı. Faz 2'de ayrı karar; CKEditor/TinyMCE hariç tutuldu. |
+| A12 | Hata izleme (Sentry vb.) | Sağlayıcı dışarıya veri aktarır (SECURITY.md §12.2); Faz 7'de karar. Şimdilik yok. |
+
+## B. Backend'de doğrulanacak / eksik görünenler
+Bulursan frontend'de çözmeye çalışma; ilgili ekranı yapma, buraya yaz.
+
+1. **İlana başvuru** (aday → ilan) ucu OpenAPI'de görünmüyor (devir özetinde açık iş).
+2. Demodaki **fırsatlar / "ilgileniyorum" sinyali**, **teklifler**, **bildirimler**, **KVKK veri talepleri (silme/erişim/düzeltme)** ekranlarının uçları görünmüyor. (Not: `Notification` modülünün public uçları yok.)
+3. İlan listesinde anahtar kelime (`q`) filtresi var mı (`GET /public/jobs`).
+4. Faaliyet Raporları için içeriğe dosya eki + public yanıtta dosya listesi; Dökümanlar için kategorili public liste.
+5. Rakamlar şeridi (`impact-metrics`) public yanıtta/blokta nasıl geliyor.
+6. Rezerve slug listesi (`api`, `admin`, `portal`, ...).
+7. Kapanmış ilan için public davranış (404/410).
+8. Bakım modunda 503 + `Retry-After`.
+9. **Rate limit ve tek IP:** Next sunucusu SSR isteklerini tek IP'den yapar; `public-read` limitleri bundan etkilenir mi, `X-Forwarded-For` güveniliyor mu (SECURITY.md §23.1). Gerekirse backend'de güvenilir proxy ayarı.
+10. Medya/yükleme URL biçimi ve `srcset` için hangi boyut varyantları var; `i.ytimg.com` kararı (SECURITY.md §23.3) CSP'ye yansır.
+11. `GET /public/site` içinde çerez/ThirdPartyScript bilgisi ve GA4 kimliği.
+12. `GET /auth/me` yanıtı: rol(ler), yetkiler, kapsam (danışman kapsamı) bilgisi.
+13. Employer public jobs, aday portalı için aday-tarafı ilan listesi (`GET /jobs` ile public liste farkı).
+14. Önceki açık işler (devir özeti): robots.txt koşulu, mülakat planlama bildirimi, hatırlatma/erteleme, Interview/Employment/Matching ADR'leri, Faz 4 mimari testi.
+
+15. **OpenAPI yanıt şemaları eksik (Faz 0 bulgusu, ENGEL):** 425 yanıtın 378'i `content` şeması tanımlamıyor; özellikle **Identity/Auth ve tüm Website** (`/public/site`, `/public/home`, `/auth/login`, `/auth/me`, tüm `/admin/website/*`). Candidate/Employer/Job/CareerAdvisor/ReferenceData düzgün tipli. Sonuç: bu uçlar için `schema.d.ts` `unknown` üretir, K-05 (tipler yalnız OpenAPI'den) işlemez. **Güncelleme (Görev 1 sonrası):** Identity tamamlandı. Ölçüm, diğer modüllerin de eksik olduğunu gösterdi: CareerAdvisor 7/7, ReferenceData 63/88, Candidate 24/29, Employer 23/31 şemasız (önceki tespitteki "düzgün tipli" ifadesi yanlıştı). Dilimler faz önkoşuludur (bkz. OPENAPI prompt, güncelleme bölümü). Çözüm backend'de: `.Produces<T>()` ve `.ProducesProblem(...)` eklemek ve regresyonu önleyen mimari test. Prompt: `docs/frontend/FRONTEND-OPENAPI-PRODUCES-PROMPT.md`. Sıra: Görev 1 (Identity) Faz 1'den önce; Görev 2 (Website public) Faz 3'ten önce; Görev 3 (Website admin) Faz 2'den önce.
+16. **Upload yolu:** `next.config` içindeki `/uploads/:path*` yönlendirmesi varsayımsal; gerçek medya URL biçimini yanıtlardan ve `webuploads` yapılandırmasından doğrula (madde 10 ile birlikte).
+17. **Reverse proxy güveni (madde 9'a kısmi yanıt):** backend'de `ReverseProxySettings` + `UseForwardedHeaders` var; açıkken yalnız listelenen adreslerden gelen `X-Forwarded-For` kabul edilir. Next sunucusunun (SSR) ve IIS'in adresi geliştirme/üretim yapılandırmasına eklenmeli; Faz 3'te doğrulanır.
+18. **Migration geçmişi uyuşmazlığı (Faz 0 raporu):** `Notification` veritabanındaki `__EFMigrationsHistory` kaydı depodaki migration adıyla uyuşmuyordu; yerel veritabanında satır elle düzeltilmiş. Migration daha önce yeniden adlandırıldıysa ve başka bir ortamda (test/canlı) eski adla uygulanmışsa `database update` orada çakışır. Kontrol: migration dosyasının git geçmişi ve diğer ortamlardaki geçmiş tablosu. (Frontend işi değil, backend takibi.)
+
+19. **Personel (staff) kullanıcısı oluşturma ucu yok:** `CreateStaffUser` komutunun HTTP endpoint'i yok (seed/iç kullanım olabilir). Admin panelinden CareerAdvisor/Admin hesabı açılamaz. Faz 1 kullanıcı yönetimi yalnız mevcut kullanıcıları yönetir; personel ekleme ekranı için backend ucu gerekir (A9 ile birlikte karara bağlanacak).
+20. **Gövdesiz hata yanıtları:** 401/403/429 ASP.NET middleware'inden **boş gövdeli** döner (ProblemDetails değil); 400/404/409 `application/problem+json`. `api-client` ikisini de ele almalı. 422 backend'de kullanılmıyor.
+21. **Testleri çalıştırırken dev sunucusunu kapat:** Görev 1'de çalışan bir dev API örneği LocalDB'yi paylaştığı için IntegrationTests ara sıra ilgisiz testlerde düştü (baseline'da da). Test koşusundan önce `dotnet run`/`pnpm dev` kapatılmalı.
+22. **CORS/baseUrl hatası (Faz 0'dan, Faz 1'de bulundu ve admin'de düzeltildi):** `apps/admin/src/App.tsx` `AuthProvider`'a `baseUrl` olarak `VITE_BACKEND_ORIGIN` (`http://localhost:5016`) veriyordu — bu, tarayıcıdan backend'e **doğrudan çapraz origin** istek anlamına gelir ve backend CORS yapılandırmadığı için `fetch` sessizce başarısız olur (gerçek tarayıcıda e2e ile yakalandı; curl bunu gizler). Doğrusu `window.location.origin` (aynı origin, Vite `server.proxy`/IIS üzerinden) — admin'de düzeltildi. **`apps/candidate` ve `apps/employer` aynı hataya sahip, henüz düzeltilmedi** (Faz 1 kapsamı yalnız admin); bu uygulamaların fazlarında ilk iş bu olmalı.
+23. **Koyu temada rozet kontrastı (Faz 0'dan, Faz 1'de bulundu ve düzeltildi):** `packages/design-tokens` koyu temada `.status--info/success/warning/danger` arka planları açık/pastel tonlardır, ama metin her zaman beyazdı → axe `color-contrast` ihlali (1.97:1, gereken 4.5:1). `--status-fg` token'ı eklenip (açık temada beyaz, koyu temada `#071f32`) `.status--*` kuralları buna geçirildi. `scripts/check-contrast.mjs` bu çifti (rozet arka planı + rozet metni) hiç test etmiyordu, yalnız anlamlı renklerin sayfa arka planına karşı kontrastını ölçüyor — betiğin kapsamında bir boşluk, Faz 1'de düzeltilmedi.
+24. **`e2e/` klasörü `pnpm lint` kapsamında değil:** kök `lint` betiği `pnpm -r run lint` olup her paketin kendi `eslint src` betiğini çalıştırır; `e2e/` hiçbir paketin `src/`si içinde değil, bu yüzden hiç lint'lenmiyor (Faz 0'dan). `eslint.config.js`'teki test-dosyası muafiyeti bu yüzden `e2e/**/*.ts` için de tanımlı ama pratikte hiç tetiklenmiyordu. Faz 1 bunu (storage muafiyetini `no-restricted-syntax`'a da genişleterek) düzeltti, ama `e2e/`'yi gerçekten lint akışına bağlamadı — ayrı bir iş.
+25. **`createdAtUtc` bazen "Z" imleci olmadan gelir:** `GET /api/v1/auth/me` yanıtında `createdAtUtc` gözlemlendi (`"2026-10-14T09:54:41.520819"`, UTC ofset imleci yok). `Date` bunu yerel saat sanır. `packages/ui/formatDateTime` savunmacı olarak imleç yoksa ekliyor; ama diğer tüm `*Utc` alanları için de aynı risk var — ileride yeni bir ekran bu alanlardan birini elle `new Date(...)`'e verirse aynı hataya düşer. Tek kural: tarih gösterimi her zaman `formatDateTime` üzerinden.
+26. **Parola değiştirince diğer oturumlar/cihazlar invalide olmuyor:** `ChangePasswordCommandHandler` mevcut access/refresh token'ları iptal etmiyor; aynı oturum parola değişiminden sonra da geçerli kalıyor (bkz. `ChangePasswordForm.tsx` yorumu). Bu bir güvenlik ödünleşimi olabilir (örn. "diğer tüm oturumları sonlandır" seçeneği yok) — Faz 1 yalnız gözlemledi, davranışı değiştirmedi.
+27. **Hesap kilidi 423 değil 403 ile gelir:** `LoginCommandHandler`, kilitli hesap için `Error.Forbidden("Auth.AccountLocked", ...)` kullanır (HTTP 403), 423 Locked değil. `FRONTEND-GUVENLIK.md`/Faz 1 prompt'u "423/429" diye anıyordu; gerçek davranış farklı. `getAuthErrorMessage` bunu `title`'a göre (`Auth.AccountLocked`) eşler, durum koduna göre değil.
+
+## C. Bilinen riskler
+- Bellek tabanlı oturum (K-07) yenilemede girişi sıfırlar: panelde sık giriş. Kabul edilen geçici ödünleşim.
+- Demo panel sayfaları ince; panel ekranlarının çoğu sıfırdan yazılır (README beklenti notu). Backend’de yaklaşık 290 yol var; Website CMS tek başına yaklaşık 145 yoldur (HTTP yöntemleriyle daha fazla uç); Faz 2 en büyük iş paketidir ve dilimlenmiştir.
+- Faz 0 sonrası durum: dört uygulama gerçek backend'den veri çekiyor, 22 birim testi, 15 e2e testi, kontrast betiği yeşil. Panel kabuklarında nav bağlantıları, var olmayan rota üretmemek için kaldırıldı; ekranlarla birlikte eklenecek.
+- Faz 1 sonrası durum: `apps/admin` kimlik + yönetim kabuğunu tamamladı (58 birim/bileşen testi, 17 e2e testi — gerçek backend + gerçek dev Admin'e karşı tam akış dahil —, `pnpm typecheck/lint/test/build` ve `pnpm audit` yeşil). `apps/candidate`/`apps/employer` hâlâ Faz 0 durumunda (madde 22'deki CORS/baseUrl hatası orada düzeltilmedi).
+- Poppins + Manrope Türkçe karakter alt kümeleri (latin-ext) doğru yüklenmezse İ/ı/ş bozulur; Faz 0 görsel testiyle doğrulanır.
+- Next.js Windows'ta servis olarak çalışacak; IIS ARR yapılandırması (WebSocket yok, yalnız HTTP) Faz 7'de denenir.
