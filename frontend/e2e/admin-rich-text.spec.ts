@@ -105,9 +105,13 @@ test.describe('admin: zengin metin editörü (A11, Tiptap) - gerçek backend', (
     await page.getByRole('button', { name: 'Yeni içerik' }).click();
 
     const title = `E2E İçerik ${Date.now()}`;
-    await page.getByLabel('İçerik tipi').selectOption({ index: 1 });
-    await page.getByLabel('Başlık (varsayılan dil)').fill(title);
-    await page.getByRole('button', { name: 'Oluştur' }).click();
+    // Liste sayfasının filtre çubuğu da "İçerik tipi" etiketli bir alan taşıyor (Dilim 2a-2 sonrası
+    // ek görev, bkz. FRONTEND-ACIK-MADDELER.md madde 32) - `getByLabel` ikisini de bulup strict mode
+    // violation ile düşerdi; diyalogla sınırlanmış seçici yalnız diyaloğun kendi zorunlu alanını bulur.
+    const createDialog = page.getByRole('dialog');
+    await createDialog.getByLabel('İçerik tipi').selectOption({ index: 1 });
+    await createDialog.getByLabel('Başlık (varsayılan dil)').fill(title);
+    await createDialog.getByRole('button', { name: 'Oluştur' }).click();
 
     await expect(page).toHaveURL(/\/site-yonetimi\/icerikler\/[0-9a-fA-F-]{36}$/);
     // Rota React.lazy ile ayrı bir parça (chunk) olarak yüklenir (A11 §1); axe taramasından önce
@@ -126,7 +130,10 @@ test.describe('admin: zengin metin editörü (A11, Tiptap) - gerçek backend', (
     await page.getByRole('button', { name: 'Başlık 2' }).click();
     await page.keyboard.type('Bir başlık');
 
-    await page.getByRole('button', { name: 'Kaydet' }).click();
+    // "Kaydet" artık tek değil: her dil sekmesinin kendi kaydet düğmesi var, ayrıca "Etiketleri
+    // kaydet" de aynı adı taşımıyor ama alt dizge eşlemesiyle eşleşebilir - aktif ("Türkçe") sekme
+    // paneliyle sınırlanmış, TAM eşleşen düğme seçiliyor.
+    await page.getByRole('tabpanel', { name: 'Türkçe' }).getByRole('button', { name: 'Kaydet', exact: true }).click();
     await expect(page.getByText('İçerik kaydedildi.').last()).toBeVisible();
 
     expect(sentBody).toBeDefined();

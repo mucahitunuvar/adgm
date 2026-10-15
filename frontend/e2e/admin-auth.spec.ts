@@ -62,13 +62,16 @@ test.describe('admin: giriş akışı ve yönetim (gerçek backend)', () => {
     await page.getByRole('button', { name: 'Rolü değiştir' }).click();
     await page.getByLabel('Yeni rol').selectOption('CareerAdvisor');
     await page.getByRole('button', { name: 'Rolü güncelle' }).click();
-    await expect(page.getByText('Kullanıcının rolü güncellendi.')).toBeVisible();
+    // Bildirimler 5 sn sonra kendiliğinden kapanır ve üst üste yığılabilir (bkz. diğer spec'lerdeki
+    // aynı not) - her zaman en sonuncusuna bakılır, aksi halde ikinci rol değişikliğinde iki bildirim
+    // aynı anda DOM'da olup "strict mode violation" ile düşer (madde 30'da kayıtlı, 15 Ekim'de kapandı).
+    await expect(page.getByText('Kullanıcının rolü güncellendi.').last()).toBeVisible();
     await expect(page.getByText('Kariyer danışmanı', { exact: true }).first()).toBeVisible();
 
     await page.getByRole('button', { name: 'Rolü değiştir' }).click();
     await page.getByLabel('Yeni rol').selectOption('Candidate');
     await page.getByRole('button', { name: 'Rolü güncelle' }).click();
-    await expect(page.getByText('Kullanıcının rolü güncellendi.')).toBeVisible();
+    await expect(page.getByText('Kullanıcının rolü güncellendi.').last()).toBeVisible();
     await expect(page.getByText('Aday', { exact: true }).first()).toBeVisible();
 
     // Denetim kaydı: bu kullanıcı için en az bir RoleChanged (üye adı "RoleChanged",
