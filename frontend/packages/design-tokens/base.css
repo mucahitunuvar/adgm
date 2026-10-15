@@ -199,6 +199,14 @@ h3 { font-size: var(--text-h3-size); line-height: var(--text-h3-line); }
 .tree-list__row { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
 .tree-list__empty { color: var(--color-text-secondary); }
 
+/* Sıralanabilir liste (menü/slider/rakamlar/blok sırası) - sürükle-bırak yok, yukarı/aşağı düğmeleri */
+.reorder-list__items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.reorder-list__item { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.reorder-list__content { flex: 1; min-width: 0; }
+.reorder-list__controls { display: flex; gap: var(--space-2); flex-shrink: 0; }
+.reorder-list__button { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: inherit; cursor: pointer; }
+.reorder-list__button:disabled { opacity: .4; cursor: not-allowed; }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {

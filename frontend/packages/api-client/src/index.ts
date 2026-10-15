@@ -219,6 +219,41 @@ export {
   type PagedResultOfVideoSummaryResponse,
   type ListVideosParams,
 } from './adminWebsiteVideos';
+export {
+  getMenus,
+  getMenuByLocation,
+  replaceMenuItems,
+  type MenuResponse,
+  type MenuItemResponse,
+  type MenuItemTranslationResponse,
+  type MenuItemLinkResponse,
+  type MenuItemTreeInput,
+  type MenuItemTranslationInput,
+  type MenuItemLinkInput,
+  type ReplaceMenuItemsRequest,
+} from './adminWebsiteMenus';
+export {
+  getSliders,
+  getSliderById,
+  createSlider,
+  updateSlider,
+  deleteSlider,
+  replaceSlides,
+  type SliderSummaryResponse,
+  type SliderDetailResponse,
+  type SlideResponse,
+  type SlideLinkResponse,
+  type SliderTranslationResponse,
+  type SlideTranslationResponse,
+  type CreateSliderRequest,
+  type CreateSliderResponse,
+  type UpdateSliderRequest,
+  type SliderTranslationInput,
+  type ReplaceSlidesRequest,
+  type SlideInput,
+  type SlideLinkInput,
+  type SlideTranslationInput,
+} from './adminWebsiteSliders';
 export type { paths, operations, components } from './schema';
 export * from './enums.generated';
 export { parseEnum } from './parseEnum';

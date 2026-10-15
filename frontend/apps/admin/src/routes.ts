@@ -23,4 +23,11 @@ export const ROUTES = {
   websiteContentItems: '/site-yonetimi/icerikler',
   websiteContentItemDetail: (contentItemId: string) => `/site-yonetimi/icerikler/${contentItemId}`,
   websiteContentTrash: '/site-yonetimi/icerikler/cop-kutusu',
+  websiteMenus: '/site-yonetimi/menuler',
+  websiteSliders: '/site-yonetimi/slider',
+  websiteSliderDetail: (sliderId: string) => `/site-yonetimi/slider/${sliderId}`,
+  websiteImpactMetrics: '/site-yonetimi/rakamlar',
+  websitePopups: '/site-yonetimi/popup',
+  websitePopupDetail: (popupId: string) => `/site-yonetimi/popup/${popupId}`,
+  websiteHomeLayout: '/site-yonetimi/ana-sayfa-duzeni',
 } as const;
