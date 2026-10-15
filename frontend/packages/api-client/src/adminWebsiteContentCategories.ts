@@ -2,6 +2,7 @@ import type { ApiClient } from './client';
 import type { components } from './schema';
 
 export type ContentCategoryTreeItemResponse = components['schemas']['ContentCategoryTreeItemResponse'];
+export type ContentCategoryDetailResponse = components['schemas']['ContentCategoryDetailResponse'];
 export type CreateContentCategoryRequest = components['schemas']['CreateContentCategoryRequest'];
 export type CreateContentCategoryResponse = components['schemas']['CreateContentCategoryResponse'];
 export type UpdateContentCategoryRequest = components['schemas']['UpdateContentCategoryRequest'];
@@ -18,6 +19,11 @@ function basePath(typeId: string): string {
 /** `GET .../categories`. Ağaç olarak döner (üst/alt yapı backend'de çözülmüş). */
 export function getContentCategoriesByType(client: ApiClient, typeId: string): Promise<ContentCategoryTreeItemResponse[]> {
   return client.request(basePath(typeId));
+}
+
+/** `GET .../categories/{id}`. Çeviri/SEO alanlarını (ad/slug + tam SEO kümesi) okur. */
+export function getContentCategoryById(client: ApiClient, typeId: string, id: string): Promise<ContentCategoryDetailResponse> {
+  return client.request(`${basePath(typeId)}/${encodeURIComponent(id)}`);
 }
 
 export function createContentCategory(
