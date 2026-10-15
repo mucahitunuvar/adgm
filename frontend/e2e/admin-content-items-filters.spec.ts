@@ -60,10 +60,12 @@ async function createItem(
 
 async function deleteItem(request: APIRequestContext, headers: Record<string, string>, id: string): Promise<void> {
   const detailResponse = await request.get(`${BACKEND_URL}/api/v1/admin/website/contents/${id}`, { headers });
-  if (!detailResponse.ok()) return;
+  expect(detailResponse.ok()).toBe(true);
   const detail = (await detailResponse.json()) as { rowVersion: string };
-  await request.delete(`${BACKEND_URL}/api/v1/admin/website/contents/${id}`, { headers, data: { rowVersion: detail.rowVersion } });
-  await request.delete(`${BACKEND_URL}/api/v1/admin/website/trash/${id}`, { headers });
+  const deleteResponse = await request.delete(`${BACKEND_URL}/api/v1/admin/website/contents/${id}`, { headers, data: { rowVersion: detail.rowVersion } });
+  expect(deleteResponse.status()).toBe(204);
+  const trashDeleteResponse = await request.delete(`${BACKEND_URL}/api/v1/admin/website/trash/${id}`, { headers });
+  expect(trashDeleteResponse.status()).toBe(204);
 }
 
 test.describe.configure({ mode: 'serial' });

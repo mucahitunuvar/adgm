@@ -30,6 +30,26 @@ async function expectNoAxeViolations(page: Page) {
 test.describe.configure({ mode: 'serial' });
 
 test.describe('admin: zengin metin editörü (A11, Tiptap) - gerçek backend', () => {
+  // İkinci test (editörle oluşturma) bu id'yi doldurur; afterEach test başarısız olsa da temizler.
+  let editorContentItemId: string | undefined;
+
+  test.afterEach(async ({ request }) => {
+    if (!editorContentItemId) return;
+    const token = await loginForApiToken(request);
+    const headers = { Authorization: `Bearer ${token}` };
+    const detailResponse = await request.get(`${BACKEND_URL}/api/v1/admin/website/contents/${editorContentItemId}`, { headers });
+    expect(detailResponse.ok()).toBe(true);
+    const detail = (await detailResponse.json()) as { rowVersion: string };
+    const deleteResponse = await request.delete(`${BACKEND_URL}/api/v1/admin/website/contents/${editorContentItemId}`, {
+      headers,
+      data: { rowVersion: detail.rowVersion },
+    });
+    expect(deleteResponse.status()).toBe(204);
+    const trashDeleteResponse = await request.delete(`${BACKEND_URL}/api/v1/admin/website/trash/${editorContentItemId}`, { headers });
+    expect(trashDeleteResponse.status()).toBe(204);
+    editorContentItemId = undefined;
+  });
+
   test('backende doğrudan gönderilen XSS yükleri sanitize edilir, editör hiç devrede değil', async ({ request }) => {
     const token = await loginForApiToken(request);
     const headers = { Authorization: `Bearer ${token}` };
@@ -78,10 +98,13 @@ test.describe('admin: zengin metin editörü (A11, Tiptap) - gerçek backend', (
     }
 
     // Test verisini temizle - içerik tiplerinin aksine içeriklerin gerçek bir silme ucu var.
-    await request.delete(`${BACKEND_URL}/api/v1/admin/website/contents/${created.id}`, {
+    const deleteResponse = await request.delete(`${BACKEND_URL}/api/v1/admin/website/contents/${created.id}`, {
       headers,
       data: { rowVersion: detail.rowVersion },
     });
+    expect(deleteResponse.status()).toBe(204);
+    const trashDeleteResponse = await request.delete(`${BACKEND_URL}/api/v1/admin/website/trash/${created.id}`, { headers });
+    expect(trashDeleteResponse.status()).toBe(204);
   });
 
   test('editörle yazılan içerik kaydedilir; editörün gönderdiği HTML ile backendin döndürdüğü arasındaki fark raporlanır', async ({ page }) => {
@@ -114,6 +137,7 @@ test.describe('admin: zengin metin editörü (A11, Tiptap) - gerçek backend', (
     await createDialog.getByRole('button', { name: 'Oluştur' }).click();
 
     await expect(page).toHaveURL(/\/site-yonetimi\/icerikler\/[0-9a-fA-F-]{36}$/);
+    editorContentItemId = page.url().match(/([0-9a-fA-F-]{36})$/)?.[1];
     // Rota React.lazy ile ayrı bir parça (chunk) olarak yüklenir (A11 §1); axe taramasından önce
     // Suspense yer tutucusunun (h1 içermez) kapanıp gerçek sayfa başlığının göründüğünden emin ol.
     await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
