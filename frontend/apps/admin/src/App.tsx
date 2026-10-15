@@ -26,6 +26,9 @@ import { ContentTrashPage } from './features/website/contentItems/ContentTrashPa
 import { MenusPage } from './features/website/menus/MenusPage';
 import { SlidersListPage } from './features/website/sliders/SlidersListPage';
 import { SliderDetailPage } from './features/website/sliders/SliderDetailPage';
+import { ImpactMetricsPage } from './features/website/impactMetrics/ImpactMetricsPage';
+import { PopupsListPage } from './features/website/popups/PopupsListPage';
+import { PopupDetailPage } from './features/website/popups/PopupDetailPage';
 import { ROUTES } from './routes';
 
 const queryClient = new QueryClient();
@@ -70,6 +73,9 @@ export function App() {
                     <Route path={ROUTES.websiteMenus} element={<MenusPage />} />
                     <Route path={ROUTES.websiteSliders} element={<SlidersListPage />} />
                     <Route path="/site-yonetimi/slider/:id" element={<SliderDetailPage />} />
+                    <Route path={ROUTES.websiteImpactMetrics} element={<ImpactMetricsPage />} />
+                    <Route path={ROUTES.websitePopups} element={<PopupsListPage />} />
+                    <Route path="/site-yonetimi/popup/:id" element={<PopupDetailPage />} />
                     <Route
                       path="/site-yonetimi/icerikler/:contentItemId"
                       element={
