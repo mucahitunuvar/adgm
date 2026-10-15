@@ -22,6 +22,8 @@
   <ItemGroup>
     <!-- EnumContractTests.cs: docs/api/enums.v1.json'un çalışan kopyası. -->
     <Content Include="..\..\docs\api\enums.v1.json" Link="TestData\enums.v1.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- HtmlWhitelistContractTests.cs: docs/api/html-whitelist.v1.json'un çalışan kopyası. -->
+    <Content Include="..\..\docs\api\html-whitelist.v1.json" Link="TestData\html-whitelist.v1.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

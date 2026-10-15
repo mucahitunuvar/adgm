@@ -6,10 +6,11 @@ using Microsoft.Extensions.Options;
 
 namespace GenclikMerkezi.Modules.Website.Infrastructure.Sanitization;
 
-// ADR-024 §16 (Görev 3): the whitelist policy lives in exactly this one place, built on a
-// HtmlSanitizerOptions instance whose collections are cleared before use, so nothing from the
-// library's own (much broader) defaults leaks in by accident - every allowed tag/attribute/scheme
-// below is a deliberate choice, not an inherited one.
+// ADR-024 §16 (Görev 3): the whitelist policy is built on a HtmlSanitizerOptions instance whose
+// collections are cleared before use, so nothing from the library's own (much broader) defaults
+// leaks in by accident - every allowed tag/attribute/scheme comes from HtmlWhitelistPolicy, a
+// deliberate choice, not an inherited one. HtmlWhitelistPolicy is the single source those values
+// are read from (both here and by the docs/api/html-whitelist.v1.json contract test).
 //
 // img/src and iframe/src need stricter rules than HtmlSanitizer's built-in scheme whitelist can
 // express on its own (a's href and img's src would otherwise have to share one global AllowedSchemes
@@ -17,19 +18,14 @@ namespace GenclikMerkezi.Modules.Website.Infrastructure.Sanitization;
 // directly against the raw attribute string in PostProcessNode instead of via AllowedSchemes.
 public sealed class HtmlSanitizerContentSanitizer : IHtmlContentSanitizer
 {
-    private const string YouTubeNoCookieHost = "www.youtube-nocookie.com";
-    private const string YouTubeNoCookieEmbedPathPrefix = "/embed/";
-
     // Tags the whitelist deliberately excludes (div/span/section/article/font - never had semantic
     // meaning worth preserving) or didn't add every level of (h1/h5/h6 - only h2-h4 made AllowedTags)
     // but whose CONTENT is still safe once their own attributes have gone through the same
     // sanitization pass as everything else. Unwrapped, not removed with their content - unlike
     // script/style/noscript/template/object/embed/form/svg/math/disallowed-iframe, which stay fully
     // removed (see OnRemovingTag remarks).
-    private static readonly HashSet<string> UnwrappableTags = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "div", "span", "section", "article", "font", "h1", "h5", "h6",
-    };
+    private static readonly HashSet<string> UnwrappableTags =
+        new(HtmlWhitelistPolicy.UnwrappableTags, StringComparer.OrdinalIgnoreCase);
 
     private readonly HtmlSanitizer _sanitizer;
     private readonly string _publicMediaRootPrefix;
@@ -55,17 +51,13 @@ public sealed class HtmlSanitizerContentSanitizer : IHtmlContentSanitizer
         options.AllowedCssProperties.Clear();
         options.UriAttributes.Clear();
 
-        options.AllowedTags.UnionWith(
-        [
-            "p", "br", "strong", "b", "em", "i", "u", "s", "h2", "h3", "h4", "ul", "ol", "li", "blockquote",
-            "a", "img", "figure", "figcaption", "table", "thead", "tbody", "tr", "th", "td", "hr", "iframe",
-        ]);
-        options.AllowedAttributes.UnionWith(["href", "title", "target", "src", "alt", "width", "height"]);
+        options.AllowedTags.UnionWith(HtmlWhitelistPolicy.AllowedTags);
+        options.AllowedAttributes.UnionWith(HtmlWhitelistPolicy.AllowedAttributes);
 
         // Only href goes through the library's own scheme check - relative hrefs (in-site links)
         // pass through unrestricted, absolute ones are limited to these four schemes. img/iframe src
         // are deliberately NOT registered here (see class remarks) and validated below instead.
-        options.AllowedSchemes.UnionWith(["http", "https", "mailto", "tel"]);
+        options.AllowedSchemes.UnionWith(HtmlWhitelistPolicy.AllowedHrefSchemes);
         options.UriAttributes.Add("href");
 
         // KeepChildNodes stays at its default (false): a disallowed tag is removed together with its
@@ -137,8 +129,10 @@ public sealed class HtmlSanitizerContentSanitizer : IHtmlContentSanitizer
 
         if (anchor.Target == "_blank")
         {
-            anchor.RelationList.Add("noopener");
-            anchor.RelationList.Add("noreferrer");
+            foreach (var relValue in HtmlWhitelistPolicy.RelValuesOnBlankTarget)
+            {
+                anchor.RelationList.Add(relValue);
+            }
         }
     }
 
@@ -194,17 +188,12 @@ public sealed class HtmlSanitizerContentSanitizer : IHtmlContentSanitizer
     // installation ever generates (ADR-019's "{category}/{yyyy}/{MM}/{dd}/{guid}.{ext}"), so their
     // presence only ever means someone hand-crafted the value.
     private static bool ContainsPathTraversal(string path) =>
-        path.Contains("..", StringComparison.Ordinal)
-        || path.Contains('\\')
-        || path.Contains('?')
-        || path.Contains('#')
-        || path.Contains("%2e", StringComparison.OrdinalIgnoreCase)
-        || path.Contains("%2f", StringComparison.OrdinalIgnoreCase)
-        || path.Contains("%5c", StringComparison.OrdinalIgnoreCase);
+        HtmlWhitelistPolicy.ImageSourcePathTraversalTokens.Any(
+            token => path.Contains(token, StringComparison.OrdinalIgnoreCase));
 
     private static bool IsAllowedIframeSource(string? src) =>
         Uri.TryCreate(src, UriKind.Absolute, out var uri)
         && uri.Scheme == Uri.UriSchemeHttps
-        && string.Equals(uri.Host, YouTubeNoCookieHost, StringComparison.OrdinalIgnoreCase)
-        && uri.AbsolutePath.StartsWith(YouTubeNoCookieEmbedPathPrefix, StringComparison.Ordinal);
+        && string.Equals(uri.Host, HtmlWhitelistPolicy.AllowedIframeHost, StringComparison.OrdinalIgnoreCase)
+        && uri.AbsolutePath.StartsWith(HtmlWhitelistPolicy.AllowedIframeEmbedPathPrefix, StringComparison.Ordinal);
 }
