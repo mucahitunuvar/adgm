@@ -57,13 +57,17 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     const token = options.getAccessToken?.();
     const headers: Record<string, string> = {};
     if (token) headers.Authorization = `Bearer ${token}`;
-    if (init.body !== undefined) headers['Content-Type'] = 'application/json';
+    // FormData gövdesi için Content-Type elle verilmez - tarayıcı/fetch kendi multipart
+    // sınır (boundary) değerini üretip ekler; biz üretirsek sınır eksik kalır ve backend
+    // gövdeyi ayrıştıramaz (ör. UploadMediaAssetEndpoint'in IFormFile bağlaması).
+    const isFormData = init.body instanceof FormData;
+    if (init.body !== undefined && !isFormData) headers['Content-Type'] = 'application/json';
     if (init.idempotencyKey) headers['Idempotency-Key'] = init.idempotencyKey;
 
     const fetchInit: FetchInitWithNext = {
       method: init.method ?? 'GET',
       headers,
-      body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+      body: init.body === undefined ? undefined : isFormData ? (init.body as FormData) : JSON.stringify(init.body),
       signal: init.signal,
       cache: init.cache,
     };

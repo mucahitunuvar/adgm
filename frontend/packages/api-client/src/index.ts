@@ -120,6 +120,37 @@ export {
   type UpdateTagRequest,
   type ListTagsParams,
 } from './adminWebsiteTags';
+export {
+  getMediaAssets,
+  getMediaAssetById,
+  getMediaAssetFolders,
+  uploadMediaAsset,
+  updateMediaAsset,
+  deleteMediaAsset,
+  type MediaAssetSummaryResponse,
+  type PagedResultOfMediaAssetSummaryResponse,
+  type MediaAssetDetailResponse,
+  type GetMediaAssetFoldersResponse,
+  type UploadMediaAssetResponse,
+  type UpdateMediaAssetRequest,
+  type ListMediaAssetsParams,
+  type UploadMediaAssetParams,
+} from './adminWebsiteMedia';
+export {
+  getContentItems,
+  getContentItemById,
+  createContentItem,
+  updateContentItemTranslation,
+  type ContentItemSummaryResponse,
+  type PagedResultOfContentItemSummaryResponse,
+  type ContentItemDetailResponse,
+  type ContentItemTranslationResponse,
+  type ContentItemSeoResponse,
+  type CreateContentItemRequest,
+  type CreateContentItemResponse,
+  type UpdateContentItemTranslationRequest,
+  type ListContentItemsParams,
+} from './adminWebsiteContentItems';
 export type { paths, operations, components } from './schema';
 export * from './enums.generated';
 export { parseEnum } from './parseEnum';

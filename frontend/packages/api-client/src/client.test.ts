@@ -74,4 +74,17 @@ describe('createApiClient', () => {
     await expect(client.request('/foo')).rejects.toBeInstanceOf(ApiError);
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
+
+  it('sends a FormData body as-is, without JSON.stringify or a manual Content-Type', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(201, { id: '1' }));
+    const client = createApiClient({ baseUrl: 'http://api.test', fetchImpl });
+    const formData = new FormData();
+    formData.set('file', new File(['x'], 'x.png'));
+
+    await client.request('/foo', { method: 'POST', body: formData });
+
+    const [, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
+    expect(init.body).toBe(formData);
+    expect((init.headers as Record<string, string>)['Content-Type']).toBeUndefined();
+  });
 });
