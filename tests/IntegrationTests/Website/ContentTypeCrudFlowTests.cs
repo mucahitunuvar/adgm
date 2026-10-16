@@ -160,12 +160,19 @@ public class ContentTypeCrudFlowTests : IClassFixture<CustomWebApplicationFactor
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [Fact]
-    public async Task CreateContentType_WithReservedRoutePrefix_ReturnsConflict()
+    // "giris"/"uye-ol"/"ilanlar"/"newsletter" are apps/web's own hardcoded pages (Faz 3 Koşu 1,
+    // ReservedRouteSegments.StaticSegments); "admin" is the pre-existing static infra segment.
+    [Theory]
+    [InlineData("admin")]
+    [InlineData("giris")]
+    [InlineData("uye-ol")]
+    [InlineData("ilanlar")]
+    [InlineData("newsletter")]
+    public async Task CreateContentType_WithReservedRoutePrefix_ReturnsConflict(string reservedPrefix)
     {
         var accessToken = await LoginAsAdminAsync();
         var key = $"test-{Guid.NewGuid():N}"[..20];
-        var request = NewTypeRequest(key, routePrefix: "admin");
+        var request = NewTypeRequest(key, routePrefix: reservedPrefix);
 
         var response = await _client.SendAsync(Authorized(HttpMethod.Post, "/api/v1/admin/website/content-types", accessToken, request));
 
