@@ -11,6 +11,12 @@ export {
 export { resolveRoute, type RouteResolutionResponse } from './publicRoutes';
 export { createCookieConsentRecord, type CreateCookieConsentRecordRequest } from './publicCookieConsent';
 export {
+  listPublicJobs,
+  type ListPublicJobsParams,
+  type PublicJobListItemResponse,
+  type PagedResultOfPublicJobListItemResponse,
+} from './publicJobs';
+export {
   login,
   refreshAccessToken,
   logout,

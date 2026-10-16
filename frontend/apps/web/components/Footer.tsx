@@ -1,6 +1,7 @@
 import { Brand, safeUrl } from '@gm/ui';
 import type { PublicSiteResponse } from '@gm/api-client';
 import { CookiePreferencesButton } from './CookiePreferencesButton';
+import { NewsletterSection } from './NewsletterSection';
 
 /**
  * FRONTEND-FAZ3-MASTER-PROMPT.md §2B: 4 kolon + alt şerit. Backend `Footer` menüsünü grup
@@ -15,6 +16,9 @@ export function Footer({ site }: { site: PublicSiteResponse }) {
 
   return (
     <footer className="site-footer">
+      <div className="container">
+        <NewsletterSection enabled={site.newsletterEnabled} />
+      </div>
       <div className="container site-footer__grid">
         <div className="site-footer__brand">
           <Brand />

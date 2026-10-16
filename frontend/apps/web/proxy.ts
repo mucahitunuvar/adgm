@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getMaintenanceStatus } from './lib/maintenanceFlag';
 import { renderMaintenancePageHtml } from './lib/maintenancePage';
+import { mediaOrigin } from './lib/mediaOrigin';
 
 const backendOrigin = process.env.BACKEND_ORIGIN ?? 'http://localhost:5016';
-const mediaOrigin = process.env.NEXT_PUBLIC_MEDIA_ORIGIN ?? backendOrigin;
 const MAINTENANCE_RETRY_AFTER_SECONDS = 300;
 
 // Bu önekler Next'in `rewrites()`'i (next.config.ts) aracılığıyla doğrudan backend'e gider; backend
@@ -51,7 +51,10 @@ export async function proxy(request: NextRequest) {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}'${isProd ? '' : " 'unsafe-eval'"} https://challenges.cloudflare.com`,
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: ${mediaOrigin}`,
+    // FRONTEND-ACIK-MADDELER.md madde 10 / SECURITY.md §23.3: video-feature bloğunun
+    // `thumbnailUrl`'u backend tarafından i.ytimg.com'a hotlink ediliyor (canlı doğrulandı,
+    // Koşu 2C) - CSP bunu açıkça izin vermeli, aksi halde küçük resim sessizce engellenir.
+    `img-src 'self' data: ${mediaOrigin} https://i.ytimg.com`,
     "font-src 'self'",
     "connect-src 'self'",
     "frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com",

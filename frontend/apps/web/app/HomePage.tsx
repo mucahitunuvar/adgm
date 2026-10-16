@@ -1,14 +1,14 @@
 import { getPublicHome } from '@gm/api-client';
 import { createServerApiClient } from '../lib/apiClient';
+import { getSite } from '../lib/getSite';
+import { renderHomeBlocks } from '../components/blocks/BlockRegistry';
+import { NewsletterSection } from '../components/NewsletterSection';
+import { PopupHost } from '../components/PopupHost';
 
-/**
- * Koşu 1 kararı: blok registry'si 15 tipin tamamını render eder (bu dosya Koşu 2C'de genişler).
- * Şimdilik (Koşu 2A) yalnız altyapının uçtan uca çalıştığını gösteren, gerçek veriyle çalışan
- * ama henüz tasarlanmamış bir çıktı - mock veri yok, blok listesi gerçek `GET /public/home`'dan.
- */
+/** Ana sayfa - blok registry'si `GET /public/home`'un yayındaki bloklarını render eder (Koşu 2C). */
 export async function HomePage() {
   const client = createServerApiClient();
-  const home = await getPublicHome(client);
+  const [home, site] = await Promise.all([getPublicHome(client), getSite()]);
 
   if (home.blocks.length === 0) {
     return (
@@ -20,13 +20,14 @@ export async function HomePage() {
   }
 
   return (
-    <main className="container section">
-      <p className="eyebrow">Ana sayfa (Koşu 2C'de tasarlanacak)</p>
-      <ul>
-        {home.blocks.map((block, index) => (
-          <li key={`${block.type}-${index}`}>{block.type}</li>
-        ))}
-      </ul>
+    <main>
+      {renderHomeBlocks(home.blocks, { publicJobListingsEnabled: site.publicJobListingsEnabled })}
+      {site.newsletterEnabled && (
+        <div className="container section">
+          <NewsletterSection enabled={site.newsletterEnabled} />
+        </div>
+      )}
+      <PopupHost popups={site.popups} />
     </main>
   );
 }

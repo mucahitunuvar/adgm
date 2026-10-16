@@ -17,7 +17,9 @@
     "@gm/api-client": "workspace:*",
     "@gm/design-tokens": "workspace:*",
     "@gm/ui": "workspace:*",
+    "embla-carousel-react": "8.6.0",
     "lucide-react": "1.57.0",
+    "motion": "12.23.24",
     "next": "16.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
