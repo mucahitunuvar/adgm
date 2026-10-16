@@ -43,6 +43,14 @@ public static class ReferenceDataModuleEndpointExtensions
         // ADMIN-MANAGED, bespoke shape (ProvinceId - does not implement ILookupItemFactory<TaxOffice>).
         TaxOfficeEndpoints.Map(app);
 
+        // PUBLIC (madde 39, Faz 3 Koşu 3C): narrow id+name sets for anonymous /public/jobs filter
+        // dropdowns - only the 5 lookup types that query needs, not the whole catalog.
+        PublicLookupEndpoints.Map(app, "provinces", ReferenceDataLookupType.Province);
+        PublicLookupEndpoints.Map(app, "positions", ReferenceDataLookupType.Position);
+        PublicLookupEndpoints.Map(app, "departments", ReferenceDataLookupType.Department);
+        PublicLookupEndpoints.Map(app, "employment-types", ReferenceDataLookupType.EmploymentType);
+        PublicLookupEndpoints.Map(app, "work-location-types", ReferenceDataLookupType.WorkLocationType);
+
         return app;
     }
 }
