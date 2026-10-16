@@ -5701,6 +5701,70 @@ export interface components {
             /** Format: byte */
             rowVersion: string;
         };
+        ContentPreviewAttachmentResponse: {
+            url: string;
+            name: string;
+            extension: string;
+            /** Format: int64 */
+            sizeInBytes: number | string;
+        };
+        ContentPreviewGalleryItemResponse: {
+            /** Format: uuid */
+            mediaAssetId: string;
+            image: components["schemas"]["ContentPreviewImageResponse"];
+            altText: string;
+            caption: string;
+        };
+        ContentPreviewImageResponse: {
+            small: null | string;
+            medium: null | string;
+            large: null | string;
+            original: string;
+        };
+        ContentPreviewRelatedItemResponse: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            summary: string;
+            coverImageUrl: null | string;
+        };
+        ContentPreviewResponse: {
+            /** Format: uuid */
+            id: string;
+            contentTypeKey: string;
+            detailTemplate: string;
+            title: string;
+            summary: string;
+            body: string;
+            coverImage: null | components["schemas"]["ContentPreviewImageResponse"];
+            detailImage: null | components["schemas"]["ContentPreviewImageResponse"];
+            gallery: components["schemas"]["ContentPreviewGalleryItemResponse"][];
+            videos: components["schemas"]["ContentPreviewVideoResponse"][];
+            attachments: components["schemas"]["ContentPreviewAttachmentResponse"][];
+            categories: string[];
+            tags: string[];
+            related: components["schemas"]["ContentPreviewRelatedItemResponse"][];
+            seo: components["schemas"]["ContentPreviewSeoResponse"];
+            blocks: null | components["schemas"]["PublicLayoutBlockResponse"][];
+        };
+        ContentPreviewSeoResponse: {
+            metaTitle: string;
+            metaDescription: string;
+            ogTitle: string;
+            ogDescription: string;
+            ogImageUrl: null | string;
+            canonicalUrl: string;
+            noIndex: boolean;
+        };
+        ContentPreviewVideoResponse: {
+            /** Format: uuid */
+            videoId: string;
+            youTubeVideoId: string;
+            embedUrl: string;
+            youTubeThumbnailUrl: string;
+            title: string;
+            description: null | string;
+        };
         ContentTypeDetailResponse: {
             /** Format: uuid */
             id: string;
@@ -6878,8 +6942,48 @@ export interface components {
         GetMediaAssetFoldersResponse: {
             folders: string[];
         };
+        GetPublicCompanyProfileResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            sectorName: null | string;
+            provinceName: null | string;
+            /** Format: int32 */
+            foundedYear: null | number | string;
+            /** Format: int32 */
+            employeeCount: null | number | string;
+            websiteUrl: null | string;
+            aboutHtml: null | string;
+            hasLogo: boolean;
+            /** Format: int32 */
+            publishedJobCount: number | string;
+        };
+        GetPublicJobDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            title: string;
+            company: components["schemas"]["PublicJobCompanyResponse"];
+            provinceName: null | string;
+            employmentTypeName: null | string;
+            workLocationTypeName: null | string;
+            positionName: null | string;
+            departmentName: null | string;
+            isForDisabledCandidates: boolean;
+            /** Format: date-time */
+            publishedAtUtc: string;
+            descriptionHtml: null | string;
+            experienceLevelName: null | string;
+            educationLevelNames: string[];
+            drivingLicenseNames: string[];
+            militaryStatusPreferenceNames: string[];
+            languageRequirements: components["schemas"]["PublicJobLanguageRequirementResponse"][];
+        };
         GetSiteLanguagesResponse: {
             items: components["schemas"]["SiteLanguageResponse"][];
+        };
+        GetSubmissionTokenResponse: {
+            token: string;
         };
         /** Format: binary */
         IFormFile: string;
@@ -7404,6 +7508,71 @@ export interface components {
             hasNextPage?: boolean;
             hasPreviousPage?: boolean;
         };
+        PagedResultOfPublicContentListItemResponse: {
+            items: components["schemas"]["PublicContentListItemResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasNextPage?: boolean;
+            hasPreviousPage?: boolean;
+        };
+        PagedResultOfPublicEventListItemResponse: {
+            items: components["schemas"]["PublicEventListItemResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasNextPage?: boolean;
+            hasPreviousPage?: boolean;
+        };
+        PagedResultOfPublicJobListItemResponse: {
+            items: components["schemas"]["PublicJobListItemResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasNextPage?: boolean;
+            hasPreviousPage?: boolean;
+        };
+        PagedResultOfPublicSearchResultItemResponse: {
+            items: components["schemas"]["PublicSearchResultItemResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasNextPage?: boolean;
+            hasPreviousPage?: boolean;
+        };
+        PagedResultOfPublicVideoResponse: {
+            items: components["schemas"]["PublicVideoResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasNextPage?: boolean;
+            hasPreviousPage?: boolean;
+        };
         PagedResultOfRedirectResponse: {
             items: components["schemas"]["RedirectResponse"][];
             /** Format: int32 */
@@ -7634,11 +7803,496 @@ export interface components {
             /** Format: date-time */
             proposedDateTimeUtc: string;
         };
+        PublicBankAccountResponse: {
+            iban: string;
+            bankName: string;
+            accountHolder: string;
+            currency: string;
+            description: null | string;
+            /** Format: int32 */
+            sortOrder: number | string;
+        };
+        PublicContactInfoResponse: {
+            address: string;
+            phone: string;
+            email: string;
+            whatsApp: string;
+            mapEmbedUrl: string;
+        };
+        PublicContentAlternateResponse: {
+            languageCode: string;
+            path: string;
+        };
+        PublicContentAttachmentResponse: {
+            url: string;
+            name: string;
+            extension: string;
+            /** Format: int64 */
+            sizeInBytes: number | string;
+        };
+        PublicContentBreadcrumbItemResponse: {
+            title: string;
+            path: string;
+        };
+        PublicContentCategoryResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            slug: string;
+        };
+        PublicContentCategoryTreeItemResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            slug: string;
+            children: components["schemas"]["PublicContentCategoryTreeItemResponse"][];
+        };
+        PublicContentChildResponse: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            summary: string;
+            path: string;
+            coverImage: null | components["schemas"]["PublicContentDetailImageResponse"];
+        };
+        PublicContentDetailAlternateResponse: {
+            languageCode: string;
+            path: string;
+        };
+        PublicContentDetailAttachmentResponse: {
+            url: string;
+            name: string;
+            extension: string;
+            /** Format: int64 */
+            sizeInBytes: number | string;
+        };
+        PublicContentDetailCategoryResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            slug: string;
+        };
+        PublicContentDetailEventResponse: {
+            /** Format: date-time */
+            startsAtUtc: string;
+            /** Format: date-time */
+            endsAtUtc: string;
+            format: string;
+            venueName: string;
+            isCancelled: boolean;
+            registrationState: string;
+            /** Format: int32 */
+            remainingSpots: null | number | string;
+            venueAddress: string;
+            feeInfo: string;
+            instructors: string;
+            programFlow: string;
+            accessibilityNote: string;
+            /** Format: int32 */
+            minAge: null | number | string;
+            /** Format: int32 */
+            maxAge: null | number | string;
+            /** Format: date-time */
+            registrationOpensAtUtc: null | string;
+            /** Format: date-time */
+            registrationClosesAtUtc: null | string;
+        };
+        PublicContentDetailGalleryItemResponse: {
+            /** Format: uuid */
+            mediaAssetId: string;
+            image: components["schemas"]["PublicContentDetailImageResponse"];
+            altText: string;
+            caption: string;
+        };
+        PublicContentDetailImageResponse: {
+            small: null | string;
+            medium: null | string;
+            large: null | string;
+            original: string;
+        };
+        PublicContentDetailResponse: {
+            /** Format: uuid */
+            id: string;
+            contentTypeKey: string;
+            detailTemplate: string;
+            title: string;
+            summary: string;
+            body: string;
+            path: string;
+            /** Format: date-time */
+            effectivePublishDate: string;
+            /** Format: date-time */
+            updatedAtUtc: null | string;
+            coverImage: null | components["schemas"]["PublicContentDetailImageResponse"];
+            detailImage: null | components["schemas"]["PublicContentDetailImageResponse"];
+            gallery: components["schemas"]["PublicContentDetailGalleryItemResponse"][];
+            videos: components["schemas"]["PublicContentDetailVideoResponse"][];
+            attachments: components["schemas"]["PublicContentDetailAttachmentResponse"][];
+            categories: components["schemas"]["PublicContentDetailCategoryResponse"][];
+            tags: string[];
+            children: components["schemas"]["PublicContentChildResponse"][];
+            related: components["schemas"]["PublicContentRelatedItemResponse"][];
+            breadcrumb: components["schemas"]["PublicContentBreadcrumbItemResponse"][];
+            alternates: components["schemas"]["PublicContentDetailAlternateResponse"][];
+            seo: components["schemas"]["PublicContentDetailSeoResponse"];
+            blocks: null | components["schemas"]["PublicLayoutBlockResponse"][];
+            form: null | components["schemas"]["PublicFormDefinitionResponse"];
+            event: null | components["schemas"]["PublicContentDetailEventResponse"];
+            jsonLd: Record<string, never>[];
+        };
+        PublicContentDetailSeoResponse: {
+            metaTitle: string;
+            metaDescription: string;
+            ogTitle: string;
+            ogDescription: string;
+            ogImageUrl: null | string;
+            canonicalUrl: string;
+            noIndex: boolean;
+        };
+        PublicContentDetailVideoResponse: {
+            /** Format: uuid */
+            videoId: string;
+            youTubeVideoId: string;
+            embedUrl: string;
+            youTubeThumbnailUrl: string;
+            title: string;
+            description: null | string;
+        };
+        PublicContentImageResponse: {
+            small: null | string;
+            medium: null | string;
+            large: null | string;
+            original: string;
+        };
+        PublicContentListItemResponse: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            summary: string;
+            path: null | string;
+            coverImage: null | components["schemas"]["PublicContentImageResponse"];
+            /** Format: date-time */
+            effectivePublishDate: string;
+            isFeatured: boolean;
+            categories: components["schemas"]["PublicContentCategoryResponse"][];
+            body: null | string;
+            detailImage: null | components["schemas"]["PublicContentImageResponse"];
+            attachments: null | components["schemas"]["PublicContentAttachmentResponse"][];
+        };
+        PublicContentListResponse: {
+            contentTypeName: string;
+            listTemplate: string;
+            seo: components["schemas"]["PublicContentSeoResponse"];
+            alternates: components["schemas"]["PublicContentAlternateResponse"][];
+            categories: components["schemas"]["PublicContentCategoryTreeItemResponse"][];
+            selectedCategory: null | components["schemas"]["PublicContentCategoryResponse"];
+            items: components["schemas"]["PagedResultOfPublicContentListItemResponse"];
+            jsonLd: null | Record<string, never>;
+        };
+        PublicContentRelatedItemResponse: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            summary: string;
+            path: string;
+            coverImageUrl: null | string;
+        };
+        PublicContentSeoResponse: {
+            metaTitle: string;
+            metaDescription: string;
+            ogTitle: string;
+            ogDescription: string;
+            ogImageUrl: null | string;
+            canonicalUrl: string;
+            noIndex: boolean;
+        };
+        PublicEventImageResponse: {
+            small: null | string;
+            medium: null | string;
+            large: null | string;
+            original: string;
+        };
+        PublicEventListItemResponse: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            path: string;
+            coverImage: null | components["schemas"]["PublicEventImageResponse"];
+            event: components["schemas"]["PublicEventSummaryResponse"];
+        };
+        PublicEventSummaryResponse: {
+            /** Format: date-time */
+            startsAtUtc: string;
+            /** Format: date-time */
+            endsAtUtc: string;
+            format: string;
+            venueName: string;
+            isCancelled: boolean;
+            registrationState: string;
+            /** Format: int32 */
+            remainingSpots: null | number | string;
+        };
+        PublicFormDefinitionResponse: {
+            key: string;
+            title: string;
+            description: string;
+            submitButtonLabel: string;
+            fields: components["schemas"]["PublicFormFieldResponse"][];
+            privacyNotice: components["schemas"]["PublicFormLegalDocumentReferenceResponse"];
+            explicitConsents: components["schemas"]["PublicFormLegalDocumentReferenceResponse"][];
+        };
+        PublicFormFieldOptionResponse: {
+            key: string;
+            label: string;
+        };
+        PublicFormFieldResponse: {
+            key: string;
+            type: string;
+            label: string;
+            placeholder: null | string;
+            helpText: null | string;
+            isRequired: boolean;
+            /** Format: int32 */
+            minLength: null | number | string;
+            /** Format: int32 */
+            maxLength: null | number | string;
+            options: components["schemas"]["PublicFormFieldOptionResponse"][];
+            /** Format: date-time */
+            dateMin: null | string;
+            /** Format: date-time */
+            dateMax: null | string;
+            allowedFileTypes: string[];
+            /** Format: int32 */
+            maxSizeMb: null | number | string;
+        };
+        PublicFormLegalDocumentReferenceResponse: {
+            key: string;
+            /** Format: int32 */
+            versionNumber: number | string;
+            title: string;
+            isRequired: boolean;
+        };
+        PublicHomeResponse: {
+            blocks: components["schemas"]["PublicLayoutBlockResponse"][];
+            seo: components["schemas"]["PublicHomeSeoResponse"];
+        };
+        PublicHomeSeoResponse: {
+            metaTitle: string;
+            metaDescription: string;
+            ogTitle: string;
+            ogDescription: string;
+            ogImageUrl: null | string;
+            canonicalUrl: string;
+            noIndex: boolean;
+        };
+        PublicJobCompanyResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            hasLogo: boolean;
+        };
+        PublicJobLanguageRequirementResponse: {
+            languageName: null | string;
+            levelName: null | string;
+        };
+        PublicJobListItemResponse: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            title: string;
+            company: components["schemas"]["PublicJobCompanyResponse"];
+            provinceName: null | string;
+            employmentTypeName: null | string;
+            workLocationTypeName: null | string;
+            positionName: null | string;
+            isForDisabledCandidates: boolean;
+            /** Format: date-time */
+            publishedAtUtc: string;
+            summary: string;
+        };
         PublicLayoutBlockResponse: {
             type: string;
             settings: null | components["schemas"]["JsonElement"];
             texts: null | components["schemas"]["JsonElement"];
             data: unknown;
+        };
+        PublicLegalDocumentResponse: {
+            title: string;
+            body: string;
+            /** Format: int32 */
+            versionNumber: number | string;
+            /** Format: date-time */
+            effectiveAtUtc: string;
+        };
+        PublicLegalDocumentVersionResponse: {
+            title: string;
+            body: string;
+            /** Format: int32 */
+            versionNumber: number | string;
+            /** Format: date-time */
+            effectiveAtUtc: string;
+        };
+        PublicMenuItemResponse: {
+            label: string;
+            href: null | string;
+            openInNewTab: boolean;
+            iconKey: null | string;
+            children: components["schemas"]["PublicMenuItemResponse"][];
+        };
+        PublicMenusResponse: {
+            header: components["schemas"]["PublicMenuItemResponse"][];
+            utility: components["schemas"]["PublicMenuItemResponse"][];
+            footer: components["schemas"]["PublicMenuItemResponse"][];
+        };
+        PublicPartnerLogoResponse: {
+            small: null | string;
+            medium: null | string;
+            large: null | string;
+            original: string;
+        };
+        PublicPartnerResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: null | string;
+            websiteUrl: null | string;
+            logo: components["schemas"]["PublicPartnerLogoResponse"];
+            /** Format: int32 */
+            sortOrder: number | string;
+        };
+        PublicPopupImageResponse: {
+            small: null | string;
+            medium: null | string;
+            large: null | string;
+            original: string;
+        };
+        PublicPopupResponse: {
+            /** Format: uuid */
+            id: string;
+            displayMode: string;
+            title: null | string;
+            body: string;
+            buttonLabel: null | string;
+            href: null | string;
+            image: null | components["schemas"]["PublicPopupImageResponse"];
+            deviceTarget: string;
+            targeting: components["schemas"]["PublicPopupTargetingResponse"];
+            /** Format: int32 */
+            delaySeconds: number | string;
+            frequency: string;
+            /** Format: int32 */
+            frequencyDays: null | number | string;
+            dismissible: boolean;
+            /** Format: int32 */
+            priority: number | string;
+        };
+        PublicPopupTargetingResponse: {
+            kind: string;
+            paths: string[];
+        };
+        PublicSearchResponse: {
+            results: components["schemas"]["PagedResultOfPublicSearchResultItemResponse"];
+            typeCounts: {
+                [key: string]: number | string;
+            };
+        };
+        PublicSearchResultItemResponse: {
+            sourceKey: string;
+            typeKey: string;
+            title: string;
+            summary: string;
+            url: string;
+            /** Format: date-time */
+            publishedAtUtc: string;
+        };
+        PublicSiteCookieCategoryResponse: {
+            category: string;
+            description: string;
+            scripts: components["schemas"]["PublicSiteCookieCategoryScriptResponse"][];
+        };
+        PublicSiteCookieCategoryScriptResponse: {
+            name: string;
+            purpose: string;
+        };
+        PublicSiteCookieConsentResponse: {
+            bannerTitle: string;
+            bannerText: string;
+            categories: components["schemas"]["PublicSiteCookieCategoryResponse"][];
+            policyKey: null | string;
+            /** Format: int32 */
+            policyVersion: null | number | string;
+        };
+        PublicSiteLanguageResponse: {
+            code: string;
+            name: string;
+            isDefault: boolean;
+            /** Format: int32 */
+            sortOrder: number | string;
+        };
+        PublicSiteResponse: {
+            languages: components["schemas"]["PublicSiteLanguageResponse"][];
+            resolvedLanguageCode: string;
+            logoLightUrl: null | string;
+            logoDarkUrl: null | string;
+            faviconUrl: null | string;
+            defaultOgImageUrl: null | string;
+            theme: components["schemas"]["PublicSiteThemeResponse"];
+            contact: components["schemas"]["PublicContactInfoResponse"];
+            socialLinks: components["schemas"]["PublicSocialLinkResponse"][];
+            bankAccounts: components["schemas"]["PublicBankAccountResponse"][];
+            siteName: string;
+            tagline: string;
+            defaultMetaTitle: string;
+            defaultMetaDescription: string;
+            footerText: string;
+            globalSearchEnabled: boolean;
+            newsletterEnabled: boolean;
+            publicJobListingsEnabled: boolean;
+            donationPageEnabled: boolean;
+            maintenanceModeEnabled: boolean;
+            maintenanceMessage: string;
+            turnstileSiteKey: string;
+            menus: components["schemas"]["PublicMenusResponse"];
+            popups: components["schemas"]["PublicPopupResponse"][];
+            cookieConsent: components["schemas"]["PublicSiteCookieConsentResponse"];
+            scripts: components["schemas"]["PublicSiteScriptResponse"][];
+            organization: Record<string, never>;
+        };
+        PublicSiteScriptResponse: {
+            /** Format: uuid */
+            id: string;
+            provider: string;
+            category: string;
+            placement: string;
+            measurementId: null | string;
+            containerId: null | string;
+            pixelId: null | string;
+            src: null | string;
+            async: boolean;
+            defer: boolean;
+        };
+        PublicSiteThemeResponse: {
+            primaryColorHex: string;
+            secondaryColorHex: string;
+            fontFamily: string;
+        };
+        PublicSocialLinkResponse: {
+            platform: string;
+            url: string;
+            /** Format: int32 */
+            sortOrder: number | string;
+        };
+        PublicVideoResponse: {
+            /** Format: uuid */
+            id: string;
+            youTubeVideoId: string;
+            embedUrl: string;
+            youTubeThumbnailUrl: string;
+            coverImage: null | components["schemas"]["VideoCoverImageResponse"];
+            title: string;
+            description: null | string;
+            /** Format: int32 */
+            sortOrder: number | string;
         };
         PublishContentItemRequest: {
             /** Format: byte */
@@ -7801,6 +8455,36 @@ export interface components {
             rowVersion: null | string;
             languageCode: null | string;
             restoreCategories: boolean;
+        };
+        RouteAlternateResponse: {
+            languageCode: string;
+            path: string;
+        };
+        RouteResolutionResponse: {
+            kind: string;
+            languageCode: null | string;
+            /** Format: uuid */
+            contentItemId: null | string;
+            contentTypeKey: null | string;
+            listTemplate: null | string;
+            detailTemplate: null | string;
+            name: null | string;
+            seo: null | components["schemas"]["RouteResolutionSeoResponse"];
+            alternates: null | components["schemas"]["RouteAlternateResponse"][];
+            location: null | string;
+            /** Format: int32 */
+            statusCode: null | number | string;
+        };
+        RouteResolutionSeoResponse: {
+            metaTitle: string;
+            metaDescription: string;
+            metaKeywords: string;
+            ogTitle: string;
+            ogDescription: string;
+            /** Format: uuid */
+            ogImageMediaId: null | string;
+            canonicalUrl: null | string;
+            noIndex: boolean;
         };
         ScheduleContentItemRequest: {
             /** Format: byte */
@@ -8079,6 +8763,10 @@ export interface components {
             id: string;
             platform: string;
             url: string;
+        };
+        SubmitFormSubmissionResponse: {
+            referenceNumber: string;
+            successMessage: string;
         };
         SubscribeToNewsletterRequest: {
             submissionToken: null | string;
@@ -12758,6 +13446,24 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/json": components["schemas"]["GetPublicCompanyProfileResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
@@ -12775,6 +13481,25 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "image/png": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13063,6 +13788,24 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/json": components["schemas"]["PagedResultOfPublicJobListItemResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
@@ -13080,6 +13823,24 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetPublicJobDetailResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -15273,6 +16034,15 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/json": components["schemas"]["PublicSiteResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
@@ -17133,6 +17903,24 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/json": components["schemas"]["ContentPreviewResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
@@ -17162,6 +17950,33 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/json": components["schemas"]["PublicContentListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
@@ -17181,6 +17996,24 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicContentDetailResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -17522,6 +18355,33 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/json": components["schemas"]["PagedResultOfPublicEventListItemResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
@@ -17544,6 +18404,24 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "text/calendar": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
@@ -17563,8 +18441,42 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -17585,8 +18497,33 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -17607,8 +18544,24 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -17629,8 +18582,33 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -18629,6 +19607,15 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/json": components["schemas"]["RouteResolutionResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
@@ -19194,6 +20181,15 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedResultOfPublicVideoResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -21554,6 +22550,15 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/json": components["schemas"]["PublicPartnerResponse"][];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
@@ -23170,6 +24175,15 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/json": components["schemas"]["PublicHomeResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
@@ -23185,6 +24199,15 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetSubmissionTokenResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -23744,6 +24767,24 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/json": components["schemas"]["PublicLegalDocumentResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
@@ -23764,6 +24805,24 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicLegalDocumentVersionResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -24411,6 +25470,24 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/json": components["schemas"]["PublicFormDefinitionResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
@@ -24428,6 +25505,42 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitFormSubmissionResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -24965,8 +26078,42 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -24987,8 +26134,24 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -25009,8 +26172,24 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -25709,8 +26888,42 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -25780,6 +26993,33 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicSearchResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -25910,6 +27150,15 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/xml": string;
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
@@ -25930,6 +27179,24 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/xml": string;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
@@ -25945,6 +27212,15 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
