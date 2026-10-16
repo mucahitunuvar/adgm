@@ -8,6 +8,7 @@ export { LoadingState, EmptyState, ErrorState } from './PageState';
 export { ProgressBar } from './ProgressBar';
 export { Brand } from './Brand';
 export { SafeHtml } from './SafeHtml';
+export { JsonLd } from './JsonLd';
 export { safeUrl } from './safeUrl';
 export { serializeJsonLd } from './serializeJsonLd';
 export { DataTable, type DataTableColumn, type DataTableProps } from './DataTable';

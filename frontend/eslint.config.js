@@ -30,7 +30,7 @@ const restrictedGlobals = [
   ...storageRestrictions,
   {
     selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
-    message: 'dangerouslySetInnerHTML yalnız packages/ui/src/SafeHtml.tsx içinde izinlidir.',
+    message: 'dangerouslySetInnerHTML yalnız packages/ui/src/SafeHtml.tsx (zengin metin) ve JsonLd.tsx (JSON-LD) içinde izinlidir.',
   },
   {
     selector: "MemberExpression[property.name='innerHTML']",
@@ -67,7 +67,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/ui/src/SafeHtml.tsx'],
+    files: ['packages/ui/src/SafeHtml.tsx', 'packages/ui/src/JsonLd.tsx'],
     rules: { 'no-restricted-syntax': 'off' },
   },
   {

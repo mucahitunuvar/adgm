@@ -9,6 +9,7 @@ export {
   type PublicMenuItemResponse,
 } from './publicSite';
 export { resolveRoute, type RouteResolutionResponse } from './publicRoutes';
+export { createCookieConsentRecord, type CreateCookieConsentRecordRequest } from './publicCookieConsent';
 export {
   login,
   refreshAccessToken,
