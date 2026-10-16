@@ -19,9 +19,11 @@ import { VideoFeatureBlock } from './VideoFeatureBlock';
  * Karar (madde 5): registry 15 blok tipinin TAMAMINI render eder, 11 satırlık akışla sınırlı değil.
  * Bilinmeyen tip güvenle atlanır (ADR-024 §8.1). Ardışık iki `process-steps` = sekmeli görünüm
  * (karar madde 2) - bu TEK istisna, burada "önden bakma" ile ele alınır; başka hiçbir blok
- * ikilisi birleştirilmez.
+ * ikilisi birleştirilmez. Blok şekli `Home` ve `Content` hedefleri arasında aynıdır (ADR-024
+ * §8.1); bu yüzden aynı registry Faz 3 Koşu 3'te içerik detay sayfasının `blocks` alanı için de
+ * (`SupportsBlockLayout` türler) kullanılır - isim artık yalnız ana sayfaya özgü değildir.
  */
-export function renderHomeBlocks(
+export function renderLayoutBlocks(
   blocks: readonly PublicLayoutBlockResponse[],
   { publicJobListingsEnabled }: { publicJobListingsEnabled: boolean },
 ): React.ReactNode[] {

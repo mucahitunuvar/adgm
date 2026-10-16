@@ -8,6 +8,7 @@ export { LoadingState, EmptyState, ErrorState } from './PageState';
 export { ProgressBar } from './ProgressBar';
 export { Brand } from './Brand';
 export { SafeHtml } from './SafeHtml';
+export { Breadcrumb, type BreadcrumbItem } from './Breadcrumb';
 export { JsonLd } from './JsonLd';
 export { safeUrl } from './safeUrl';
 export { serializeJsonLd } from './serializeJsonLd';

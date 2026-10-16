@@ -1,7 +1,7 @@
 import { getPublicHome } from '@gm/api-client';
 import { createServerApiClient } from '../lib/apiClient';
 import { getSite } from '../lib/getSite';
-import { renderHomeBlocks } from '../components/blocks/BlockRegistry';
+import { renderLayoutBlocks } from '../components/blocks/BlockRegistry';
 import { NewsletterSection } from '../components/NewsletterSection';
 import { PopupHost } from '../components/PopupHost';
 
@@ -28,7 +28,7 @@ export async function HomePage() {
   return (
     <>
       {pageHeading}
-      {renderHomeBlocks(home.blocks, { publicJobListingsEnabled: site.publicJobListingsEnabled })}
+      {renderLayoutBlocks(home.blocks, { publicJobListingsEnabled: site.publicJobListingsEnabled })}
       {site.newsletterEnabled && (
         <div className="container section">
           <NewsletterSection enabled={site.newsletterEnabled} />

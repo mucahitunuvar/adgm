@@ -1,23 +1,44 @@
+import { headers } from 'next/headers';
 import { notFound, permanentRedirect, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
-import { RouteResolutionKind } from '@gm/api-client';
+import { RouteResolutionKind, getPublicContentById, listPublicContents } from '@gm/api-client';
 import { getPublicHome } from '@gm/api-client';
 import { createServerApiClient } from '../../lib/apiClient';
 import { pathFromSlug, resolvePage } from '../../lib/resolvePage';
-import { metadataFromHomeSeo, metadataFromResolution } from '../../lib/seo';
+import { metadataFromHomeSeo, metadataFromResolution, metadataFromContentDetail, metadataFromContentList } from '../../lib/seo';
 import { HomePage } from '../HomePage';
+import { ContentDetailPage } from '../../components/content/ContentDetailPage';
+import { ContentListPage } from '../../components/content/ContentListPage';
+import { EventListPage } from '../../components/events/EventListPage';
 
 interface CatchAllPageProps {
   params: Promise<{ slug?: string[] }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export async function generateMetadata({ params }: CatchAllPageProps): Promise<Metadata> {
+function firstParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export async function generateMetadata({ params, searchParams }: CatchAllPageProps): Promise<Metadata> {
   const path = pathFromSlug((await params).slug);
   const resolution = await resolvePage(path);
+  const client = createServerApiClient();
 
   if (resolution.kind === RouteResolutionKind.Home) {
-    const home = await getPublicHome(createServerApiClient());
+    const home = await getPublicHome(client);
     return metadataFromHomeSeo(home);
+  }
+
+  if (resolution.kind === RouteResolutionKind.Detail && resolution.contentItemId) {
+    const detail = await getPublicContentById(client, resolution.contentItemId);
+    return metadataFromContentDetail(detail);
+  }
+
+  if (resolution.kind === RouteResolutionKind.Listing && resolution.contentTypeKey && resolution.detailTemplate !== 'event') {
+    const { category, search } = await searchParams;
+    const list = await listPublicContents(client, { type: resolution.contentTypeKey, category: firstParam(category), search: firstParam(search) });
+    return metadataFromContentList(list, path);
   }
 
   if (resolution.kind === RouteResolutionKind.Detail || resolution.kind === RouteResolutionKind.Listing) {
@@ -27,9 +48,11 @@ export async function generateMetadata({ params }: CatchAllPageProps): Promise<M
   return {};
 }
 
-export default async function CatchAllPage({ params }: CatchAllPageProps) {
+export default async function CatchAllPage({ params, searchParams }: CatchAllPageProps) {
   const path = pathFromSlug((await params).slug);
   const resolution = await resolvePage(path);
+  const query = await searchParams;
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   switch (resolution.kind) {
     case RouteResolutionKind.Home:
@@ -48,16 +71,27 @@ export default async function CatchAllPage({ params }: CatchAllPageProps) {
     }
 
     case RouteResolutionKind.Detail:
-    case RouteResolutionKind.Listing:
-      // Koşu 3 kapsamı (içerik şablonları). Mock veri üretmek yerine dürüst bir "henüz yok"
-      // durumu - gerçek bir içerik asla bu ekranı görmemeli, görürse bu bir regresyondur.
+      if (!resolution.contentItemId) notFound();
+      return <ContentDetailPage contentItemId={resolution.contentItemId} nonce={nonce} />;
+
+    case RouteResolutionKind.Listing: {
+      if (!resolution.contentTypeKey) notFound();
+      // Etkinlik türleri (`detailTemplate === 'event'`) canlı kayıt durumu için ayrı, özel bir
+      // liste ucu kullanır (ADR-024 §11.3) - genel içerik listesi burada hiç çağrılmaz.
+      if (resolution.detailTemplate === 'event') {
+        return <EventListPage contentTypeKey={resolution.contentTypeKey} basePath={path} when={firstParam(query.when)} page={Number(firstParam(query.page)) || 1} />;
+      }
       return (
-        <div className="container section">
-          <p className="eyebrow">{resolution.kind === RouteResolutionKind.Detail ? 'İçerik' : 'Liste'}</p>
-          <h1>{resolution.name || 'Sayfa hazırlanıyor'}</h1>
-          <p className="page-lead">Bu sayfa şablonu henüz hazır değil (Faz 3 Koşu 3).</p>
-        </div>
+        <ContentListPage
+          contentTypeKey={resolution.contentTypeKey}
+          basePath={path}
+          category={firstParam(query.category)}
+          search={firstParam(query.search)}
+          page={Number(firstParam(query.page)) || 1}
+          nonce={nonce}
+        />
       );
+    }
 
     case RouteResolutionKind.NotFound:
     default:

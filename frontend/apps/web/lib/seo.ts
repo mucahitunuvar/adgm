@@ -1,5 +1,10 @@
 import type { Metadata } from 'next';
-import type { PublicHomeResponse, RouteResolutionResponse } from '@gm/api-client';
+import type {
+  PublicContentDetailResponse,
+  PublicContentListResponse,
+  PublicHomeResponse,
+  RouteResolutionResponse,
+} from '@gm/api-client';
 
 // Next.js ebeveyn (root layout) metadata'sından DEVRALMAK için bir alanı tamamen ATLAMAK gerekir -
 // `{ title: undefined }` döndürmek ebeveynin değerini `undefined` ile EZER (basit obje birleştirme),
@@ -47,11 +52,56 @@ export function metadataFromResolution(resolution: RouteResolutionResponse, path
 }
 
 /** K-12: tek aktif dilde (`tr`) hreflang alternatifi basılmaz. */
-function buildHreflang(alternates: RouteResolutionResponse['alternates']): Record<string, string> | undefined {
+function buildHreflang(alternates: readonly { languageCode: string; path: string }[] | null | undefined): Record<string, string> | undefined {
   if (!alternates || alternates.length < 2) return undefined;
   const map: Record<string, string> = {};
   for (const alternate of alternates) {
     map[alternate.languageCode] = alternate.path;
   }
   return map;
+}
+
+/** `GET /public/contents/{id}` zaten tam çözülmüş SEO alanlarını döner (ADR-024 §15 `ContentSeoResolver`). */
+export function metadataFromContentDetail(detail: PublicContentDetailResponse): Metadata {
+  const { seo } = detail;
+  const ogTitle = seo.ogTitle || seo.metaTitle || detail.title;
+  const ogDescription = seo.ogDescription || seo.metaDescription || detail.summary;
+  const languages = buildHreflang(detail.alternates);
+
+  return {
+    title: seo.metaTitle || detail.title,
+    ...(seo.metaDescription && { description: seo.metaDescription }),
+    alternates: {
+      canonical: seo.canonicalUrl || detail.path,
+      ...(languages && { languages }),
+    },
+    ...(seo.noIndex && { robots: { index: false, follow: false } }),
+    openGraph: {
+      title: ogTitle,
+      ...(ogDescription && { description: ogDescription }),
+      ...(seo.ogImageUrl && { images: [{ url: seo.ogImageUrl }] }),
+      url: seo.canonicalUrl || detail.path,
+    },
+  };
+}
+
+export function metadataFromContentList(list: PublicContentListResponse, path: string): Metadata {
+  const { seo } = list;
+  const languages = buildHreflang(list.alternates);
+
+  return {
+    ...(seo.metaTitle && { title: seo.metaTitle }),
+    ...(seo.metaDescription && { description: seo.metaDescription }),
+    alternates: {
+      canonical: seo.canonicalUrl || path,
+      ...(languages && { languages }),
+    },
+    ...(seo.noIndex && { robots: { index: false, follow: false } }),
+    openGraph: {
+      ...(seo.ogTitle || seo.metaTitle ? { title: seo.ogTitle || seo.metaTitle } : {}),
+      ...(seo.ogDescription || seo.metaDescription ? { description: seo.ogDescription || seo.metaDescription } : {}),
+      ...(seo.ogImageUrl && { images: [{ url: seo.ogImageUrl }] }),
+      url: seo.canonicalUrl || path,
+    },
+  };
 }
