@@ -143,7 +143,11 @@ public sealed class GetPublicContentsQueryHandler(
             ?? contentType.Key.Value;
         var routePrefix = contentType.Translations.FirstOrDefault(t => t.LanguageCode == resolvedLanguage.Code)?.RoutePrefix ?? string.Empty;
         var categorySlug = selectedCategory?.Translations.FirstOrDefault(t => t.LanguageCode == resolvedLanguage.Code)?.Slug;
-        var canonicalPath = categorySlug is null ? routePrefix : $"{routePrefix}/{categorySlug}";
+        var canonicalRemainder = categorySlug is null ? routePrefix : $"{routePrefix}/{categorySlug}";
+        // Madde 41 (Faz 3 Koşu 3E): unlike BuildAlternates below (and Home/Detail's own canonicalUrl),
+        // this was missing RoutePathFormat.BuildPublicPath - it sent the bare, slash-less RoutePrefix
+        // (and never the non-default-language segment) instead of a root-relative public path.
+        var canonicalPath = RoutePathFormat.BuildPublicPath(resolvedLanguage.Code.Value, defaultLanguage.Code.Value, canonicalRemainder);
 
         var resolvedSeo = ContentSeoResolver.Resolve(
             seoSource, pageTitle, string.Empty, canonicalPath, null, null, settings.DefaultOgImageMediaId,

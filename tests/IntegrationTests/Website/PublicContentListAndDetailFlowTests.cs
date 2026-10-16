@@ -283,6 +283,36 @@ public class PublicContentListAndDetailFlowTests : IClassFixture<CustomWebApplic
         Assert.Equal(50, body!.Items.PageSize);
     }
 
+    // --- List: SEO ---
+
+    // Madde 41 (Faz 3 Koşu 3E, regression): canonicalUrl used to be the bare RoutePrefix ("haberler"),
+    // never passed through RoutePathFormat.BuildPublicPath the way Home's and Detail's own canonicalUrl
+    // already were - neither root-relative ("/" prefix) nor language-prefixed for a non-default language.
+    [Fact]
+    public async Task GetPublicContents_CanonicalUrl_IsRootRelativePath_NotBareRoutePrefix()
+    {
+        var response = await GetListAsync("?type=news");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<PublicContentListResponse>();
+        Assert.Equal("/haberler", body!.Seo.CanonicalUrl);
+    }
+
+    [Fact]
+    public async Task GetPublicContents_CanonicalUrl_WithCategory_IncludesCategorySlug()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var newsTypeId = await GetContentTypeIdByKeyAsync(accessToken, "news");
+        var category = await CreateCategoryAsync(accessToken, newsTypeId, null, $"Kategori-{Guid.NewGuid():N}");
+        var categorySlug = await GetCategorySlugAsync(accessToken, newsTypeId, category.Id);
+
+        var response = await GetListAsync($"?type=news&category={categorySlug}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<PublicContentListResponse>();
+        Assert.Equal($"/haberler/{categorySlug}", body!.Seo.CanonicalUrl);
+    }
+
     // --- List: visibility rule ---
 
     // Regression test: SearchPublicListAsync used to check only Status == Published, never
