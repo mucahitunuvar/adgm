@@ -20,6 +20,10 @@ const storageRestrictions = [
     selector: "Identifier[name='sessionStorage']",
     message: 'sessionStorage yasak (K-07, FRONTEND-GUVENLIK.md §2).',
   },
+  {
+    selector: "MemberExpression[object.name='document'][property.name='cookie']",
+    message: 'document.cookie yasak. Yalnız apps/web/lib/consentStore.ts (çerez tercihi) için izinlidir (FRONTEND-FAZ3-MASTER-PROMPT.md "Depolama kuralı").',
+  },
 ];
 
 const restrictedGlobals = [
@@ -69,6 +73,10 @@ export default tseslint.config(
   {
     files: ['packages/design-tokens/src/theme.ts'],
     rules: { 'no-restricted-syntax': 'off', 'no-restricted-globals': 'off' },
+  },
+  {
+    files: ['apps/web/lib/consentStore.ts'],
+    rules: { 'no-restricted-syntax': 'off' },
   },
   {
     // Testler (K-07/FRONTEND-GUVENLIK.md §10): storage'ın BOŞ olduğunu doğrulamak amacıyla
