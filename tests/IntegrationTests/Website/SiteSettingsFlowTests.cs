@@ -278,6 +278,45 @@ public class SiteSettingsFlowTests : IClassFixture<CustomWebApplicationFactory>
         var publicBody = await (await _client.GetAsync("/api/v1/public/site")).Content.ReadFromJsonAsync<PublicSiteResponse>();
         Assert.True(publicBody!.MaintenanceModeEnabled);
         Assert.Equal("Bakımdayız", publicBody.MaintenanceMessage);
+
+        // Flag now actually enforces 503 on every other public endpoint (WebsiteMaintenanceModeMiddlewareExtensions) -
+        // turn it back off so other tests in this class (which share this same singleton row) aren't affected.
+        var rowVersionAfterEnable = await GetCurrentRowVersionAsync(accessToken);
+        var revertResponse = await PutMaintenanceAsync(accessToken, rowVersionAfterEnable, false, []);
+        Assert.Equal(HttpStatusCode.NoContent, revertResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task MaintenanceMode_WhenEnabled_Returns503WithRetryAfterForPublicEndpointsExceptSite()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var rowVersion = await GetCurrentRowVersionAsync(accessToken);
+
+        var enableResponse = await PutMaintenanceAsync(accessToken, rowVersion, true, []);
+        Assert.Equal(HttpStatusCode.NoContent, enableResponse.StatusCode);
+
+        try
+        {
+            var homeResponse = await _client.GetAsync("/api/v1/public/home");
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, homeResponse.StatusCode);
+            Assert.True(homeResponse.Headers.RetryAfter is not null);
+
+            // The one public endpoint the frontend itself reads MaintenanceModeEnabled from must stay
+            // reachable while maintenance is on, or the frontend could never render its own maintenance page.
+            var siteResponse = await _client.GetAsync("/api/v1/public/site");
+            Assert.Equal(HttpStatusCode.OK, siteResponse.StatusCode);
+            var siteBody = await siteResponse.Content.ReadFromJsonAsync<PublicSiteResponse>();
+            Assert.True(siteBody!.MaintenanceModeEnabled);
+        }
+        finally
+        {
+            var rowVersionAfterEnable = await GetCurrentRowVersionAsync(accessToken);
+            var revertResponse = await PutMaintenanceAsync(accessToken, rowVersionAfterEnable, false, []);
+            Assert.Equal(HttpStatusCode.NoContent, revertResponse.StatusCode);
+        }
+
+        var afterRevertResponse = await _client.GetAsync("/api/v1/public/home");
+        Assert.Equal(HttpStatusCode.OK, afterRevertResponse.StatusCode);
     }
 
     [Fact]

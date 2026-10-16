@@ -11,6 +11,12 @@ public static class WebsiteCacheKeys
 
     public static string InvalidationPrefix => Prefix;
 
+    // Faz 3 Koşu 1 (maintenance mode enforcement): a single flag, not per-language, lives under the
+    // same "public-site" prefix as PublicSite above, so every SiteSettings-mutating command's existing
+    // InvalidateAllPublic call already clears it too - flipping MaintenanceModeEnabled off takes effect
+    // on the very next request, no separate invalidation wiring needed.
+    public static string MaintenanceEnabled => $"{Prefix}maintenance-enabled";
+
     // ADR-024 §17 (Faz 1b Görev 7): everything derived from content/type/category/tag/video/media/
     // redirect/language state - the public list, the public detail, and public route resolution - is
     // cached under this single prefix, so one coarse-grained RemoveByPrefix (deliberately not

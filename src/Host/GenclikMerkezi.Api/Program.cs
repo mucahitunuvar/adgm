@@ -365,6 +365,11 @@ app.Use(async (context, next) =>
     await next(context);
 });
 
+// Faz 3 Koşu 1: SiteSettings.MaintenanceModeEnabled was previously just a data field in
+// GetPublicSite's response - nothing ever actually blocked public traffic while it was on. See
+// WebsiteMaintenanceModeMiddlewareExtensions for what is (and, deliberately, is not) gated.
+app.UseWebsiteMaintenanceMode();
+
 app.UseRateLimiter();
 
 app.UseAuthentication();
