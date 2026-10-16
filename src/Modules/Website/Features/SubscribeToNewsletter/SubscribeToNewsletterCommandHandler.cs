@@ -128,16 +128,23 @@ public sealed class SubscribeToNewsletterCommandHandler(
     // §14 "Her bülten e-postasında kullanılacak ... link adresi yapılandırmadan okunur
     // (Website:PublicSiteBaseUrl); e-postadaki link frontend sayfasına gider, frontend token'ı API'ye
     // iletir" - mirrors SubmitFormSubmissionCommandHandler's own AdminPanelBaseUrl lookup (optional,
-    // empty by default).
+    // empty by default). "Her e-postada imzalı abonelikten çıkma linki bulunur" (§14) - this is
+    // currently the only email a subscriber ever receives (no campaign/send feature exists yet, see
+    // ADR-024 §14's own "bülten gönderim aracı yoktur"), so the unsubscribe link belongs here. It
+    // reuses the subscriber's own persisted UnsubscribeToken (NewsletterSubscriber.UnsubscribeToken's
+    // remarks: a deliberately non-expiring, directly-looked-up value, unlike this confirmation token)
+    // against the existing POST /api/v1/public/newsletter/unsubscriptions endpoint - no new endpoint.
     private async Task SendConfirmationEmailAsync(NewsletterSubscriber subscriber, CancellationToken cancellationToken)
     {
         var token = confirmationLinkGenerator.GenerateToken(subscriber.Id, ConfirmationTokenLifetime);
         var publicSiteBaseUrl = (configuration["Website:PublicSiteBaseUrl"] ?? string.Empty).TrimEnd('/');
         var confirmUrl = $"{publicSiteBaseUrl}/newsletter/confirm?token={Uri.EscapeDataString(token)}";
+        var unsubscribeUrl = $"{publicSiteBaseUrl}/newsletter/unsubscribe?token={Uri.EscapeDataString(subscriber.UnsubscribeToken)}";
 
         const string subject = "Confirm your newsletter subscription";
         var body = "<p>Please confirm your newsletter subscription by clicking the link below.</p>"
-            + $"<p><a href=\"{confirmUrl}\">Confirm subscription</a></p>";
+            + $"<p><a href=\"{confirmUrl}\">Confirm subscription</a></p>"
+            + $"<p><a href=\"{unsubscribeUrl}\">Unsubscribe</a></p>";
 
         await websiteEmailSender.SendEmailAsync(subscriber.Email, subject, body, cancellationToken);
     }

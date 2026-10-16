@@ -139,6 +139,13 @@ public class NewsletterSubscriptionFlowTests : IClassFixture<CustomWebApplicatio
         return Uri.UnescapeDataString(match.Groups[1].Value);
     }
 
+    private static string ExtractUnsubscribeToken(string emailBody)
+    {
+        var match = Regex.Match(emailBody, "newsletter/unsubscribe\\?token=([^\"&]+)");
+        Assert.True(match.Success, $"No unsubscribe link found in email body: {emailBody}");
+        return Uri.UnescapeDataString(match.Groups[1].Value);
+    }
+
     [Fact]
     public async Task SubscribeToNewsletter_WhenDisabled_ReturnsNotFound()
     {
@@ -250,8 +257,13 @@ public class NewsletterSubscriptionFlowTests : IClassFixture<CustomWebApplicatio
         var afterExportLog = (await afterExportLogResponse.Content.ReadFromJsonAsync<PagedResult<PersonalDataAccessLogResponse>>())!;
         Assert.Contains(afterExportLog.Items, l => l.EntityType == "NewsletterSubscriber" && l.Action == "Export");
 
-        // Unsubscribe via the subscriber's own persisted token (never returned by any HTTP response).
-        var (unsubscribeToken, statusAfterConfirm) = await _factory.GetNewsletterSubscriberStateAsync(email);
+        // Unsubscribe via the token the confirmation email itself carried (Faz 3 Koşu 1 GÖREV 4: every
+        // email a subscriber receives now includes it, per ADR-024 §14) - never returned by any HTTP
+        // response, only ever the subscriber's own persisted value, which the e-mailed link and the
+        // database must agree on.
+        var unsubscribeToken = ExtractUnsubscribeToken(confirmationEmail.Body);
+        var (persistedUnsubscribeToken, statusAfterConfirm) = await _factory.GetNewsletterSubscriberStateAsync(email);
+        Assert.Equal(persistedUnsubscribeToken, unsubscribeToken);
         Assert.Equal(NewsletterSubscriberStatus.Active, statusAfterConfirm);
 
         var unsubscribeResponse = await _client.PostAsJsonAsync(
