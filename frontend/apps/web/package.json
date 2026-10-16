@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start --port 3000",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "eslint app proxy.ts --max-warnings 0",
+    "lint": "eslint app lib proxy.ts --max-warnings 0",
     "test": "echo no-tests"
   },
   "dependencies": {

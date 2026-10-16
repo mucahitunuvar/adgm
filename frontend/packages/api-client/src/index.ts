@@ -1,7 +1,14 @@
 export { createApiClient, type ApiClient, type ApiClientOptions, type ApiRequestInit, type HttpMethod } from './client';
 export { ApiError, type ProblemDetails } from './ApiError';
 export { getApiErrorMessage } from './getApiErrorMessage';
-export { getPublicSite, getPublicHome } from './publicSite';
+export {
+  getPublicSite,
+  getPublicHome,
+  type PublicSiteResponse,
+  type PublicHomeResponse,
+  type PublicMenuItemResponse,
+} from './publicSite';
+export { resolveRoute, type RouteResolutionResponse } from './publicRoutes';
 export {
   login,
   refreshAccessToken,
