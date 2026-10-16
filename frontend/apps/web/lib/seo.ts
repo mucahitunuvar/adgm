@@ -1,18 +1,25 @@
 import type { Metadata } from 'next';
 import type { PublicHomeResponse, RouteResolutionResponse } from '@gm/api-client';
 
-/** `GET /public/home`'un hazır SEO bloğu - tüm alanlar zaten çözülmüş (ogImageUrl dahil). */
+// Next.js ebeveyn (root layout) metadata'sından DEVRALMAK için bir alanı tamamen ATLAMAK gerekir -
+// `{ title: undefined }` döndürmek ebeveynin değerini `undefined` ile EZER (basit obje birleştirme),
+// "sağlanmadı" anlamına gelmez. Bu yüzden boş değerler burada koşullu yayılım (spread) ile hiç
+// eklenmez, `|| undefined` ile "boş" bırakılmaz (canlı doğrulandı: ikincisi `<title>` etiketini
+// tamamen kaybettiriyordu - axe `document-title` ihlali).
 export function metadataFromHomeSeo(home: PublicHomeResponse): Metadata {
   const { seo } = home;
+  const ogTitle = seo.ogTitle || seo.metaTitle;
+  const ogDescription = seo.ogDescription || seo.metaDescription;
+
   return {
-    title: seo.metaTitle || undefined,
-    description: seo.metaDescription || undefined,
+    ...(seo.metaTitle && { title: seo.metaTitle }),
+    ...(seo.metaDescription && { description: seo.metaDescription }),
     alternates: { canonical: seo.canonicalUrl || '/' },
-    robots: seo.noIndex ? { index: false, follow: false } : undefined,
+    ...(seo.noIndex && { robots: { index: false, follow: false } }),
     openGraph: {
-      title: seo.ogTitle || seo.metaTitle || undefined,
-      description: seo.ogDescription || seo.metaDescription || undefined,
-      images: seo.ogImageUrl ? [{ url: seo.ogImageUrl }] : undefined,
+      ...(ogTitle && { title: ogTitle }),
+      ...(ogDescription && { description: ogDescription }),
+      ...(seo.ogImageUrl && { images: [{ url: seo.ogImageUrl }] }),
       url: seo.canonicalUrl || '/',
     },
   };
@@ -25,14 +32,17 @@ export function metadataFromHomeSeo(home: PublicHomeResponse): Metadata {
  */
 export function metadataFromResolution(resolution: RouteResolutionResponse, path: string): Metadata {
   const seo = resolution.seo;
+  const title = seo?.metaTitle || resolution.name;
+  const languages = buildHreflang(resolution.alternates);
+
   return {
-    title: seo?.metaTitle || resolution.name || undefined,
-    description: seo?.metaDescription || undefined,
+    ...(title && { title }),
+    ...(seo?.metaDescription && { description: seo.metaDescription }),
     alternates: {
       canonical: seo?.canonicalUrl || path,
-      languages: buildHreflang(resolution.alternates),
+      ...(languages && { languages }),
     },
-    robots: seo?.noIndex ? { index: false, follow: false } : undefined,
+    ...(seo?.noIndex && { robots: { index: false, follow: false } }),
   };
 }
 

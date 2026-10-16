@@ -43,16 +43,14 @@ export function Header({ site }: { site: PublicSiteResponse }) {
       )}
 
       <div className="container site-header__row">
-        <a href="/" className="brand" aria-label={site.siteName || 'Ana sayfa'}>
-          {logoLight || logoDark ? (
-            <>
-              {logoLight && <img src={logoLight} alt={site.siteName} className="site-header__logo site-header__logo--light" />}
-              {logoDark && <img src={logoDark} alt={site.siteName} className="site-header__logo site-header__logo--dark" />}
-            </>
-          ) : (
-            <Brand />
-          )}
-        </a>
+        {logoLight || logoDark ? (
+          <a href="/" className="brand" aria-label={site.siteName || 'Ana sayfa'}>
+            {logoLight && <img src={logoLight} alt={site.siteName} className="site-header__logo site-header__logo--light" />}
+            {logoDark && <img src={logoDark} alt={site.siteName} className="site-header__logo site-header__logo--dark" />}
+          </a>
+        ) : (
+          <Brand />
+        )}
 
         <DesktopNav items={site.menus.header} />
 

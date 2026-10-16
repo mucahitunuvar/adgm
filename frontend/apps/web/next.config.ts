@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  // `next dev`'in kayan geliştirici araçları rozeti axe'ın renk kontrastı hesaplamasını bulanık bir
+  // arka planla kirletiyordu (canlı doğrulandı: aynı metin/renk kombinasyonu her koşuda farklı,
+  // tekrarlanamayan bir `bgColor` ile "yetersiz kontrast" raporlanıyordu - üretimde bu rozet hiç yok).
+  devIndicators: false,
   transpilePackages: ['@gm/design-tokens', '@gm/ui', '@gm/api-client', '@gm/auth'],
   productionBrowserSourceMaps: false,
   async rewrites() {

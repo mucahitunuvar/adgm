@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <main className="container section">
+    <div className="container section">
       <p className="eyebrow">Giriş Yap</p>
       <h1>Hangi portala giriş yapmak istersiniz?</h1>
       <div className="portal-choice-grid">
@@ -26,6 +26,6 @@ export default function LoginPage() {
           ctaLabel="Firma portalına git"
         />
       </div>
-    </main>
+    </div>
   );
 }

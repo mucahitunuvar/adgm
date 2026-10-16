@@ -25,7 +25,7 @@ export function HeroSliderBlock({ data }: { data: Slide[] | null }) {
         <BlockImage image={slide.desktop} alt={slide.altText} className="hero-slide__image hero-slide__image--desktop" sizes="100vw" />
         <div className="hero-slide__content">
           {slide.eyebrow && <p className="eyebrow">{slide.eyebrow}</p>}
-          <h1>{slide.title}</h1>
+          <h2>{slide.title}</h2>
           {slide.text && <p className="page-lead">{slide.text}</p>}
           {href && slide.buttonLabel && (
             <a className="button button--primary" href={href}>

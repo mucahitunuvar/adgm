@@ -52,10 +52,11 @@ export default async function CatchAllPage({ params }: CatchAllPageProps) {
       // Koşu 3 kapsamı (içerik şablonları). Mock veri üretmek yerine dürüst bir "henüz yok"
       // durumu - gerçek bir içerik asla bu ekranı görmemeli, görürse bu bir regresyondur.
       return (
-        <main className="container section">
+        <div className="container section">
           <p className="eyebrow">{resolution.kind === RouteResolutionKind.Detail ? 'İçerik' : 'Liste'}</p>
+          <h1>{resolution.name || 'Sayfa hazırlanıyor'}</h1>
           <p className="page-lead">Bu sayfa şablonu henüz hazır değil (Faz 3 Koşu 3).</p>
-        </main>
+        </div>
       );
 
     case RouteResolutionKind.NotFound:

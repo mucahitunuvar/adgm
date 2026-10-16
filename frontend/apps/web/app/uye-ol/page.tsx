@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function RegisterPage() {
   return (
-    <main className="container section">
+    <div className="container section">
       <p className="eyebrow">Üye Ol</p>
       <h1>Hangi hesap türüyle üye olmak istersiniz?</h1>
       <div className="portal-choice-grid">
@@ -26,6 +26,6 @@ export default function RegisterPage() {
           ctaLabel="Firma portalına git"
         />
       </div>
-    </main>
+    </div>
   );
 }

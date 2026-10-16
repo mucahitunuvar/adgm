@@ -34,9 +34,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         {Object.keys(site.organization).length > 0 && <JsonLd data={site.organization} nonce={nonce} />}
       </head>
       <body>
-        <a href="#main-content" className="skip-link">
-          İçeriğe atla
-        </a>
+        <nav aria-label="Atla bağlantısı">
+          <a href="#main-content" className="skip-link">
+            İçeriğe atla
+          </a>
+        </nav>
         <Header site={site} />
         <main id="main-content">{children}</main>
         <Footer site={site} />
