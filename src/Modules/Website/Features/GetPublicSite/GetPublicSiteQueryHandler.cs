@@ -101,6 +101,8 @@ public sealed class GetPublicSiteQueryHandler(
         var scripts = BuildScripts(activeScripts);
         var cookieConsent = await BuildCookieConsentAsync(settings, translation, activeScripts, resolvedLanguage.Code, now, cancellationToken);
         var organization = await BuildOrganizationAsync(settings, translation, cancellationToken);
+        var newsletterPrivacyNotice = await ResolveLegalNoticeAsync(settings.NewsletterPrivacyNoticeKey, now, cancellationToken);
+        var eventPrivacyNotice = await ResolveLegalNoticeAsync(settings.EventPrivacyNoticeKey, now, cancellationToken);
 
         return new PublicSiteResponse(
             languageResponses, resolvedLanguage.Code.Value,
@@ -115,7 +117,7 @@ public sealed class GetPublicSiteQueryHandler(
             settings.GlobalSearchEnabled, settings.NewsletterEnabled, settings.PublicJobListingsEnabled, settings.DonationPageEnabled,
             settings.MaintenanceModeEnabled, translation?.MaintenanceMessage ?? string.Empty,
             settings.TurnstileSiteKey,
-            menus, popups, cookieConsent, scripts, organization);
+            menus, popups, cookieConsent, scripts, organization, newsletterPrivacyNotice, eventPrivacyNotice);
     }
 
     // ADR-024 §13/§15 (Faz 5 Görev 6): "GET /api/v1/public/site yanıtına organization olarak" -
@@ -336,18 +338,7 @@ public sealed class GetPublicSiteQueryHandler(
         SiteSettings settings, SiteSettingsTranslation? translation, IReadOnlyList<ThirdPartyScript> activeScripts, LanguageCode languageCode,
         DateTime now, CancellationToken cancellationToken)
     {
-        string? policyKey = null;
-        int? policyVersion = null;
-        if (settings.CookiePolicyKey is not null)
-        {
-            var document = await legalDocumentRepository.GetByKeyAsync(settings.CookiePolicyKey, cancellationToken);
-            var effective = document is null ? null : LegalDocumentEffectiveVersionResolver.Resolve(document.Versions, now);
-            if (effective is not null)
-            {
-                policyKey = settings.CookiePolicyKey.Value;
-                policyVersion = effective.VersionNumber;
-            }
-        }
+        var cookieNotice = await ResolveLegalNoticeAsync(settings.CookiePolicyKey, now, cancellationToken);
 
         var categories = new List<PublicSiteCookieCategoryResponse>
         {
@@ -360,7 +351,25 @@ public sealed class GetPublicSiteQueryHandler(
         };
 
         return new PublicSiteCookieConsentResponse(
-            translation?.CookieBannerTitle ?? string.Empty, translation?.CookieBannerText ?? string.Empty, categories, policyKey, policyVersion);
+            translation?.CookieBannerTitle ?? string.Empty, translation?.CookieBannerText ?? string.Empty, categories,
+            cookieNotice?.Key, cookieNotice?.Version);
+    }
+
+    // Madde 36/38: shared by cookieConsent (policyKey/policyVersion) and the newsletter/event privacy
+    // notice fields - null whenever there is no key to look up, or the key's LegalDocument has no
+    // effective (published, EffectiveAtUtc already passed) version.
+    private async Task<PublicSiteLegalNoticeResponse?> ResolveLegalNoticeAsync(
+        LegalDocumentKey? key, DateTime now, CancellationToken cancellationToken)
+    {
+        if (key is null)
+        {
+            return null;
+        }
+
+        var document = await legalDocumentRepository.GetByKeyAsync(key, cancellationToken);
+        var effective = document is null ? null : LegalDocumentEffectiveVersionResolver.Resolve(document.Versions, now);
+
+        return effective is null ? null : new PublicSiteLegalNoticeResponse(key.Value, effective.VersionNumber);
     }
 
     private static PublicSiteCookieCategoryResponse BuildCookieCategory(

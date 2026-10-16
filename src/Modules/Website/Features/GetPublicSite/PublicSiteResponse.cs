@@ -30,4 +30,9 @@ public sealed record PublicSiteResponse(
     IReadOnlyList<PublicPopupResponse> Popups,
     PublicSiteCookieConsentResponse CookieConsent,
     IReadOnlyList<PublicSiteScriptResponse> Scripts,
-    IReadOnlyDictionary<string, object?> Organization);
+    IReadOnlyDictionary<string, object?> Organization,
+    // Madde 36/38 (Faz 3 Koşu 3E): null when SiteSettings has no key configured for that purpose, or
+    // the key's LegalDocument has no effective (published) version yet - the frontend closes the
+    // corresponding form in that case (bülten/etkinlik kaydı aydınlatma metni gösterilemiyor).
+    PublicSiteLegalNoticeResponse? NewsletterPrivacyNotice,
+    PublicSiteLegalNoticeResponse? EventPrivacyNotice);
