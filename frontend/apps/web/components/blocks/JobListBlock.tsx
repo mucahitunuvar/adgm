@@ -1,4 +1,4 @@
-import { listPublicJobs, type PublicJobListItemResponse } from '@gm/api-client';
+import { listPublicJobs, publicCompanyLogoUrl, type PublicJobListItemResponse } from '@gm/api-client';
 import { safeUrl } from '@gm/ui';
 import { createServerApiClient } from '../../lib/apiClient';
 
@@ -35,7 +35,7 @@ function JobCard({ job }: { job: PublicJobListItemResponse & { company: { hasLog
   const href = safeUrl(`/ilanlar/${job.slug}`);
   return (
     <a href={href} className="content-card job-card">
-      {job.company.hasLogo && <img src={`/api/v1/public/companies/${job.company.id}/logo`} alt={job.company.name} loading="lazy" />}
+      {job.company.hasLogo && <img src={publicCompanyLogoUrl(job.company.id)} alt={job.company.name} loading="lazy" />}
       <h3>{job.title}</h3>
       <p>{job.company.name}</p>
       {job.provinceName && <p className="field-hint">{job.provinceName}</p>}
