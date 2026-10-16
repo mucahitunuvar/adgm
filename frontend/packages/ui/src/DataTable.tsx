@@ -1,3 +1,5 @@
+'use client';
+
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { EmptyState, ErrorState, LoadingState } from './PageState';

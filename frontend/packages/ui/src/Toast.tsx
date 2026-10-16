@@ -1,3 +1,5 @@
+'use client';
+
 import { X } from 'lucide-react';
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import type { StatusTone } from './StatusBadge';

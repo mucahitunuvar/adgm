@@ -1,3 +1,5 @@
+'use client';
+
 import { AccessibleDialog } from './AccessibleDialog';
 import { Button, type ButtonTone } from './Button';
 

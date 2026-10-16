@@ -1,3 +1,5 @@
+'use client';
+
 import type { KeyboardEvent, ReactNode } from 'react';
 
 export interface TabItem {

@@ -1,3 +1,5 @@
+'use client';
+
 import type { FormEvent, ReactNode } from 'react';
 import { Button } from './Button';
 

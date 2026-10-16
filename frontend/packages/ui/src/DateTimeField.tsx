@@ -1,3 +1,5 @@
+'use client';
+
 // Türkiye Eylül 2016'dan beri kalıcı UTC+3'te (yaz saati uygulaması yok) - bu yüzden tek bir sabit
 // ofsetle çeviri güvenli; `formatDateTime.ts`'in salt-okunur gösterimi `Intl`/`Europe/Istanbul`
 // kullanıyor, burada ise GERİ dönüşüm (yerel girdi -> UTC) de gerektiği için aynı sabiti kullanan
