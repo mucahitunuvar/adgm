@@ -37,6 +37,10 @@ internal static class GetPublicContentsEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces<PublicContentListResponse>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetPublicContents")
             .WithTags("Website");
     }

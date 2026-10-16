@@ -19,6 +19,8 @@ internal static class GetPublicHomeEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces<PublicHomeResponse>(StatusCodes.Status200OK)
+            .ProducesRateLimited()
             .WithName("GetPublicHome")
             .WithTags("Website");
     }

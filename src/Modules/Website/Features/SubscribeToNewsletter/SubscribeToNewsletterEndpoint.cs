@@ -25,6 +25,11 @@ internal static class SubscribeToNewsletterEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-forms")
+            .Produces(StatusCodes.Status202Accepted)
+            .ProducesValidationProblem()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("SubscribeToNewsletter")
             .WithTags("Website");
     }

@@ -19,6 +19,9 @@ internal static class GetPublicContentByIdEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces<PublicContentDetailResponse>(StatusCodes.Status200OK)
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetPublicContentById")
             .WithTags("Website");
     }

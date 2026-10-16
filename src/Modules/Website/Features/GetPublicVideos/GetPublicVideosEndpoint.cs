@@ -25,6 +25,8 @@ internal static class GetPublicVideosEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces<PagedResult<PublicVideoResponse>>(StatusCodes.Status200OK)
+            .ProducesRateLimited()
             .WithName("GetPublicVideos")
             .WithTags("Website");
     }

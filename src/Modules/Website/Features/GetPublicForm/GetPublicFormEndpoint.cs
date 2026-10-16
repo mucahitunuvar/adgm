@@ -1,4 +1,5 @@
 using GenclikMerkezi.BuildingBlocks.Infrastructure.Http;
+using GenclikMerkezi.Modules.Website.Application.Forms.PublicResolution;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -19,6 +20,9 @@ internal static class GetPublicFormEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces<PublicFormDefinitionResponse>(StatusCodes.Status200OK)
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetPublicForm")
             .WithTags("Website");
     }

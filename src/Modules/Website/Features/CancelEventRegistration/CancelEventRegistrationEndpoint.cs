@@ -22,6 +22,10 @@ internal static class CancelEventRegistrationEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-forms")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("CancelEventRegistration")
             .WithTags("Website");
     }

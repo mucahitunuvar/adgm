@@ -85,6 +85,8 @@ internal static class ResolveRouteEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces<RouteResolutionResponse>(StatusCodes.Status200OK)
+            .ProducesRateLimited()
             .WithName("ResolveRoute")
             .WithTags("Website");
     }

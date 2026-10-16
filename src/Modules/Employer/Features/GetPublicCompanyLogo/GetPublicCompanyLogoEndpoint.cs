@@ -27,6 +27,9 @@ internal static class GetPublicCompanyLogoEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces(StatusCodes.Status200OK, typeof(byte[]), "image/jpeg", "image/png")
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetPublicCompanyLogo")
             .WithTags("Employer");
     }

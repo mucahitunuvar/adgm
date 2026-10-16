@@ -35,6 +35,10 @@ internal static class GetPublicEventsEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces<PagedResult<PublicEventListItemResponse>>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetPublicEvents")
             .WithTags("Website");
     }

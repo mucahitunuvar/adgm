@@ -19,6 +19,8 @@ internal static class GetSitemapEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces(StatusCodes.Status200OK, typeof(string), "application/xml")
+            .ProducesRateLimited()
             .WithName("GetSitemap")
             .WithTags("Website");
     }

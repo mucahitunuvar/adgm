@@ -19,6 +19,9 @@ internal static class GetPublicEventCalendarEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces(StatusCodes.Status200OK, typeof(string), "text/calendar")
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetPublicEventCalendar")
             .WithTags("Website");
     }

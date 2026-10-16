@@ -28,6 +28,11 @@ internal static class CreateEventRegistrationEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-forms")
+            .Produces(StatusCodes.Status202Accepted)
+            .ProducesValidationProblem()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("CreateEventRegistration")
             .WithTags("Website");
     }

@@ -19,6 +19,9 @@ internal static class GetPublicCompanyProfileEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces<GetPublicCompanyProfileResponse>(StatusCodes.Status200OK)
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetPublicCompanyProfile")
             .WithTags("Employer");
     }

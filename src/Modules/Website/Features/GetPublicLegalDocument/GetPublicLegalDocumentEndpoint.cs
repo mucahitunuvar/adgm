@@ -19,6 +19,9 @@ internal static class GetPublicLegalDocumentEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces<PublicLegalDocumentResponse>(StatusCodes.Status200OK)
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetPublicLegalDocument")
             .WithTags("Website");
     }

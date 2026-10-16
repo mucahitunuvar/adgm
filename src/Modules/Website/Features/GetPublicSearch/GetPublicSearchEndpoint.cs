@@ -33,6 +33,10 @@ internal static class GetPublicSearchEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-search")
+            .Produces<PublicSearchResponse>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetPublicSearch")
             .WithTags("Website");
     }

@@ -27,6 +27,9 @@ internal static class ResendEventRegistrationVerificationEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-forms")
+            .Produces(StatusCodes.Status202Accepted)
+            .ProducesValidationProblem()
+            .ProducesRateLimited()
             .WithName("ResendEventRegistrationVerification")
             .WithTags("Website");
     }

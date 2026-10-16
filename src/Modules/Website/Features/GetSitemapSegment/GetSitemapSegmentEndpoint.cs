@@ -19,6 +19,9 @@ internal static class GetSitemapSegmentEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces(StatusCodes.Status200OK, typeof(string), "application/xml")
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetSitemapSegment")
             .WithTags("Website");
     }

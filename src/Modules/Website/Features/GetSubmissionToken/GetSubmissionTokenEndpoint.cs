@@ -24,6 +24,8 @@ internal static class GetSubmissionTokenEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-forms")
+            .Produces<GetSubmissionTokenResponse>(StatusCodes.Status200OK)
+            .ProducesRateLimited()
             .WithName("GetSubmissionToken")
             .WithTags("Website");
     }

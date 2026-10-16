@@ -19,6 +19,9 @@ internal static class GetPublicJobDetailEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces<GetPublicJobDetailResponse>(StatusCodes.Status200OK)
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetPublicJobDetail")
             .WithTags("Employer");
     }

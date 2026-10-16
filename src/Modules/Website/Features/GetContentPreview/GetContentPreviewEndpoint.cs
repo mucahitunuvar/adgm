@@ -25,6 +25,9 @@ internal static class GetContentPreviewEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces<ContentPreviewResponse>(StatusCodes.Status200OK)
+            .ProducesNotFoundProblem()
+            .ProducesRateLimited()
             .WithName("GetContentPreview")
             .WithTags("Website");
     }

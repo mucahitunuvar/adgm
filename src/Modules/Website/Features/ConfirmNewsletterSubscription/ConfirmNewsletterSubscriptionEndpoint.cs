@@ -19,6 +19,9 @@ internal static class ConfirmNewsletterSubscriptionEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-forms")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesRateLimited()
             .WithName("ConfirmNewsletterSubscription")
             .WithTags("Website");
     }

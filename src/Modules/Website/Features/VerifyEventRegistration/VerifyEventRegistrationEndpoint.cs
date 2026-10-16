@@ -20,6 +20,10 @@ internal static class VerifyEventRegistrationEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-forms")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("VerifyEventRegistration")
             .WithTags("Website");
     }

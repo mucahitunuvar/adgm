@@ -21,6 +21,11 @@ internal static class CreateCookieConsentRecordEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-forms")
+            .Produces(StatusCodes.Status202Accepted)
+            .ProducesValidationProblem()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("CreateCookieConsentRecord")
             .WithTags("Website");
     }

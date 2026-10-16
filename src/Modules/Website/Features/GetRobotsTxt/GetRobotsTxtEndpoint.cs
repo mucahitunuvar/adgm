@@ -19,6 +19,8 @@ internal static class GetRobotsTxtEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces(StatusCodes.Status200OK, typeof(string), "text/plain")
+            .ProducesRateLimited()
             .WithName("GetRobotsTxt")
             .WithTags("Website");
     }

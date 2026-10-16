@@ -19,6 +19,9 @@ internal static class UnsubscribeFromNewsletterEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-forms")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesRateLimited()
             .WithName("UnsubscribeFromNewsletter")
             .WithTags("Website");
     }

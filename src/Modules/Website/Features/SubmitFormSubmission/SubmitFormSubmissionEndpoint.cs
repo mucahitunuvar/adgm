@@ -64,6 +64,11 @@ internal static class SubmitFormSubmissionEndpoint
             .AllowAnonymous()
             .RequireRateLimiting("public-forms")
             .DisableAntiforgery()
+            .Produces<SubmitFormSubmissionResponse>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesNotFoundProblem()
+            .ProducesConflictProblem()
+            .ProducesRateLimited()
             .WithName("SubmitFormSubmission")
             .WithTags("Website");
     }

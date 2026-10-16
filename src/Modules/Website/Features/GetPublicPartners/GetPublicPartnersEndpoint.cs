@@ -1,4 +1,5 @@
 using GenclikMerkezi.BuildingBlocks.Infrastructure.Http;
+using GenclikMerkezi.Modules.Website.Application.Partners;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -19,6 +20,8 @@ internal static class GetPublicPartnersEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces<IReadOnlyList<PublicPartnerResponse>>(StatusCodes.Status200OK)
+            .ProducesRateLimited()
             .WithName("GetPublicPartners")
             .WithTags("Website");
     }

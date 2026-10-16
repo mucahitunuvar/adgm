@@ -39,6 +39,9 @@ internal static class GetPublicJobsEndpoint
                 })
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
+            .Produces<PagedResult<PublicJobListItemResponse>>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesRateLimited()
             .WithName("GetPublicJobs")
             .WithTags("Employer");
     }
