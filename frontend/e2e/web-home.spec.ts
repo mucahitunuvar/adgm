@@ -27,6 +27,10 @@ async function loginForApiToken(request: APIRequestContext): Promise<string> {
 // binen hiçbir katman olmadığını, gerçek arka planın solid `--color-bg` (#071f32) olduğunu gösterdi.
 // Bu yüzden SADECE bu iki seçici + bu kural için tolere edilir; başka hiçbir ihlal (başka seçici,
 // başka kural) bu filtreden geçmez.
+// Üretim doğrulaması (Faz 3 Koşu 3E, 16 Ekim): `next build && next start`'a karşı (`next dev`
+// DEĞİL) aynı iki seçici + açık/koyu tema axe ile ayrıca tarandı, bağımsız bir betikle - 0
+// `color-contrast` ihlali bulundu. Bu, istisnanın gerçekten yalnız `next dev` + headless
+// Chromium'a özgü olduğunu kanıtlıyor; istisna bu yüzden kaldırılmadı.
 const KNOWN_FALSE_POSITIVE_TARGETS = new Set(['.eyebrow', '.page-lead']);
 
 async function scanScreen(page: Page, url: string, label: string) {

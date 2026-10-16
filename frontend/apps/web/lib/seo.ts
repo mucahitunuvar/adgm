@@ -11,21 +11,37 @@ import type {
 // "sağlanmadı" anlamına gelmez. Bu yüzden boş değerler burada koşullu yayılım (spread) ile hiç
 // eklenmez, `|| undefined` ile "boş" bırakılmaz (canlı doğrulandı: ikincisi `<title>` etiketini
 // tamamen kaybettiriyordu - axe `document-title` ihlali).
+/**
+ * Üretim derlemesine karşı doğrulandı (Faz 3 Koşu 3E, 16 Ekim): liste SEO'sunda `canonicalUrl`
+ * backend'den açık override yoksa `ContentType.RoutePrefix`'e düşüyor ve bu alan başında `/`
+ * TAŞIMIYOR (ör. `"haberler"`) - olduğu gibi basılırsa Next bunu geçerli yoldan RELATİF sayıp
+ * `<link rel="canonical" href="haberler">` (kök-göreli değil) üretiyor; canlı `next build && next
+ * start`'a karşı `curl` ile görüldü, mutlak URL ile de başlamıyor. Bu yüzden her yerde tek bir
+ * normalizasyon noktasından geçirilir; backend sözleşmesi değiştirilmedi.
+ */
+function normalizeCanonical(value: string | null | undefined, fallbackPath: string): string {
+  const trimmed = value?.trim();
+  if (!trimmed) return fallbackPath;
+  if (trimmed.startsWith('/') || /^https?:\/\//i.test(trimmed)) return trimmed;
+  return `/${trimmed}`;
+}
+
 export function metadataFromHomeSeo(home: PublicHomeResponse): Metadata {
   const { seo } = home;
   const ogTitle = seo.ogTitle || seo.metaTitle;
   const ogDescription = seo.ogDescription || seo.metaDescription;
+  const canonical = normalizeCanonical(seo.canonicalUrl, '/');
 
   return {
     ...(seo.metaTitle && { title: seo.metaTitle }),
     ...(seo.metaDescription && { description: seo.metaDescription }),
-    alternates: { canonical: seo.canonicalUrl || '/' },
+    alternates: { canonical },
     ...(seo.noIndex && { robots: { index: false, follow: false } }),
     openGraph: {
       ...(ogTitle && { title: ogTitle }),
       ...(ogDescription && { description: ogDescription }),
       ...(seo.ogImageUrl && { images: [{ url: seo.ogImageUrl }] }),
-      url: seo.canonicalUrl || '/',
+      url: canonical,
     },
   };
 }
@@ -44,7 +60,7 @@ export function metadataFromResolution(resolution: RouteResolutionResponse, path
     ...(title && { title }),
     ...(seo?.metaDescription && { description: seo.metaDescription }),
     alternates: {
-      canonical: seo?.canonicalUrl || path,
+      canonical: normalizeCanonical(seo?.canonicalUrl, path),
       ...(languages && { languages }),
     },
     ...(seo?.noIndex && { robots: { index: false, follow: false } }),
@@ -67,12 +83,13 @@ export function metadataFromContentDetail(detail: PublicContentDetailResponse): 
   const ogTitle = seo.ogTitle || seo.metaTitle || detail.title;
   const ogDescription = seo.ogDescription || seo.metaDescription || detail.summary;
   const languages = buildHreflang(detail.alternates);
+  const canonical = normalizeCanonical(seo.canonicalUrl, detail.path);
 
   return {
     title: seo.metaTitle || detail.title,
     ...(seo.metaDescription && { description: seo.metaDescription }),
     alternates: {
-      canonical: seo.canonicalUrl || detail.path,
+      canonical,
       ...(languages && { languages }),
     },
     ...(seo.noIndex && { robots: { index: false, follow: false } }),
@@ -80,7 +97,7 @@ export function metadataFromContentDetail(detail: PublicContentDetailResponse): 
       title: ogTitle,
       ...(ogDescription && { description: ogDescription }),
       ...(seo.ogImageUrl && { images: [{ url: seo.ogImageUrl }] }),
-      url: seo.canonicalUrl || detail.path,
+      url: canonical,
     },
   };
 }
@@ -88,12 +105,13 @@ export function metadataFromContentDetail(detail: PublicContentDetailResponse): 
 export function metadataFromContentList(list: PublicContentListResponse, path: string): Metadata {
   const { seo } = list;
   const languages = buildHreflang(list.alternates);
+  const canonical = normalizeCanonical(seo.canonicalUrl, path);
 
   return {
     ...(seo.metaTitle && { title: seo.metaTitle }),
     ...(seo.metaDescription && { description: seo.metaDescription }),
     alternates: {
-      canonical: seo.canonicalUrl || path,
+      canonical,
       ...(languages && { languages }),
     },
     ...(seo.noIndex && { robots: { index: false, follow: false } }),
@@ -101,7 +119,7 @@ export function metadataFromContentList(list: PublicContentListResponse, path: s
       ...(seo.ogTitle || seo.metaTitle ? { title: seo.ogTitle || seo.metaTitle } : {}),
       ...(seo.ogDescription || seo.metaDescription ? { description: seo.ogDescription || seo.metaDescription } : {}),
       ...(seo.ogImageUrl && { images: [{ url: seo.ogImageUrl }] }),
-      url: seo.canonicalUrl || path,
+      url: canonical,
     },
   };
 }
