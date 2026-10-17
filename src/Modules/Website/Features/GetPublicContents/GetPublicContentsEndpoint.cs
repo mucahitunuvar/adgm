@@ -19,18 +19,30 @@ internal static class GetPublicContentsEndpoint
                     string? category,
                     string? tag,
                     string? search,
-                    DateTime? from,
-                    DateTime? to,
-                    bool? featured,
-                    int? page,
-                    int? pageSize,
+                    string? from,
+                    string? to,
+                    string? featured,
+                    string? page,
+                    string? pageSize,
                     ISender sender,
                     CancellationToken cancellationToken) =>
                 {
-                    var query = new GetPublicContentsQuery(type, lang, category, tag, search, from, to, featured)
+                    var fromResult = OptionalQueryParameter.Parse<DateTime>(from, nameof(from));
+                    if (fromResult.IsFailure) return fromResult.ToProblem();
+                    var toResult = OptionalQueryParameter.Parse<DateTime>(to, nameof(to));
+                    if (toResult.IsFailure) return toResult.ToProblem();
+                    var featuredResult = OptionalQueryParameter.Parse<bool>(featured, nameof(featured));
+                    if (featuredResult.IsFailure) return featuredResult.ToProblem();
+                    var pageResult = OptionalQueryParameter.Parse<int>(page, nameof(page));
+                    if (pageResult.IsFailure) return pageResult.ToProblem();
+                    var pageSizeResult = OptionalQueryParameter.Parse<int>(pageSize, nameof(pageSize));
+                    if (pageSizeResult.IsFailure) return pageSizeResult.ToProblem();
+
+                    var query = new GetPublicContentsQuery(
+                        type, lang, category, tag, search, fromResult.Value, toResult.Value, featuredResult.Value)
                     {
-                        Page = page ?? 1,
-                        PageSize = pageSize ?? PagedRequest.DefaultPageSize,
+                        Page = pageResult.Value ?? 1,
+                        PageSize = pageSizeResult.Value ?? PagedRequest.DefaultPageSize,
                     };
                     var result = await sender.Send(query, cancellationToken);
                     return result.ToOkOrProblem();

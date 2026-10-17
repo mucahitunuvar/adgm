@@ -27,6 +27,38 @@ public class PublicLookupItemsFlowTests(CustomWebApplicationFactory factory) : I
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    // Same bug class as GetPublicJobs (confirmed via OptionalQueryParameter's own callers): an empty
+    // "page"/"pageSize" used to crash the Guid?/int? binder; now treated as "not provided" (defaults
+    // apply), and a malformed one is a 400 ProblemDetails, not a 500.
+    [Fact]
+    public async Task GetPublicProvinces_WithEmptyPageAndPageSize_UsesDefaults()
+    {
+        var response = await _client.GetAsync("/api/v1/public/reference-data/provinces?page=&pageSize=");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, json.GetProperty("page").GetInt32());
+        Assert.Equal(20, json.GetProperty("pageSize").GetInt32());
+    }
+
+    [Fact]
+    public async Task GetPublicProvinces_WithMalformedPage_ReturnsBadRequestNotServerError()
+    {
+        var response = await _client.GetAsync("/api/v1/public/reference-data/provinces?page=abc");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Query.InvalidPage", json.GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task GetPublicProvinces_WithMalformedPageSize_ReturnsBadRequestNotServerError()
+    {
+        var response = await _client.GetAsync("/api/v1/public/reference-data/provinces?pageSize=abc");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     [Fact]
     public async Task GetPublicPositions_ReturnsOnlyIdAndName_ExcludingInactiveAndOtherFields()
     {

@@ -288,6 +288,49 @@ public class PublicJobsFlowTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    // Confirmed live before this fix: ?provinceId= and ?provinceId=abc both 500'd (minimal API's
+    // Guid? binder threw BadHttpRequestException on both an empty and a malformed value, and the
+    // global exception handler turned any unhandled exception into a generic 500). An empty filter
+    // now means "not applied" (200, same as no filter at all); a malformed one is a 400 ProblemDetails,
+    // not a 500 - see OptionalQueryParameter.
+    [Fact]
+    public async Task GetPublicJobs_WithEmptyProvinceId_IsTreatedAsNoFilter()
+    {
+        var unfiltered = await _client.GetAsync("/api/v1/public/jobs");
+        var withEmptyFilter = await _client.GetAsync("/api/v1/public/jobs?provinceId=");
+
+        Assert.Equal(HttpStatusCode.OK, withEmptyFilter.StatusCode);
+        var unfilteredJson = await unfiltered.Content.ReadFromJsonAsync<JsonElement>();
+        var filteredJson = await withEmptyFilter.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(unfilteredJson.GetProperty("totalCount").GetInt32(), filteredJson.GetProperty("totalCount").GetInt32());
+    }
+
+    [Fact]
+    public async Task GetPublicJobs_WithMalformedProvinceId_ReturnsBadRequestNotServerError()
+    {
+        var response = await _client.GetAsync("/api/v1/public/jobs?provinceId=not-a-guid");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Query.InvalidProvinceId", json.GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task GetPublicJobs_WithMalformedPage_ReturnsBadRequestNotServerError()
+    {
+        var response = await _client.GetAsync("/api/v1/public/jobs?page=abc");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetPublicJobs_WithMalformedIsForDisabledCandidates_ReturnsBadRequestNotServerError()
+    {
+        var response = await _client.GetAsync("/api/v1/public/jobs?isForDisabledCandidates=maybe");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     [Fact]
     public async Task GetPublicJobs_FiltersByCompanyId()
     {

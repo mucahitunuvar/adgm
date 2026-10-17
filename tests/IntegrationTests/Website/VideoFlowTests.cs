@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using GenclikMerkezi.IntegrationTests.Identity;
 using GenclikMerkezi.Modules.Identity.Features.Login;
 using GenclikMerkezi.Modules.Website.Features.ActivateVideo;
@@ -316,6 +317,38 @@ public class VideoFlowTests : IClassFixture<CustomWebApplicationFactory>
         var publicResult = await publicResponse.Content.ReadFromJsonAsync<PagedResult<PublicVideoResponse>>();
 
         Assert.DoesNotContain(publicResult!.Items, i => i.Id == created.Id);
+    }
+
+    // Confirmed live before this fix: an empty "page"/"pageSize" crashed the same way an empty
+    // provinceId did on /public/jobs (minimal API's int? binder throws on an empty string). Empty now
+    // means "not applied" (defaults apply); malformed is a 400 ProblemDetails, not a 500.
+    [Fact]
+    public async Task PublicVideos_WithEmptyPageAndPageSize_UsesDefaults()
+    {
+        var response = await _client.GetAsync("/api/v1/public/videos?page=&pageSize=");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<PagedResult<PublicVideoResponse>>();
+        Assert.Equal(1, body!.Page);
+        Assert.Equal(20, body.PageSize);
+    }
+
+    [Fact]
+    public async Task PublicVideos_WithMalformedPage_ReturnsBadRequestNotServerError()
+    {
+        var response = await _client.GetAsync("/api/v1/public/videos?page=abc");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Query.InvalidPage", json.GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task PublicVideos_WithMalformedPageSize_ReturnsBadRequestNotServerError()
+    {
+        var response = await _client.GetAsync("/api/v1/public/videos?pageSize=abc");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using GenclikMerkezi.IntegrationTests.Identity;
 using GenclikMerkezi.Modules.Identity.Features.Login;
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
@@ -281,6 +282,61 @@ public class PublicContentListAndDetailFlowTests : IClassFixture<CustomWebApplic
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<PublicContentListResponse>();
         Assert.Equal(50, body!.Items.PageSize);
+    }
+
+    // Confirmed live before this fix: an empty "from"/"to"/"featured"/"page"/"pageSize" crashed the
+    // same way an empty provinceId did on /public/jobs (minimal API's DateTime?/bool?/int? binder
+    // throws on an empty string, and the unhandled exception became a 500). Empty now means "not
+    // applied"; malformed is a 400 ProblemDetails, not a 500. A valid date range is also proven to
+    // actually filter (not just "not crash") - see OptionalQueryParameter.
+    [Fact]
+    public async Task GetPublicContents_WithEmptyFromToFeatured_IsTreatedAsNoFilter()
+    {
+        var unfiltered = await GetListAsync("?type=news");
+        var withEmptyFilters = await GetListAsync("?type=news&from=&to=&featured=&page=&pageSize=");
+
+        Assert.Equal(HttpStatusCode.OK, withEmptyFilters.StatusCode);
+        var unfilteredBody = await unfiltered.Content.ReadFromJsonAsync<PublicContentListResponse>();
+        var filteredBody = await withEmptyFilters.Content.ReadFromJsonAsync<PublicContentListResponse>();
+        Assert.Equal(unfilteredBody!.Items.TotalCount, filteredBody!.Items.TotalCount);
+    }
+
+    [Fact]
+    public async Task GetPublicContents_WithValidFromToRange_ReturnsSameItemsAsUnfiltered()
+    {
+        var unfiltered = await GetListAsync("?type=news");
+        var withWideRange = await GetListAsync("?type=news&from=2000-01-01T00:00:00Z&to=2100-01-01T00:00:00Z");
+
+        Assert.Equal(HttpStatusCode.OK, withWideRange.StatusCode);
+        var unfilteredBody = await unfiltered.Content.ReadFromJsonAsync<PublicContentListResponse>();
+        var filteredBody = await withWideRange.Content.ReadFromJsonAsync<PublicContentListResponse>();
+        Assert.Equal(unfilteredBody!.Items.TotalCount, filteredBody!.Items.TotalCount);
+    }
+
+    [Fact]
+    public async Task GetPublicContents_WithMalformedFrom_ReturnsBadRequestNotServerError()
+    {
+        var response = await GetListAsync("?type=news&from=not-a-date");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Query.InvalidFrom", json.GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task GetPublicContents_WithMalformedFeatured_ReturnsBadRequestNotServerError()
+    {
+        var response = await GetListAsync("?type=news&featured=maybe");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetPublicContents_WithMalformedPageSize_ReturnsBadRequestNotServerError()
+    {
+        var response = await GetListAsync("?type=news&pageSize=abc");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     // --- List: SEO ---

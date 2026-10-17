@@ -13,12 +13,17 @@ internal static class GetPublicVideosEndpoint
     {
         app.MapGet(
                 "/api/v1/public/videos",
-                async (string? lang, int? page, int? pageSize, ISender sender, CancellationToken cancellationToken) =>
+                async (string? lang, string? page, string? pageSize, ISender sender, CancellationToken cancellationToken) =>
                 {
+                    var pageResult = OptionalQueryParameter.Parse<int>(page, nameof(page));
+                    if (pageResult.IsFailure) return pageResult.ToProblem();
+                    var pageSizeResult = OptionalQueryParameter.Parse<int>(pageSize, nameof(pageSize));
+                    if (pageSizeResult.IsFailure) return pageSizeResult.ToProblem();
+
                     var query = new GetPublicVideosQuery(lang)
                     {
-                        Page = page ?? 1,
-                        PageSize = pageSize ?? PagedRequest.DefaultPageSize,
+                        Page = pageResult.Value ?? 1,
+                        PageSize = pageSizeResult.Value ?? PagedRequest.DefaultPageSize,
                     };
                     var result = await sender.Send(query, cancellationToken);
                     return result.ToOkOrProblem();
@@ -26,6 +31,7 @@ internal static class GetPublicVideosEndpoint
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
             .Produces<PagedResult<PublicVideoResponse>>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
             .ProducesRateLimited()
             .WithName("GetPublicVideos")
             .WithTags("Website");

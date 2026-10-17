@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using GenclikMerkezi.IntegrationTests.Identity;
 using GenclikMerkezi.Modules.Identity.Features.Login;
 using GenclikMerkezi.Modules.Website.Features.CreateContentItem;
@@ -134,6 +135,63 @@ public class PublicEventsFlowTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<PagedResult<PublicEventListItemResponse>>();
         Assert.DoesNotContain(body!.Items, i => i.Id == id);
+    }
+
+    // Confirmed live before this fix: an empty "from"/"to"/"page"/"pageSize" crashed the same way an
+    // empty provinceId did on /public/jobs (minimal API's DateTime?/int? binder throws on an empty
+    // string). Empty now means "not applied"; malformed is a 400 ProblemDetails, not a 500. A valid
+    // date range is also proven to actually filter (not just "not crash") - see OptionalQueryParameter.
+    [Fact]
+    public async Task GetPublicEvents_WithEmptyFromToPage_IsTreatedAsNoFilter()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var eventTypeId = await GetContentTypeIdAsync(accessToken, "event");
+        var created = await CreatePublishedEventAsync(accessToken, eventTypeId, NewScheduleRequest(startsAtUtc: DateTime.UtcNow.AddDays(1)));
+
+        var response = await GetEventsAsync("?when=all&pageSize=100&from=&to=&page=");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<PagedResult<PublicEventListItemResponse>>();
+        Assert.Contains(body!.Items, i => i.Id == created.Id);
+    }
+
+    [Fact]
+    public async Task GetPublicEvents_WithValidFromToRange_ActuallyFilters()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var eventTypeId = await GetContentTypeIdAsync(accessToken, "event");
+        var startsAtUtc = DateTime.UtcNow.AddDays(10);
+        var created = await CreatePublishedEventAsync(accessToken, eventTypeId, NewScheduleRequest(startsAtUtc: startsAtUtc));
+
+        var withinRange = await GetEventsAsync(
+            $"?when=all&pageSize=100&from={Uri.EscapeDataString((startsAtUtc.AddDays(-1)).ToString("O"))}&to={Uri.EscapeDataString(startsAtUtc.AddDays(1).ToString("O"))}");
+        var outsideRange = await GetEventsAsync(
+            $"?when=all&pageSize=100&from={Uri.EscapeDataString(startsAtUtc.AddDays(5).ToString("O"))}&to={Uri.EscapeDataString(startsAtUtc.AddDays(6).ToString("O"))}");
+
+        Assert.Equal(HttpStatusCode.OK, withinRange.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, outsideRange.StatusCode);
+        var withinBody = await withinRange.Content.ReadFromJsonAsync<PagedResult<PublicEventListItemResponse>>();
+        var outsideBody = await outsideRange.Content.ReadFromJsonAsync<PagedResult<PublicEventListItemResponse>>();
+        Assert.Contains(withinBody!.Items, i => i.Id == created.Id);
+        Assert.DoesNotContain(outsideBody!.Items, i => i.Id == created.Id);
+    }
+
+    [Fact]
+    public async Task GetPublicEvents_WithMalformedFrom_ReturnsBadRequestNotServerError()
+    {
+        var response = await GetEventsAsync("?from=not-a-date");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Query.InvalidFrom", json.GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task GetPublicEvents_WithMalformedPageSize_ReturnsBadRequestNotServerError()
+    {
+        var response = await GetEventsAsync("?pageSize=abc");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]

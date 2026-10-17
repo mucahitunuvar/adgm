@@ -15,17 +15,26 @@ internal static class GetDistrictsEndpoint
         app.MapGet(
                 "/api/v1/reference-data/districts",
                 async (
-                    Guid? provinceId,
-                    bool? activeOnly,
-                    int? page,
-                    int? pageSize,
+                    string? provinceId,
+                    string? activeOnly,
+                    string? page,
+                    string? pageSize,
                     ISender sender,
                     CancellationToken cancellationToken) =>
                 {
-                    var query = new GetDistrictsQuery(provinceId, activeOnly ?? true)
+                    var provinceIdResult = OptionalQueryParameter.Parse<Guid>(provinceId, nameof(provinceId));
+                    if (provinceIdResult.IsFailure) return provinceIdResult.ToProblem();
+                    var activeOnlyResult = OptionalQueryParameter.Parse<bool>(activeOnly, nameof(activeOnly));
+                    if (activeOnlyResult.IsFailure) return activeOnlyResult.ToProblem();
+                    var pageResult = OptionalQueryParameter.Parse<int>(page, nameof(page));
+                    if (pageResult.IsFailure) return pageResult.ToProblem();
+                    var pageSizeResult = OptionalQueryParameter.Parse<int>(pageSize, nameof(pageSize));
+                    if (pageSizeResult.IsFailure) return pageSizeResult.ToProblem();
+
+                    var query = new GetDistrictsQuery(provinceIdResult.Value, activeOnlyResult.Value ?? true)
                     {
-                        Page = page ?? 1,
-                        PageSize = pageSize ?? PagedRequest.DefaultPageSize,
+                        Page = pageResult.Value ?? 1,
+                        PageSize = pageSizeResult.Value ?? PagedRequest.DefaultPageSize,
                     };
                     var result = await sender.Send(query, cancellationToken);
 
@@ -33,6 +42,7 @@ internal static class GetDistrictsEndpoint
                 })
             .AllowAnonymous()
             .Produces<PagedResult<LookupItemSummary>>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
             .WithName("Getdistricts")
             .WithTags("ReferenceData");
     }

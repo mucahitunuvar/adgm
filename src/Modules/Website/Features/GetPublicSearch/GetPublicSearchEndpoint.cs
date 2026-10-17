@@ -18,15 +18,20 @@ internal static class GetPublicSearchEndpoint
                     string? lang,
                     string? type,
                     string? source,
-                    int? page,
-                    int? pageSize,
+                    string? page,
+                    string? pageSize,
                     ISender sender,
                     CancellationToken cancellationToken) =>
                 {
+                    var pageResult = OptionalQueryParameter.Parse<int>(page, nameof(page));
+                    if (pageResult.IsFailure) return pageResult.ToProblem();
+                    var pageSizeResult = OptionalQueryParameter.Parse<int>(pageSize, nameof(pageSize));
+                    if (pageSizeResult.IsFailure) return pageSizeResult.ToProblem();
+
                     var query = new GetPublicSearchQuery(q, lang, type, source)
                     {
-                        Page = page ?? 1,
-                        PageSize = pageSize ?? GetPublicSearchQueryHandler.DefaultPageSize,
+                        Page = pageResult.Value ?? 1,
+                        PageSize = pageSizeResult.Value ?? GetPublicSearchQueryHandler.DefaultPageSize,
                     };
                     var result = await sender.Send(query, cancellationToken);
                     return result.ToOkOrProblem();

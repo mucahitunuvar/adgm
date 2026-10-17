@@ -16,19 +16,28 @@ internal static class GetPublicEventsEndpoint
                 async (
                     string? typeKey,
                     string? when,
-                    DateTime? from,
-                    DateTime? to,
+                    string? from,
+                    string? to,
                     string? format,
                     string? lang,
-                    int? page,
-                    int? pageSize,
+                    string? page,
+                    string? pageSize,
                     ISender sender,
                     CancellationToken cancellationToken) =>
                 {
-                    var query = new GetPublicEventsQuery(typeKey, when, from, to, format, lang)
+                    var fromResult = OptionalQueryParameter.Parse<DateTime>(from, nameof(from));
+                    if (fromResult.IsFailure) return fromResult.ToProblem();
+                    var toResult = OptionalQueryParameter.Parse<DateTime>(to, nameof(to));
+                    if (toResult.IsFailure) return toResult.ToProblem();
+                    var pageResult = OptionalQueryParameter.Parse<int>(page, nameof(page));
+                    if (pageResult.IsFailure) return pageResult.ToProblem();
+                    var pageSizeResult = OptionalQueryParameter.Parse<int>(pageSize, nameof(pageSize));
+                    if (pageSizeResult.IsFailure) return pageSizeResult.ToProblem();
+
+                    var query = new GetPublicEventsQuery(typeKey, when, fromResult.Value, toResult.Value, format, lang)
                     {
-                        Page = page ?? 1,
-                        PageSize = pageSize ?? PagedRequest.DefaultPageSize,
+                        Page = pageResult.Value ?? 1,
+                        PageSize = pageSizeResult.Value ?? PagedRequest.DefaultPageSize,
                     };
                     var result = await sender.Send(query, cancellationToken);
                     return result.ToOkOrProblem();

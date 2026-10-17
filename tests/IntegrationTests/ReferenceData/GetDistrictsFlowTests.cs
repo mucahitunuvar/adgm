@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using GenclikMerkezi.Contracts.ReferenceData;
 using GenclikMerkezi.IntegrationTests.Identity;
 using GenclikMerkezi.SharedKernel.Results;
@@ -70,5 +71,44 @@ public class GetDistrictsFlowTests : IClassFixture<CustomWebApplicationFactory>
         var body = await response.Content.ReadFromJsonAsync<PagedResult<LookupItemSummary>>();
         Assert.Equal(1, body!.Page);
         Assert.Equal(100, body.PageSize);
+    }
+
+    // AllowAnonymous() with the exact same Guid?/bool?/int? binder risk as /public/jobs - found while
+    // surveying that bug class even though this route doesn't carry the "/public" prefix. An empty
+    // provinceId used to crash the same way; now it means "not applied" (same total as no filter).
+    [Fact]
+    public async Task GetDistricts_WithEmptyProvinceId_IsTreatedAsNoFilter()
+    {
+        var response = await _client.GetAsync("/api/v1/reference-data/districts?provinceId=");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<PagedResult<LookupItemSummary>>();
+        Assert.Equal(975, body!.TotalCount);
+    }
+
+    [Fact]
+    public async Task GetDistricts_WithMalformedProvinceId_ReturnsBadRequestNotServerError()
+    {
+        var response = await _client.GetAsync("/api/v1/reference-data/districts?provinceId=not-a-guid");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Query.InvalidProvinceId", json.GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task GetDistricts_WithMalformedActiveOnly_ReturnsBadRequestNotServerError()
+    {
+        var response = await _client.GetAsync("/api/v1/reference-data/districts?activeOnly=maybe");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetDistricts_WithMalformedPage_ReturnsBadRequestNotServerError()
+    {
+        var response = await _client.GetAsync("/api/v1/reference-data/districts?page=abc");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 }

@@ -26,15 +26,20 @@ internal static class PublicLookupEndpoints
         app.MapGet(
                 $"{BasePath}/{routeSegment}",
                 async (
-                    int? page,
-                    int? pageSize,
+                    string? page,
+                    string? pageSize,
                     ISender sender,
                     CancellationToken cancellationToken) =>
                 {
+                    var pageResult = OptionalQueryParameter.Parse<int>(page, nameof(page));
+                    if (pageResult.IsFailure) return pageResult.ToProblem();
+                    var pageSizeResult = OptionalQueryParameter.Parse<int>(pageSize, nameof(pageSize));
+                    if (pageSizeResult.IsFailure) return pageSizeResult.ToProblem();
+
                     var query = new GetPublicLookupItemsQuery(lookupType)
                     {
-                        Page = page ?? 1,
-                        PageSize = pageSize ?? PagedRequest.DefaultPageSize,
+                        Page = pageResult.Value ?? 1,
+                        PageSize = pageSizeResult.Value ?? PagedRequest.DefaultPageSize,
                     };
                     var result = await sender.Send(query, cancellationToken);
 
@@ -43,6 +48,7 @@ internal static class PublicLookupEndpoints
             .AllowAnonymous()
             .RequireRateLimiting("public-read")
             .Produces<PagedResult<PublicLookupItemResponse>>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
             .ProducesRateLimited()
             .WithName($"GetPublic{routeSegment}")
             .WithTags("ReferenceData");

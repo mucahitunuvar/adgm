@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using GenclikMerkezi.IntegrationTests.Identity;
 using GenclikMerkezi.Modules.Identity.Features.Login;
 using GenclikMerkezi.Modules.Website.Application.Abstractions;
@@ -286,6 +287,42 @@ public class PublicSearchEndpointFlowTests : IClassFixture<CustomWebApplicationF
         var secondPage = await _client.GetAsync($"/api/v1/public/search?q={token}&page=2&pageSize=2");
         var secondPageBody = await secondPage.Content.ReadFromJsonAsync<PublicSearchResponse>();
         Assert.Single(secondPageBody!.Results.Items);
+    }
+
+    // Confirmed live before this fix: an empty "page"/"pageSize" crashed the same way an empty
+    // provinceId did on /public/jobs (minimal API's int? binder throws on an empty string). Empty now
+    // means "not applied" (defaults apply); malformed is a 400 ProblemDetails, not a 500 - and this
+    // check runs in the ENDPOINT before GlobalSearchEnabled is even consulted, so no setup is needed
+    // for the malformed case.
+    [Fact]
+    public async Task Search_WithEmptyPageAndPageSize_UsesDefaults()
+    {
+        var accessToken = await LoginAsAdminAsync();
+        await SetGlobalSearchEnabledAsync(accessToken, enabled: true);
+
+        var response = await _client.GetAsync("/api/v1/public/search?q=ab&page=&pageSize=");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<PublicSearchResponse>();
+        Assert.Equal(1, body!.Results.Page);
+    }
+
+    [Fact]
+    public async Task Search_WithMalformedPage_ReturnsBadRequestNotServerError()
+    {
+        var response = await _client.GetAsync("/api/v1/public/search?q=ab&page=abc");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Query.InvalidPage", json.GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task Search_WithMalformedPageSize_ReturnsBadRequestNotServerError()
+    {
+        var response = await _client.GetAsync("/api/v1/public/search?q=ab&pageSize=abc");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
