@@ -411,6 +411,19 @@ export {
   type PublishLegalDocumentDraftRequest,
   type DeleteLegalDocumentDraftRequest,
 } from './adminWebsiteLegalDocuments';
+export {
+  getNewsletterSubscribers,
+  exportNewsletterSubscribers,
+  deleteNewsletterSubscriber,
+  type NewsletterSubscriberSummaryResponse,
+  type PagedResultOfNewsletterSubscriberSummaryResponse,
+  type ListNewsletterSubscribersParams,
+} from './adminWebsiteNewsletterSubscribers';
+export {
+  getCookieConsentSummary,
+  type CookieConsentSummaryResponse,
+  type GetCookieConsentSummaryParams,
+} from './adminWebsiteCookieConsent';
 export type { paths, operations, components } from './schema';
 export * from './enums.generated';
 export { parseEnum } from './parseEnum';
