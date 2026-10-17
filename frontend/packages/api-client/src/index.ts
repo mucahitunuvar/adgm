@@ -387,6 +387,30 @@ export {
   type ReplaceHomeDraftBlocksRequest,
   type ReplaceContentDraftBlocksRequest,
 } from './adminWebsiteLayouts';
+export {
+  getLegalDocuments,
+  getLegalDocumentById,
+  createLegalDocument,
+  updateLegalDocumentTranslation,
+  deleteLegalDocument,
+  createLegalDocumentDraft,
+  deleteLegalDocumentDraft,
+  updateLegalDocumentDraftBody,
+  publishLegalDocumentDraft,
+  type LegalDocumentSummaryResponse,
+  type LegalDocumentDetailResponse,
+  type LegalDocumentTranslationResponse,
+  type LegalDocumentVersionResponse,
+  type LegalDocumentVersionTranslationResponse,
+  type CreateLegalDocumentRequest,
+  type CreateLegalDocumentResponse,
+  type UpdateLegalDocumentTranslationRequest,
+  type CreateLegalDocumentDraftRequest,
+  type CreateLegalDocumentDraftResponse,
+  type UpdateLegalDocumentDraftBodyRequest,
+  type PublishLegalDocumentDraftRequest,
+  type DeleteLegalDocumentDraftRequest,
+} from './adminWebsiteLegalDocuments';
 export type { paths, operations, components } from './schema';
 export * from './enums.generated';
 export { parseEnum } from './parseEnum';

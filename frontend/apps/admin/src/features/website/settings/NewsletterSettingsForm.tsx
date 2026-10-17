@@ -1,8 +1,9 @@
-import { getApiErrorMessage, updateSiteSettingsNewsletter, type SiteSettingsResponse } from '@gm/api-client';
+import { getApiErrorMessage, LegalDocumentKind, updateSiteSettingsNewsletter, type SiteSettingsResponse } from '@gm/api-client';
 import { useAuth } from '@gm/auth';
-import { Button, FormSection, TextField, UnsavedChangesGuard, useToast } from '@gm/ui';
+import { Button, FormSection, UnsavedChangesGuard, useToast } from '@gm/ui';
 import { useMutation } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
+import { LegalDocumentSelector } from '../shared/LegalDocumentSelector';
 
 export function NewsletterSettingsForm({ settings, onSaved }: { settings: SiteSettingsResponse; onSaved: () => void }) {
   const { client } = useAuth();
@@ -30,9 +31,15 @@ export function NewsletterSettingsForm({ settings, onSaved }: { settings: SiteSe
       <UnsavedChangesGuard isDirty={isDirty} />
       <FormSection
         title="Bülten"
-        description="Bülten aboneliği formunda gösterilecek gizlilik bildirimi anahtarı (Yasal Metinler ekranındaki belge anahtarıyla eşleşir)."
+        description="Bülten aboneliği formunda gösterilecek gizlilik bildirimi. Yayınlı bir sürümü olmayan bir anahtar seçilirse bülten formu public sitede kapalı kalır."
       >
-        <TextField id="newsletter-privacy-key" label="Gizlilik bildirimi anahtarı" value={key} onChange={(event) => setKey(event.target.value)} />
+        <LegalDocumentSelector
+          idPrefix="newsletter"
+          label="Gizlilik bildirimi"
+          kind={LegalDocumentKind.PrivacyNotice}
+          value={key || null}
+          onChange={(next) => setKey(next ?? '')}
+        />
       </FormSection>
       <Button type="button" tone="quiet" onClick={() => setKey(initial)} disabled={!isDirty || mutation.isPending}>
         Değişiklikleri geri al

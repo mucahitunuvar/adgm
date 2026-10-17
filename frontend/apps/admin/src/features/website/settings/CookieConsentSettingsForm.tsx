@@ -1,5 +1,6 @@
 import {
   getApiErrorMessage,
+  LegalDocumentKind,
   updateSiteSettingsCookieConsent,
   type SiteSettingsResponse,
   type UpdateSiteSettingsCookieConsentTranslationInput,
@@ -18,6 +19,7 @@ import {
 import { useMutation } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { mergeTranslations } from '../mergeTranslations';
+import { LegalDocumentSelector } from '../shared/LegalDocumentSelector';
 
 type Translation = UpdateSiteSettingsCookieConsentTranslationInput;
 
@@ -80,7 +82,13 @@ export function CookieConsentSettingsForm({
     <form onSubmit={handleSubmit}>
       <UnsavedChangesGuard isDirty={isDirty} />
       <FormSection title="Çerez onayı" description="Çerez banner'ının metni ve kategori açıklamaları.">
-        <TextField id="cookie-policy-key" label="Çerez politikası belge anahtarı" value={policyKey} onChange={(event) => setPolicyKey(event.target.value)} />
+        <LegalDocumentSelector
+          idPrefix="cookie-consent"
+          label="Çerez politikası"
+          kind={LegalDocumentKind.CookiePolicy}
+          value={policyKey || null}
+          onChange={(next) => setPolicyKey(next ?? '')}
+        />
         <TranslationTabs
           languages={languages}
           activeCode={activeLanguage}

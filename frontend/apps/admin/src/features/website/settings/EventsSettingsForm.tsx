@@ -1,8 +1,9 @@
-import { getApiErrorMessage, updateSiteSettingsEvents, type SiteSettingsResponse } from '@gm/api-client';
+import { getApiErrorMessage, LegalDocumentKind, updateSiteSettingsEvents, type SiteSettingsResponse } from '@gm/api-client';
 import { useAuth } from '@gm/auth';
-import { Button, FormSection, TextField, UnsavedChangesGuard, useToast } from '@gm/ui';
+import { Button, FormSection, UnsavedChangesGuard, useToast } from '@gm/ui';
 import { useMutation } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
+import { LegalDocumentSelector } from '../shared/LegalDocumentSelector';
 
 export function EventsSettingsForm({ settings, onSaved }: { settings: SiteSettingsResponse; onSaved: () => void }) {
   const { client } = useAuth();
@@ -28,8 +29,17 @@ export function EventsSettingsForm({ settings, onSaved }: { settings: SiteSettin
   return (
     <form onSubmit={handleSubmit}>
       <UnsavedChangesGuard isDirty={isDirty} />
-      <FormSection title="Etkinlik" description="Etkinlik kaydı formunda gösterilecek gizlilik bildirimi anahtarı.">
-        <TextField id="events-privacy-key" label="Gizlilik bildirimi anahtarı" value={key} onChange={(event) => setKey(event.target.value)} />
+      <FormSection
+        title="Etkinlik"
+        description="Etkinlik kaydı formunda gösterilecek gizlilik bildirimi. Yayınlı bir sürümü olmayan bir anahtar seçilirse etkinlik kaydı public sitede kapalı kalır."
+      >
+        <LegalDocumentSelector
+          idPrefix="events"
+          label="Gizlilik bildirimi"
+          kind={LegalDocumentKind.PrivacyNotice}
+          value={key || null}
+          onChange={(next) => setKey(next ?? '')}
+        />
       </FormSection>
       <Button type="button" tone="quiet" onClick={() => setKey(initial)} disabled={!isDirty || mutation.isPending}>
         Değişiklikleri geri al
