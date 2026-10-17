@@ -1029,6 +1029,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -1082,6 +1085,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -1097,39 +1103,28 @@
             "name": "provinceId",
             "in": "query",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "string"
             }
           },
           {
             "name": "activeOnly",
             "in": "query",
             "schema": {
-              "type": "boolean"
+              "type": "string"
             }
           },
           {
             "name": "page",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           },
           {
             "name": "pageSize",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
@@ -1140,6 +1135,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PagedResultOfLookupItemSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -1196,6 +1201,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -1249,6 +1257,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -1379,6 +1390,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -1509,6 +1523,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -1639,6 +1656,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -1769,6 +1789,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -1899,6 +1922,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -2029,6 +2055,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -2159,6 +2188,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -2289,6 +2321,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -2419,6 +2454,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -2549,6 +2587,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -2679,6 +2720,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -2809,6 +2853,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -2939,6 +2986,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -3069,6 +3119,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -3199,6 +3252,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -3329,6 +3385,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -3459,6 +3518,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -3589,6 +3651,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -3719,6 +3784,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -3849,6 +3917,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -3941,24 +4012,14 @@
             "name": "page",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           },
           {
             "name": "pageSize",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
@@ -3969,6 +4030,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PagedResultOfPublicLookupItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -3990,24 +4061,14 @@
             "name": "page",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           },
           {
             "name": "pageSize",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
@@ -4018,6 +4079,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PagedResultOfPublicLookupItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -4039,24 +4110,14 @@
             "name": "page",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           },
           {
             "name": "pageSize",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
@@ -4067,6 +4128,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PagedResultOfPublicLookupItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -4088,24 +4159,14 @@
             "name": "page",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           },
           {
             "name": "pageSize",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
@@ -4116,6 +4177,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PagedResultOfPublicLookupItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -4137,24 +4208,14 @@
             "name": "page",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           },
           {
             "name": "pageSize",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
@@ -4165,6 +4226,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PagedResultOfPublicLookupItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -6138,55 +6209,49 @@
             "name": "provinceId",
             "in": "query",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "string"
             }
           },
           {
             "name": "employmentTypeId",
             "in": "query",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "string"
             }
           },
           {
             "name": "workLocationTypeId",
             "in": "query",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "string"
             }
           },
           {
             "name": "positionId",
             "in": "query",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "string"
             }
           },
           {
             "name": "departmentId",
             "in": "query",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "string"
             }
           },
           {
             "name": "companyId",
             "in": "query",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "string"
             }
           },
           {
             "name": "isForDisabledCandidates",
             "in": "query",
             "schema": {
-              "type": "boolean"
+              "type": "string"
             }
           },
           {
@@ -6200,24 +6265,14 @@
             "name": "page",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           },
           {
             "name": "pageSize",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
@@ -10748,47 +10803,35 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "string",
-              "format": "date-time"
+              "type": "string"
             }
           },
           {
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "string",
-              "format": "date-time"
+              "type": "string"
             }
           },
           {
             "name": "featured",
             "in": "query",
             "schema": {
-              "type": "boolean"
+              "type": "string"
             }
           },
           {
             "name": "page",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           },
           {
             "name": "pageSize",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
@@ -11210,16 +11253,14 @@
             "name": "from",
             "in": "query",
             "schema": {
-              "type": "string",
-              "format": "date-time"
+              "type": "string"
             }
           },
           {
             "name": "to",
             "in": "query",
             "schema": {
-              "type": "string",
-              "format": "date-time"
+              "type": "string"
             }
           },
           {
@@ -11240,24 +11281,14 @@
             "name": "page",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           },
           {
             "name": "pageSize",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
@@ -13250,24 +13281,14 @@
             "name": "page",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           },
           {
             "name": "pageSize",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
@@ -13278,6 +13299,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PagedResultOfPublicVideoResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -20307,24 +20338,14 @@
             "name": "page",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           },
           {
             "name": "pageSize",
             "in": "query",
             "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
+              "type": "string"
             }
           }
         ],

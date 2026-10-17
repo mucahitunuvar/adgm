@@ -12,7 +12,7 @@ const PAGE_SIZE = 12;
  */
 export async function EventListPage({ contentTypeKey, basePath, when = 'upcoming', page = 1 }: { contentTypeKey: string; basePath: string; when?: string; page?: number }) {
   const client = createServerApiClient();
-  const result = await listPublicEvents(client, { typeKey: contentTypeKey, when, page, pageSize: PAGE_SIZE });
+  const result = await listPublicEvents(client, { typeKey: contentTypeKey, when, page: String(page), pageSize: String(PAGE_SIZE) });
 
   return (
     <div className="container section content-list-page">

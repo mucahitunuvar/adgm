@@ -10534,6 +10534,13 @@ export interface operations {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     Getprovinces: {
@@ -10558,15 +10565,22 @@ export interface operations {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     Getdistricts: {
         parameters: {
             query?: {
                 provinceId?: string;
-                activeOnly?: boolean;
-                page?: number | string;
-                pageSize?: number | string;
+                activeOnly?: string;
+                page?: string;
+                pageSize?: string;
             };
             header?: never;
             path?: never;
@@ -10581,6 +10595,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
         };
@@ -10607,6 +10630,13 @@ export interface operations {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     Getsectors: {
@@ -10630,6 +10660,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -10721,6 +10758,13 @@ export interface operations {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     Createpositions: {
@@ -10810,6 +10854,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -10901,6 +10952,13 @@ export interface operations {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     "Creatework-location-types": {
@@ -10990,6 +11048,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -11081,6 +11146,13 @@ export interface operations {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     "Createeducation-levels": {
@@ -11170,6 +11242,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -11261,6 +11340,13 @@ export interface operations {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     "Createmilitary-statuses": {
@@ -11350,6 +11436,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -11441,6 +11534,13 @@ export interface operations {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     "Createlanguage-levels": {
@@ -11530,6 +11630,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -11621,6 +11728,13 @@ export interface operations {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     Createnationalities: {
@@ -11710,6 +11824,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -11801,6 +11922,13 @@ export interface operations {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     "Creatediploma-grading-systems": {
@@ -11890,6 +12018,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -11981,6 +12116,13 @@ export interface operations {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     Createcurrencies: {
@@ -12070,6 +12212,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -12161,6 +12310,13 @@ export interface operations {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     "Createschool-categories": {
@@ -12250,6 +12406,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -12341,6 +12504,13 @@ export interface operations {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     Createschools: {
@@ -12431,6 +12601,13 @@ export interface operations {
                     "application/json": components["schemas"]["PagedResultOfLookupItemSummary"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     CreateTaxOffice: {
@@ -12502,8 +12679,8 @@ export interface operations {
     GetPublicprovinces: {
         parameters: {
             query?: {
-                page?: number | string;
-                pageSize?: number | string;
+                page?: string;
+                pageSize?: string;
             };
             header?: never;
             path?: never;
@@ -12518,6 +12695,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PagedResultOfPublicLookupItemResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description Too Many Requests */
@@ -12532,8 +12718,8 @@ export interface operations {
     GetPublicpositions: {
         parameters: {
             query?: {
-                page?: number | string;
-                pageSize?: number | string;
+                page?: string;
+                pageSize?: string;
             };
             header?: never;
             path?: never;
@@ -12548,6 +12734,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PagedResultOfPublicLookupItemResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description Too Many Requests */
@@ -12562,8 +12757,8 @@ export interface operations {
     GetPublicdepartments: {
         parameters: {
             query?: {
-                page?: number | string;
-                pageSize?: number | string;
+                page?: string;
+                pageSize?: string;
             };
             header?: never;
             path?: never;
@@ -12578,6 +12773,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PagedResultOfPublicLookupItemResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description Too Many Requests */
@@ -12592,8 +12796,8 @@ export interface operations {
     "GetPublicemployment-types": {
         parameters: {
             query?: {
-                page?: number | string;
-                pageSize?: number | string;
+                page?: string;
+                pageSize?: string;
             };
             header?: never;
             path?: never;
@@ -12608,6 +12812,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PagedResultOfPublicLookupItemResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description Too Many Requests */
@@ -12622,8 +12835,8 @@ export interface operations {
     "GetPublicwork-location-types": {
         parameters: {
             query?: {
-                page?: number | string;
-                pageSize?: number | string;
+                page?: string;
+                pageSize?: string;
             };
             header?: never;
             path?: never;
@@ -12638,6 +12851,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PagedResultOfPublicLookupItemResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description Too Many Requests */
@@ -14027,10 +14249,10 @@ export interface operations {
                 positionId?: string;
                 departmentId?: string;
                 companyId?: string;
-                isForDisabledCandidates?: boolean;
+                isForDisabledCandidates?: string;
                 q?: string;
-                page?: number | string;
-                pageSize?: number | string;
+                page?: string;
+                pageSize?: string;
             };
             header?: never;
             path?: never;
@@ -18190,9 +18412,9 @@ export interface operations {
                 search?: string;
                 from?: string;
                 to?: string;
-                featured?: boolean;
-                page?: number | string;
-                pageSize?: number | string;
+                featured?: string;
+                page?: string;
+                pageSize?: string;
             };
             header?: never;
             path?: never;
@@ -18596,8 +18818,8 @@ export interface operations {
                 to?: string;
                 format?: string;
                 lang?: string;
-                page?: number | string;
-                pageSize?: number | string;
+                page?: string;
+                pageSize?: string;
             };
             header?: never;
             path?: never;
@@ -20425,8 +20647,8 @@ export interface operations {
         parameters: {
             query?: {
                 lang?: string;
-                page?: number | string;
-                pageSize?: number | string;
+                page?: string;
+                pageSize?: string;
             };
             header?: never;
             path?: never;
@@ -20441,6 +20663,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PagedResultOfPublicVideoResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description Too Many Requests */
@@ -27237,8 +27468,8 @@ export interface operations {
                 lang?: string;
                 type?: string;
                 source?: string;
-                page?: number | string;
-                pageSize?: number | string;
+                page?: string;
+                pageSize?: string;
             };
             header?: never;
             path?: never;

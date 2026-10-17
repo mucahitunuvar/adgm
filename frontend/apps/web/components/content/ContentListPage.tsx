@@ -32,8 +32,8 @@ export async function ContentListPage({ contentTypeKey, basePath, category, sear
     type: contentTypeKey,
     category,
     search,
-    page,
-    pageSize: PAGE_SIZE,
+    page: String(page),
+    pageSize: String(PAGE_SIZE),
   });
 
   const items = list.items.items;
