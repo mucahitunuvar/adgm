@@ -13,6 +13,27 @@ public class ReferenceDataPublicReadRateLimitTests
 {
     private const string ReferenceDataEndpoint = "/api/v1/reference-data/countries";
 
+    // GetDistrictsEndpoint is a standalone endpoint (not built on LookupEndpoints.MapReadOnly like
+    // every other lookup type), so it had fallen through without a "public-read" policy attached -
+    // the same previously-existing inconsistency this file's other tests cover, just missed for this
+    // one route. Response shape is unchanged (still PagedResult<LookupItemSummary> on success).
+    [Fact]
+    public async Task GetDistrictsEndpoint_ExceedsConfiguredLimit_Returns429WithEmptyBody()
+    {
+        using var factory = new ReverseProxyTestFactory(reverseProxyEnabled: false, knownNetworks: [], publicReadPermitLimit: 2);
+        var client = factory.CreateClient();
+        const string districtsEndpoint = "/api/v1/reference-data/districts";
+
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync(districtsEndpoint)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync(districtsEndpoint)).StatusCode);
+
+        var rejected = await client.GetAsync(districtsEndpoint);
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, rejected.StatusCode);
+        var body = await rejected.Content.ReadAsStringAsync();
+        Assert.Equal(string.Empty, body);
+    }
+
     [Fact]
     public async Task ReferenceDataLookupEndpoint_ExceedsConfiguredLimit_Returns429WithEmptyBody()
     {

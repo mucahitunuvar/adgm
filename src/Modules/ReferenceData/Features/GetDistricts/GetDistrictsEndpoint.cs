@@ -41,8 +41,10 @@ internal static class GetDistrictsEndpoint
                     return result.ToOkOrProblem();
                 })
             .AllowAnonymous()
+            .RequireRateLimiting("public-read")
             .Produces<PagedResult<LookupItemSummary>>(StatusCodes.Status200OK)
             .ProducesValidationProblem()
+            .ProducesRateLimited()
             .WithName("Getdistricts")
             .WithTags("ReferenceData");
     }
