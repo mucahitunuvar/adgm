@@ -19,6 +19,7 @@ export type SetContentItemVideosRequest = components['schemas']['SetContentItemV
 export type SetContentItemAttachmentsRequest = components['schemas']['SetContentItemAttachmentsRequest'];
 export type SetContentItemRelatedContentRequest = components['schemas']['SetContentItemRelatedContentRequest'];
 export type SetContentItemParentRequest = components['schemas']['SetContentItemParentRequest'];
+export type SetContentItemFormRequest = components['schemas']['SetContentItemFormRequest'];
 export type PublishContentItemRequest = components['schemas']['PublishContentItemRequest'];
 export type ScheduleContentItemRequest = components['schemas']['ScheduleContentItemRequest'];
 export type DuplicateContentItemResponse = components['schemas']['DuplicateContentItemResponse'];
@@ -238,4 +239,9 @@ export function createContentPreviewLink(
   body: CreateContentPreviewLinkRequest,
 ): Promise<CreateContentPreviewLinkResponse> {
   return client.request(`${basePath(id)}/preview-links`, { method: 'POST', body });
+}
+
+/** `formDefinitionId: null` bağlı formu kaldırır. Yalnız `supportsForm` tipli içeriklerde geçerli. */
+export function setContentItemForm(client: ApiClient, id: string, body: SetContentItemFormRequest): Promise<void> {
+  return client.request(`${basePath(id)}/form`, { method: 'PUT', body });
 }
