@@ -17,7 +17,7 @@ export function Footer({ site }: { site: PublicSiteResponse }) {
   return (
     <footer className="site-footer">
       <div className="container">
-        <NewsletterSection enabled={site.newsletterEnabled} />
+        <NewsletterSection enabled={site.newsletterEnabled} privacyNotice={site.newsletterPrivacyNotice} />
       </div>
       <div className="container site-footer__grid">
         <div className="site-footer__brand">

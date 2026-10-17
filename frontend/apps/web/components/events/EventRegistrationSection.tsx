@@ -6,12 +6,12 @@ import {
   getPublicContentById,
   createEventRegistration,
   resendEventRegistrationVerification,
-  createSubmissionToken,
   publicEventCalendarUrl,
   EventRegistrationState,
 } from '@gm/api-client';
-import type { PublicContentDetailEventResponse } from '@gm/api-client';
+import type { PublicContentDetailEventResponse, PublicSiteResponse } from '@gm/api-client';
 import { TextField } from '@gm/ui';
+import { useSubmissionToken } from '../../lib/useSubmissionToken';
 import { HoneypotField } from '../forms/HoneypotField';
 import { TurnstileWidget } from '../forms/TurnstileWidget';
 import { registrationStateLabel, canRegister } from './eventLabels';
@@ -29,10 +29,14 @@ export function EventRegistrationSection({
   contentItemId,
   initialEvent,
   turnstileSiteKey,
+  privacyNotice,
 }: {
   contentItemId: string;
   initialEvent: PublicContentDetailEventResponse;
   turnstileSiteKey: string;
+  // `site.eventPrivacyNotice` (madde 38): `null`sa anahtar `SiteSettings`'te ayarlanmamış ya da
+  // belgenin yürürlükte sürümü yok - form UYDURMA bir sürüm göndermeden tamamen kapalı kalır.
+  privacyNotice: PublicSiteResponse['eventPrivacyNotice'];
 }) {
   const [event, setEvent] = useState(initialEvent);
   const [phase, setPhase] = useState<Phase>('idle');
@@ -40,6 +44,9 @@ export function EventRegistrationSection({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [submittedEmail, setSubmittedEmail] = useState('');
+  // Yalnız kayıt formu GERÇEKTEN gösterilecekse istenir - her etkinlik detayı görüntülemesi bu dar
+  // `public-forms` kotasından (madde 4, `useSubmissionToken` yorumu) bir hak tüketmesin diye.
+  const submissionToken = useSubmissionToken(canRegister(event.registrationState) && !event.isCancelled && privacyNotice != null);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,6 +65,7 @@ export function EventRegistrationSection({
 
   async function handleSubmit(formEvent: FormEvent<HTMLFormElement>) {
     formEvent.preventDefault();
+    if (!privacyNotice) return;
     setError(null);
     setFieldErrors({});
     setPhase('submitting');
@@ -67,9 +75,8 @@ export function EventRegistrationSection({
 
     try {
       const client = createApiClient({ baseUrl: window.location.origin });
-      const { token: submissionToken } = await createSubmissionToken(client);
       await createEventRegistration(client, contentItemId, {
-        submissionToken,
+        submissionToken: submissionToken ?? '',
         turnstileToken,
         website: String(form.get('website') ?? ''),
         firstName: String(form.get('firstName') ?? ''),
@@ -77,11 +84,7 @@ export function EventRegistrationSection({
         email,
         phone: String(form.get('phone') ?? ''),
         lang: 'tr',
-        // Bilinen backend boşluğu: `PublicSiteResponse`/`PublicContentDetailEventResponse` hangi
-        // `LegalDocument` anahtarının/sürümünün etkinlik kaydına bağlı olduğunu döndürmüyor (A6/A36
-        // ile aynı sınıf eksiklik, bkz. FRONTEND-ACIK-MADDELER.md). `NewsletterSection.tsx` ile aynı
-        // geçici varsayım izlenir; backend sürümü değiştirirse 409 (`LegalVersionChanged`) döner.
-        acceptedPrivacyNoticeVersion: 1,
+        acceptedPrivacyNoticeVersion: privacyNotice.version,
       });
       setSubmittedEmail(email);
       setPhase('pending-verification');
@@ -102,10 +105,9 @@ export function EventRegistrationSection({
     setError(null);
     try {
       const client = createApiClient({ baseUrl: window.location.origin });
-      const { token: submissionToken } = await createSubmissionToken(client);
       await resendEventRegistrationVerification(client, {
         contentItemId,
-        submissionToken,
+        submissionToken: submissionToken ?? '',
         turnstileToken,
         website: '',
         email: submittedEmail,
@@ -137,7 +139,11 @@ export function EventRegistrationSection({
             Doğrulama e-postasını yeniden gönder
           </button>
         </div>
-      ) : canRegister(event.registrationState) && !event.isCancelled ? (
+      ) : !canRegister(event.registrationState) || event.isCancelled ? (
+        !event.isCancelled && <p className="page-lead">Bu etkinlik için şu anda kayıt alınmıyor.</p>
+      ) : !privacyNotice ? (
+        <p className="page-lead">Kayıt formu şu anda kullanılamıyor.</p>
+      ) : (
         <form onSubmit={handleSubmit} className="event-registration__form" noValidate>
           <HoneypotField />
           <TextField id="event-firstName" name="firstName" label="Ad" required error={fieldErrors.firstName} />
@@ -150,12 +156,13 @@ export function EventRegistrationSection({
               {error}
             </p>
           )}
+          <p className="event-registration__notice">
+            Kayıt olarak <a href={`/legal/${privacyNotice.key}`}>aydınlatma metnini</a> kabul etmiş olursunuz.
+          </p>
           <button type="submit" className="button button--primary" disabled={phase === 'submitting'}>
             {phase === 'submitting' ? 'Gönderiliyor…' : 'Kayıt ol'}
           </button>
         </form>
-      ) : (
-        !event.isCancelled && <p className="page-lead">Bu etkinlik için şu anda kayıt alınmıyor.</p>
       )}
     </section>
   );

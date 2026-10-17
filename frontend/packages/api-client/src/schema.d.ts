@@ -1007,6 +1007,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/reference-data/provinces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetPublicprovinces"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/reference-data/positions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetPublicpositions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/reference-data/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetPublicdepartments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/reference-data/employment-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetPublicemployment-types"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/reference-data/work-location-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetPublicwork-location-types"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/candidates/register": {
         parameters: {
             query?: never;
@@ -7547,6 +7627,19 @@ export interface components {
             hasNextPage?: boolean;
             hasPreviousPage?: boolean;
         };
+        PagedResultOfPublicLookupItemResponse: {
+            items: components["schemas"]["PublicLookupItemResponse"][];
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+            hasNextPage?: boolean;
+            hasPreviousPage?: boolean;
+        };
         PagedResultOfPublicSearchResultItemResponse: {
             items: components["schemas"]["PublicSearchResultItemResponse"][];
             /** Format: int32 */
@@ -8132,6 +8225,11 @@ export interface components {
             /** Format: date-time */
             effectiveAtUtc: string;
         };
+        PublicLookupItemResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
         PublicMenuItemResponse: {
             label: string;
             href: null | string;
@@ -8229,6 +8327,11 @@ export interface components {
             /** Format: int32 */
             sortOrder: number | string;
         };
+        PublicSiteLegalNoticeResponse: {
+            key: string;
+            /** Format: int32 */
+            version: number | string;
+        };
         PublicSiteResponse: {
             languages: components["schemas"]["PublicSiteLanguageResponse"][];
             resolvedLanguageCode: string;
@@ -8257,6 +8360,8 @@ export interface components {
             cookieConsent: components["schemas"]["PublicSiteCookieConsentResponse"];
             scripts: components["schemas"]["PublicSiteScriptResponse"][];
             organization: Record<string, never>;
+            newsletterPrivacyNotice: null | components["schemas"]["PublicSiteLegalNoticeResponse"];
+            eventPrivacyNotice: null | components["schemas"]["PublicSiteLegalNoticeResponse"];
         };
         PublicSiteScriptResponse: {
             /** Format: uuid */
@@ -12387,6 +12492,156 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetPublicprovinces: {
+        parameters: {
+            query?: {
+                page?: number | string;
+                pageSize?: number | string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedResultOfPublicLookupItemResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetPublicpositions: {
+        parameters: {
+            query?: {
+                page?: number | string;
+                pageSize?: number | string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedResultOfPublicLookupItemResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetPublicdepartments: {
+        parameters: {
+            query?: {
+                page?: number | string;
+                pageSize?: number | string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedResultOfPublicLookupItemResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "GetPublicemployment-types": {
+        parameters: {
+            query?: {
+                page?: number | string;
+                pageSize?: number | string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedResultOfPublicLookupItemResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    "GetPublicwork-location-types": {
+        parameters: {
+            query?: {
+                page?: number | string;
+                pageSize?: number | string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedResultOfPublicLookupItemResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

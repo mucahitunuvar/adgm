@@ -31,7 +31,7 @@ export async function HomePage() {
       {renderLayoutBlocks(home.blocks, { publicJobListingsEnabled: site.publicJobListingsEnabled })}
       {site.newsletterEnabled && (
         <div className="container section">
-          <NewsletterSection enabled={site.newsletterEnabled} />
+          <NewsletterSection enabled={site.newsletterEnabled} privacyNotice={site.newsletterPrivacyNotice} />
         </div>
       )}
       <PopupHost popups={site.popups} />
