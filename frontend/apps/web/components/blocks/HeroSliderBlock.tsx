@@ -17,12 +17,27 @@ interface Slide {
 export function HeroSliderBlock({ data }: { data: Slide[] | null }) {
   if (!data || data.length === 0) return null;
 
-  const slides = data.map((slide) => {
+  const slides = data.map((slide, index) => {
     const href = safeUrl(slide.buttonHref);
+    // Yalnız ilk slayt sayfa yüklenir yüklenmez görünür (katlama üstü); diğerleri Carousel'in
+    // transform'uyla görünüme girer, geç yüklenmeleri sorun değildir.
+    const isFirstSlide = index === 0;
     return (
       <div className="hero-slide" key={slide.id}>
-        <BlockImage image={slide.mobile ?? slide.desktop} alt={slide.altText} className="hero-slide__image hero-slide__image--mobile" sizes="100vw" />
-        <BlockImage image={slide.desktop} alt={slide.altText} className="hero-slide__image hero-slide__image--desktop" sizes="100vw" />
+        <BlockImage
+          image={slide.mobile ?? slide.desktop}
+          alt={slide.altText}
+          className="hero-slide__image hero-slide__image--mobile"
+          sizes="100vw"
+          priority={isFirstSlide}
+        />
+        <BlockImage
+          image={slide.desktop}
+          alt={slide.altText}
+          className="hero-slide__image hero-slide__image--desktop"
+          sizes="100vw"
+          priority={isFirstSlide}
+        />
         <div className="hero-slide__content">
           {slide.eyebrow && <p className="eyebrow">{slide.eyebrow}</p>}
           <h2>{slide.title}</h2>

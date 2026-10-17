@@ -6,7 +6,8 @@ import { JsonLd } from '@gm/ui';
 import '@fontsource/manrope/latin-ext-400.css';
 import '@fontsource/manrope/latin-ext-600.css';
 import '@fontsource/manrope/latin-ext-700.css';
-import '@fontsource/manrope/latin-ext-800.css';
+// KOŞU 3F (LCP): latin-ext-800 kaldırıldı - hiçbir kaynak CSS kuralı `font-weight: 800` kullanmıyor
+// (grep ile doğrulandı); gereksiz bir @font-face bildirimi render-blocking CSS'e boşuna bayt katıyordu.
 import '@fontsource/poppins/latin-ext-600.css';
 import '@fontsource/poppins/latin-ext-700.css';
 import '@gm/design-tokens/tokens.css';
@@ -17,7 +18,15 @@ import { Footer } from '../components/Footer';
 import { CookieConsentBanner } from '../components/CookieConsentBanner';
 import { getSite } from '../lib/getSite';
 
+// KOŞU 3F: `metadataBase` olmadan Next, `alternates.canonical`/`openGraph.url` için verilen
+// kök-göreli yolu (`seo.ts`'teki `normalizeCanonical`'ın ürettiği `/haberler` gibi) OLDUĞU GİBİ basar
+// - üretim derlemesine karşı doğrulandı, `<link rel="canonical">` mutlak bir URL değil. `metadataBase`
+// verilince Next tüm sayfalarda bunu otomatik mutlak hale getirir (tek yerde çözülür, her
+// `metadataFrom*` fonksiyonu tek tek değişmez).
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: 'Ahmet Demir Gençlik Merkezi',
   description: 'Gençlik merkezi derneği kurumsal sitesi ve istihdam destek portalı.',
 };

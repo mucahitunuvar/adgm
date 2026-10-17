@@ -43,12 +43,19 @@ export async function ContentDetailPage({ contentItemId, nonce }: { contentItemI
         )}
       </header>
 
-      {heroImage && <BlockImage image={heroImage} alt={detail.title} sizes="(min-width: 900px) 70vw, 100vw" className="content-detail__hero" />}
+      {heroImage && (
+        <BlockImage image={heroImage} alt={detail.title} sizes="(min-width: 900px) 70vw, 100vw" className="content-detail__hero" priority />
+      )}
 
       {detail.event && (
         <>
           <EventInfoPanel event={detail.event} />
-          <EventRegistrationSection contentItemId={detail.id} initialEvent={detail.event} turnstileSiteKey={site.turnstileSiteKey} />
+          <EventRegistrationSection
+            contentItemId={detail.id}
+            initialEvent={detail.event}
+            turnstileSiteKey={site.turnstileSiteKey}
+            privacyNotice={site.eventPrivacyNotice}
+          />
         </>
       )}
 
