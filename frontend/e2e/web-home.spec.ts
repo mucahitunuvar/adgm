@@ -31,7 +31,15 @@ async function loginForApiToken(request: APIRequestContext): Promise<string> {
 // DEĞİL) aynı iki seçici + açık/koyu tema axe ile ayrıca tarandı, bağımsız bir betikle - 0
 // `color-contrast` ihlali bulundu. Bu, istisnanın gerçekten yalnız `next dev` + headless
 // Chromium'a özgü olduğunu kanıtlıyor; istisna bu yüzden kaldırılmadı.
-const KNOWN_FALSE_POSITIVE_TARGETS = new Set(['.eyebrow', '.page-lead']);
+const KNOWN_FALSE_POSITIVE_TARGETS = ['.eyebrow', '.page-lead'];
+
+// KOŞU 3G Görev 4 (e2e kararlılığı, 17 Ekim): tam pakette (`workers: 1`) bulundu - axe, 404 sayfasında
+// `.page-lead`'i DOM yuvalamasına bağlı olarak bileşik bir seçiciyle (`.section > .page-lead`)
+// bildiriyor; eski tam-eşleşme (`Set.has`) bu biçimi YAKALAMIYORDU, bilinen sahte ihlal gerçek
+// sanılıp test düşüyordu. `endsWith` - bileşik olsa da olmasa da AYNI son sınıfı eşler.
+function isKnownFalsePositiveTarget(target: string): boolean {
+  return KNOWN_FALSE_POSITIVE_TARGETS.some((selector) => target.endsWith(selector));
+}
 
 async function scanScreen(page: Page, url: string, label: string) {
   for (const viewport of VIEWPORTS) {
@@ -42,7 +50,7 @@ async function scanScreen(page: Page, url: string, label: string) {
       const results = await new AxeBuilder({ page }).analyze();
       const realViolations = results.violations.filter((violation) => {
         if (violation.id !== 'color-contrast') return true;
-        return !violation.nodes.every((node) => node.target.some((target) => KNOWN_FALSE_POSITIVE_TARGETS.has(target)));
+        return !violation.nodes.every((node) => node.target.some((target) => isKnownFalsePositiveTarget(target)));
       });
       expect(realViolations, `${label} @ ${viewport.label}, ${theme}`).toEqual([]);
     }

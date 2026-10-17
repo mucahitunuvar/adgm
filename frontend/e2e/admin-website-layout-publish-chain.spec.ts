@@ -283,10 +283,14 @@ test.describe('admin: menü + slider + ana sayfa düzeni yayın zinciri (gerçek
     const publicHomeAfter = (await (
       await request.get(`${BACKEND_URL}/api/v1/public/home`, { params: { lang: defaultLang } })
     ).json()) as { blocks: Array<{ type: string; data: unknown }> };
-    const heroBlockAfter = publicHomeAfter.blocks.find((b) => b.type === 'hero-slider');
+    // KOŞU 3G Görev 4 (e2e kararlılığı, 17 Ekim): `seed-dev.mjs` ana sayfaya ZATEN kendi hero-slider
+    // bloğunu seed'liyor - `.find(b => b.type === 'hero-slider')` seed-dev'in bloğunu (bu testin
+    // SONUNA eklediği YENİ blok değil) bulup testi yanlış gerekçeyle düşürüyordu. Adım 9'daki aynı
+    // doğrulama ZATEN `slideTitle`'a göre süzüyordu (doğru desen) - burası ona hizalandı.
+    const heroBlockAfter = publicHomeAfter.blocks.find(
+      (b) => b.type === 'hero-slider' && (b.data as Array<{ title: string }>).some((s) => s.title === slideTitle),
+    );
     expect(heroBlockAfter, "yayınlanan hero-slider bloğu public/home'da bulunamadı").toBeTruthy();
-    const slidesAfter = heroBlockAfter!.data as Array<{ title: string }>;
-    expect(slidesAfter.some((s) => s.title === slideTitle)).toBe(true);
 
     const publicSiteAfter = (await (
       await request.get(`${BACKEND_URL}/api/v1/public/site`, { params: { lang: defaultLang } })
