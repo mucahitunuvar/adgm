@@ -20,5 +20,14 @@ export function getApiErrorMessage(error: unknown): string {
     return 'Bu kayıt sizden sonra başka biri tarafından değiştirilmiş. Sayfayı yeniden yükleyip tekrar deneyin.';
   }
 
+  // KOŞU 3G Görev 2: `PublicSubmissionGuard` her reddi (süresi dolmuş/sahte gönderim jetonu, honeypot,
+  // Turnstile) aynı ayrıntısız koda indirir (AGENTS.md §27 - hangi kontrolün başarısız olduğu client'a
+  // sızdırılmaz), bu yüzden burada da tek, nedene göre ayırmayan ama en olası/düzeltilebilir nedeni
+  // (sayfanın `GetSubmissionTokenQueryHandler.TokenLifetime` - 2 saat - süresini aşacak kadar açık
+  // kalması) işaret eden Türkçe bir mesaj gösterilir; ham İngilizce backend `detail`'i hiç basılmaz.
+  if (error.title === 'PublicSubmission.Rejected') {
+    return 'Gönderiminiz işlenemedi. Sayfa uzun süre açık kaldıysa yenileyip tekrar deneyin.';
+  }
+
   return error.detail ?? error.title;
 }
