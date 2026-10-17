@@ -112,9 +112,11 @@ interface SetupState {
   formDefinitionId: string;
   formContentItemId: string;
   validRedirectFromPath: string;
-  invalidRedirectFromPath: string;
   redirectIds: string[];
   jobSlug: string;
+  jobProvinceId: string;
+  jobProvinceName: string;
+  jobPositionId: string;
   originalPublicJobListingsEnabled: boolean;
   originalBotProtectionEnabled: boolean;
 }
@@ -320,26 +322,28 @@ test.beforeAll(async ({ request }) => {
   expect(validRedirectResponse.ok(), 'create valid redirect').toBeTruthy();
   const validRedirect = (await validRedirectResponse.json()) as { id: string };
 
-  // Madde 2 (açık yönlendirme) regresyon kanıtı: `TargetPath` yalnız `Trim('/')` ile normalize edilir
-  // (ters eğik çizgi dokunulmaz, bkz. Redirect.NormalizeTargetPath) - "\evil.example" hiçbir "/"
-  // taşımadığı için backend'in kendi doğrulamasını (https zorunluluğu yalnız MUTLAK URI'lere uygulanır)
-  // GEÇER ve ResolveRoute'ta `RoutePathFormat.BuildPublicPath` ile "/\evil.example" olarak üretilir -
-  // tam olarak `safeRedirectTarget`'ın reddetmesi gereken biçim. Bu, gerçek admin API'siyle üretilebilen
-  // GERÇEK bir senaryo, kurgusal değil.
-  const invalidRedirectFromPath = `e2e-zararli-yonlendirme-${RUN_ID}`;
-  const invalidRedirectResponse = await request.post(`${BACKEND_URL}/api/v1/admin/website/redirects`, {
+  // Madde 2 (açık yönlendirme) regresyon kanıtı - GÜNCELLEME (KOŞU 3G): bu, `TargetPath`'in eskiden
+  // yalnız `Trim('/')` ile normalize edildiği (ters eğik çizgiye dokunmadığı) için backend'in KENDİSİ
+  // tarafından kabul edilen, gerçekten sömürülebilir bir senaryoydu - frontend'in `safeRedirectTarget`'ı
+  // tek savunma hattıydı. `Redirect.NormalizeTargetPath` artık backslash/"//"/şema/kontrol karakteri/
+  // ".."'yi kaynağında reddediyor (bkz. Redirect.cs, "Redirect.TargetPathInvalid"), bu yüzden bu test
+  // artık "oluşturulur, frontend reddeder" DEĞİL, "backend'in kendisi 400 ile reddeder" biçiminde -
+  // açık yönlendirme artık gerçek admin API'sinden hiç geçemiyor (frontend'in kontrolü ikinci bir
+  // savunma hattı olarak kalıyor, ama bu uçtan uca akışta hiç tetiklenmiyor).
+  const maliciousRedirectResponse = await request.post(`${BACKEND_URL}/api/v1/admin/website/redirects`, {
     headers: authHeaders(adminToken),
     data: {
       languageCode: 'tr',
-      fromPath: invalidRedirectFromPath,
+      fromPath: `e2e-zararli-yonlendirme-${RUN_ID}`,
       targetKind: 'Path',
       targetContentItemId: null,
       targetPath: '\\evil.example.com',
       statusCode: 'Found',
     },
   });
-  expect(invalidRedirectResponse.ok(), 'create malicious-shaped redirect').toBeTruthy();
-  const invalidRedirect = (await invalidRedirectResponse.json()) as { id: string };
+  expect(maliciousRedirectResponse.status(), 'reject malicious-shaped redirect target').toBe(400);
+  const maliciousRedirectProblem = (await maliciousRedirectResponse.json()) as { title: string };
+  expect(maliciousRedirectProblem.title).toBe('Redirect.TargetPathInvalid');
 
   // --- İlan (job): işveren kaydı + onay + ilan oluştur + gönder + danışman onayı ---
   const advisorEmail = `e2e-danisman-${RUN_ID}@example.com`;
@@ -395,6 +399,35 @@ test.beforeAll(async ({ request }) => {
         })();
 
   const employerToken = await loginAs(request, employerEmail, employerPassword);
+
+  // Madde 39/KOŞU 3G Görev 3: `/ilanlar`'ın il/pozisyon dropdown'larının gerçekten filtrelediğini
+  // kanıtlamak için ilanın kendi provinceId/positionId'si RASTGELE değil, `GET /public/reference-data/
+  // {provinces|positions}`'ın döndürdüğü GERÇEK bir kayda ait olmalı - aksi halde seçilen il/pozisyon
+  // hiçbir zaman eşleşmez. Diğer referans alanları (departman/çalışma şekli/çalışma yeri tipi) bu
+  // testte kullanılmadığı için rastgele bırakılır (bu dosyanın zaten var olan deseniyle tutarlı).
+  const provincesForJob = (await (
+    await request.get(`${BACKEND_URL}/api/v1/public/reference-data/provinces`)
+  ).json()) as { items: { id: string; name: string }[] };
+  const jobProvince = provincesForJob.items[0];
+  // Provinces is Province's own `MapReadOnly`-only reference data (no admin create endpoint - it's
+  // seeded structural data, not admin content), so it must already exist; Position is `MapWithCrud`
+  // and this dev DB currently has none, so one is created on demand if the list is empty.
+  expect(jobProvince, 'at least one active province exists (seeded reference data)').toBeTruthy();
+  const positionsForJob = (await (
+    await request.get(`${BACKEND_URL}/api/v1/public/reference-data/positions`)
+  ).json()) as { items: { id: string; name: string }[] };
+  const jobPosition =
+    positionsForJob.items[0] ??
+    (await (async () => {
+      const createPositionResponse = await request.post(`${BACKEND_URL}/api/v1/reference-data/positions`, {
+        headers: authHeaders(adminToken),
+        data: { code: `e2e-pozisyon-${RUN_ID}`, displayName: `E2E Pozisyon ${RUN_ID}`, sortOrder: 0 },
+      });
+      expect(createPositionResponse.status(), 'create fallback position lookup item').toBe(201);
+      const created = (await createPositionResponse.json()) as { id: string };
+      return { id: created.id, name: `E2E Pozisyon ${RUN_ID}` };
+    })());
+
   const createJobResponse = await request.post(`${BACKEND_URL}/api/v1/employer/jobs`, {
     headers: authHeaders(employerToken),
     data: {
@@ -402,9 +435,9 @@ test.beforeAll(async ({ request }) => {
       isForDisabledCandidates: false,
       employmentTypeId: crypto.randomUUID(),
       workLocationTypeId: crypto.randomUUID(),
-      positionId: crypto.randomUUID(),
+      positionId: jobPosition!.id,
       departmentId: crypto.randomUUID(),
-      provinceId: crypto.randomUUID(),
+      provinceId: jobProvince!.id,
       descriptionHtml: '<p>E2E test ilan açıklaması.</p>',
       experienceLevelId: crypto.randomUUID(),
       genderPreferenceIds: [],
@@ -461,9 +494,11 @@ test.beforeAll(async ({ request }) => {
     formDefinitionId: createdForm.id,
     formContentItemId: createdContent.id,
     validRedirectFromPath,
-    invalidRedirectFromPath,
-    redirectIds: [validRedirect.id, invalidRedirect.id],
+    redirectIds: [validRedirect.id],
     jobSlug: publishedJob!.slug,
+    jobProvinceId: jobProvince!.id,
+    jobProvinceName: jobProvince!.name,
+    jobPositionId: jobPosition!.id,
     originalPublicJobListingsEnabled: featuresBefore.publicJobListingsEnabled,
     originalBotProtectionEnabled: botProtectionBefore.botProtectionEnabled,
   };
@@ -597,6 +632,42 @@ test('ilan detayı slug ile açılır', async ({ page }) => {
   await expect(page.getByRole('heading', { name: `E2E İlan ${RUN_ID}`, level: 1 })).toBeVisible();
 });
 
+// Madde 39/KOŞU 3G Görev 3: il/pozisyon dropdown'ları `GET /public/reference-data/*`'ten gelen AD'ları
+// gösterir ama GUID'i gönderir, ve seçim gerçekten filtreler (yalnız dropdown'un var olması yetmez).
+test('ilan listesi: il dropdown\'u gerçek adı gösterir ve seçilince ilanı filtreler', async ({ page }) => {
+  await page.goto(`${WEB_URL}/ilanlar`);
+
+  // `getByLabel('İl')` madde 32'deki gibi bir strict-mode belirsizliğine düşer: "İlan ara" (hem global
+  // site aramasının hem bu formun kendi arama alanının erişilebilir adı) "İl" ile BAŞLADIĞI için alt
+  // dizge eşleşmesine de girer. Alan kimliğiyle sınırlanır.
+  const provinceSelect = page.locator('#job-search-province');
+  await expect(provinceSelect.locator('option', { hasText: setup.jobProvinceName })).toHaveCount(1);
+
+  await provinceSelect.selectOption(setup.jobProvinceId);
+  await page.getByRole('button', { name: 'Ara' }).click();
+  await expect(page).toHaveURL(new RegExp(`provinceId=${setup.jobProvinceId}`));
+
+  // `?provinceId=<ilk il>` her koşuda AYNI (iller listesi değişmez) - bu yüzden `listPublicJobs`'ın
+  // 60 sn `revalidate` önbelleğinde ÖNCEKİ bir koşudan kalan, bu RUN_ID'yi içermeyen "stale-while-
+  // revalidate" bir yanıt bulma riski gerçek (bu dosyanın filtresiz `/ilanlar` için zaten `beforeAll`'da
+  // yaptığı tazelik yoklamasıyla AYNI kök neden, ama bu tam URL hiç orada ısıtılmadı). İçerik
+  // görünmezse arka plan yenilemesinin yetişmesi için sayfa yeniden yüklenip tekrar denenir.
+  for (let attempt = 0; attempt < 15; attempt++) {
+    if (await page.getByText(`E2E İlan ${RUN_ID}`).isVisible()) break;
+    await page.waitForTimeout(2_000);
+    await page.reload();
+  }
+  await expect(page.getByText(`E2E İlan ${RUN_ID}`)).toBeVisible();
+});
+
+test('ilan listesi: eşleşmeyen pozisyon filtresi ilanı gizler (dropdown süsü değil, gerçek filtre)', async ({ page }) => {
+  const nonMatchingPositionId = crypto.randomUUID();
+  await page.goto(`${WEB_URL}/ilanlar?positionId=${nonMatchingPositionId}`);
+
+  await expect(page.getByText(`E2E İlan ${RUN_ID}`)).toHaveCount(0);
+  await expect(page.getByText('Aramanıza uygun ilan bulunamadı.')).toBeVisible();
+});
+
 // --- Form gönderimi ---
 
 // `PublicSubmissionGuard.MinimumFillDuration` (3 sn): gönderim, submission token alındıktan EN AZ 3
@@ -692,11 +763,11 @@ test('yönlendirme: geçerli hedef 301 ile takip edilir', async ({ page }) => {
   expect(response?.status()).toBe(200);
 });
 
-test('yönlendirme: açık yönlendirme biçimindeki hedef 404 ile reddedilir, dış adrese gidilmez', async ({ page }) => {
-  const response = await page.goto(`${WEB_URL}/${setup.invalidRedirectFromPath}`);
-  expect(response?.status()).toBe(404);
-  expect(page.url()).toBe(`${WEB_URL}/${setup.invalidRedirectFromPath}`);
-});
+// Açık yönlendirme biçimindeki bir hedefin (ör. "\evil.example.com") admin API'sinden 400 ile
+// reddedildiği `beforeAll`'da ("reject malicious-shaped redirect target") zaten doğrulanıyor - bu
+// artık gerçek admin API'siyle hiç OLUŞTURULAMADIĞI için burada tekrar bir sayfa navigasyonuyla
+// (404 bekleyerek) kanıtlamaya çalışmak yalnız "var olmayan bir yolun 404 döndüğünü" (zaten "bilinmeyen
+// yol 404 döner" testinin kapsamı) tekrarlardı, açık yönlendirme savunmasının kendisini DEĞİL.
 
 // --- Canonical mutlak yol ---
 

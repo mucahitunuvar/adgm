@@ -20,6 +20,15 @@ export {
   type GetPublicJobDetailResponse,
 } from './publicJobs';
 export {
+  listPublicProvinces,
+  listPublicPositions,
+  listPublicDepartments,
+  listPublicEmploymentTypes,
+  listPublicWorkLocationTypes,
+  type PublicLookupItemResponse,
+  type PagedResultOfPublicLookupItemResponse,
+} from './publicReferenceData';
+export {
   listPublicContents,
   getPublicContentById,
   type ListPublicContentsParams,
