@@ -1,4 +1,4 @@
-export { createApiClient, type ApiClient, type ApiClientOptions, type ApiRequestInit, type HttpMethod } from './client';
+export { createApiClient, type ApiClient, type ApiClientOptions, type ApiRequestInit, type BlobResponse, type HttpMethod } from './client';
 export { ApiError, type ProblemDetails } from './ApiError';
 export { getApiErrorMessage } from './getApiErrorMessage';
 export {

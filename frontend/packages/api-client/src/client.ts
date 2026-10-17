@@ -32,8 +32,20 @@ export interface ApiClientOptions {
   fetchImpl?: typeof fetch;
 }
 
+export interface BlobResponse {
+  blob: Blob;
+  /** `Content-Disposition`'dan çıkarılan dosya adı (varsa); kullanılmadan önce çağıran kaçışlamalıdır. */
+  filename: string | null;
+}
+
 export interface ApiClient {
   request<TResponse>(path: string, init?: ApiRequestInit): Promise<TResponse>;
+  /**
+   * CSV/dosya indirme gibi `application/json` olmayan yanıtlar için. Aynı Authorization/401-tek-
+   * seferlik-refresh davranışını `request` ile paylaşır (FRONTEND-GUVENLIK.md §2); tüketici `Blob`'u
+   * geçici bir `objectURL`'e çevirip indirmeyi tetikler, sonra `revokeObjectURL` ile serbest bırakır.
+   */
+  requestBlob(path: string, init?: ApiRequestInit): Promise<BlobResponse>;
 }
 
 function buildUrl(baseUrl: string, path: string, query?: ApiRequestInit['query']): string {
@@ -50,10 +62,25 @@ function buildUrl(baseUrl: string, path: string, query?: ApiRequestInit['query']
  * Tipli `fetch` sarmalayıcısı. UI bilmez; `Authorization: Bearer` yalnız burada eklenir
  * (FRONTEND-GUVENLIK.md §2). Sunucu (Next) ve tarayıcı tarafında aynı şekilde çalışır.
  */
+/** `Content-Disposition: attachment; filename="x.csv"; filename*=UTF-8''x.csv` biçimlerini ayrıştırır. */
+function parseContentDispositionFilename(header: string | null): string | null {
+  if (!header) return null;
+  const starMatch = /filename\*=(?:UTF-8'')?([^;]+)/i.exec(header);
+  if (starMatch?.[1]) {
+    try {
+      return decodeURIComponent(starMatch[1].trim().replace(/^"|"$/g, ''));
+    } catch {
+      // Çözümlenemeyen yüzde kodlaması; aşağıdaki düz `filename`'e düş.
+    }
+  }
+  const plainMatch = /filename="?([^";]+)"?/i.exec(header);
+  return plainMatch?.[1]?.trim() ?? null;
+}
+
 export function createApiClient(options: ApiClientOptions): ApiClient {
   const fetchImpl = options.fetchImpl ?? fetch;
 
-  async function performRequest<TResponse>(path: string, init: ApiRequestInit, isRetry: boolean): Promise<TResponse> {
+  async function performFetch(path: string, init: ApiRequestInit, isRetry: boolean): Promise<Response> {
     const token = options.getAccessToken?.();
     const headers: Record<string, string> = {};
     if (token) headers.Authorization = `Bearer ${token}`;
@@ -77,12 +104,18 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
 
     if (response.status === 401 && !isRetry && options.onUnauthorized) {
       await options.onUnauthorized();
-      return performRequest<TResponse>(path, init, true);
+      return performFetch(path, init, true);
     }
 
     if (!response.ok) {
       throw await ApiError.fromResponse(response);
     }
+
+    return response;
+  }
+
+  async function performRequest<TResponse>(path: string, init: ApiRequestInit): Promise<TResponse> {
+    const response = await performFetch(path, init, false);
 
     if (response.status === 204 || response.headers.get('Content-Length') === '0') {
       return undefined as TResponse;
@@ -94,9 +127,19 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     return (await response.json()) as TResponse;
   }
 
+  async function performBlobRequest(path: string, init: ApiRequestInit): Promise<BlobResponse> {
+    const response = await performFetch(path, init, false);
+    const blob = await response.blob();
+    const filename = parseContentDispositionFilename(response.headers.get('Content-Disposition'));
+    return { blob, filename };
+  }
+
   return {
     request<TResponse>(path: string, init: ApiRequestInit = {}) {
-      return performRequest<TResponse>(path, init, false);
+      return performRequest<TResponse>(path, init);
+    },
+    requestBlob(path: string, init: ApiRequestInit = {}) {
+      return performBlobRequest(path, init);
     },
   };
 }

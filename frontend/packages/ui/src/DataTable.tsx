@@ -47,7 +47,11 @@ export function DataTable<TRow>({
   if (rows.length === 0) return <EmptyState title={emptyTitle} description={emptyDescription} />;
 
   return (
-    <div className="data-table-wrap">
+    // `tabIndex={0}` + `role="region"`: bu sarmalayıcı dar genişlikte taşan tabloda yatay kaydırma
+    // konteyneri olur (`overflow-x: auto`, base.css) - axe'ın `scrollable-region-focusable` kuralı
+    // (WCAG 2.1.1) kaydırılabilir bir alanın klavyeyle erişilebilir olmasını ister. Taşmayan tablolarda
+    // da zararsız (görünür bir değişiklik yok, yalnız gereksiz bir Tab durağı).
+    <div className="data-table-wrap" tabIndex={0} role="region" aria-label={caption}>
       <table className="data-table">
         <caption className="sr-only">{caption}</caption>
         <thead>

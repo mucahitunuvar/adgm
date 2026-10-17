@@ -75,6 +75,42 @@ describe('createApiClient', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
+  it('requestBlob returns the body as a Blob and parses the filename from Content-Disposition', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response('email,language\r\na@b.com,tr\r\n', {
+        status: 200,
+        headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="newsletter-subscribers.csv"' },
+      }),
+    );
+    const client = createApiClient({ baseUrl: 'http://api.test', fetchImpl });
+
+    const result = await client.requestBlob('/foo');
+
+    expect(result.filename).toBe('newsletter-subscribers.csv');
+    expect(result.blob.type).toContain('text/csv');
+    expect(await result.blob.text()).toContain('a@b.com');
+  });
+
+  it('requestBlob returns a null filename when Content-Disposition is absent', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response('x', { status: 200, headers: { 'Content-Type': 'text/csv' } }));
+    const client = createApiClient({ baseUrl: 'http://api.test', fetchImpl });
+
+    const result = await client.requestBlob('/foo');
+
+    expect(result.filename).toBeNull();
+  });
+
+  it('requestBlob throws ApiError on a non-2xx response without consuming it as a blob', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(403, { title: 'Bu işlem için yetkiniz yok' }));
+    const client = createApiClient({ baseUrl: 'http://api.test', fetchImpl });
+
+    await expect(client.requestBlob('/foo')).rejects.toSatisfy((error: unknown) => {
+      expect(error).toBeInstanceOf(ApiError);
+      expect((error as ApiError).status).toBe(403);
+      return true;
+    });
+  });
+
   it('sends a FormData body as-is, without JSON.stringify or a manual Content-Type', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(201, { id: '1' }));
     const client = createApiClient({ baseUrl: 'http://api.test', fetchImpl });

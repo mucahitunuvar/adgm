@@ -21,7 +21,7 @@ const meBody = {
 };
 
 function fakeClient(request: ApiClient['request']): ApiClient {
-  return { request };
+  return { request, requestBlob: vi.fn() };
 }
 
 describe('createAuthController', () => {
