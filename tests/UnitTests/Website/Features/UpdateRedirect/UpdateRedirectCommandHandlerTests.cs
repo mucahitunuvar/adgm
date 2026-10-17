@@ -83,6 +83,24 @@ public class UpdateRedirectCommandHandlerTests
         Assert.NotEqual("baska-kaynak", redirect.TargetPath);
     }
 
+    // GÖREV 1: the chain-check pre-check used to normalize its own lookup candidate with a plain
+    // Trim('/') (leaving a backslash untouched), separately from redirect.Update()'s own validation.
+    // Now it reuses Redirect.NormalizeTargetPath and skips the lookup on failure, so the real
+    // "TargetPathInvalid" error from Update() below is what actually surfaces here - not a false
+    // "chain" conflict and not a silent pass-through.
+    [Fact]
+    public async Task Handle_WithBackslashInTargetPath_ReturnsTargetPathInvalid()
+    {
+        var redirect = SeedManualRedirect();
+        var command = new UpdateRedirectCommand(redirect.Id, "Path", null, "\\evil.example.com", "MovedPermanently");
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Redirect.TargetPathInvalid", result.Error.Code);
+        Assert.Equal(0, _unitOfWork.SaveChangesCallCount);
+    }
+
     [Fact]
     public async Task Handle_WithNewTargetPathEqualToOwnFromPath_Fails()
     {

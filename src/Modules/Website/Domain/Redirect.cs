@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using GenclikMerkezi.SharedKernel.Domain;
 using GenclikMerkezi.SharedKernel.Results;
 
@@ -7,7 +8,7 @@ namespace GenclikMerkezi.Modules.Website.Domain;
 // creation/editing on the same shape). (LanguageCode, FromPath) is unique - enforced by
 // IRedirectRepository callers and a DB index, the same split every other cross-aggregate uniqueness
 // rule in this module uses (ContentType.Key, ContentItem's FullPath).
-public sealed class Redirect : AggregateRoot
+public sealed partial class Redirect : AggregateRoot
 {
     public LanguageCode LanguageCode { get; private set; } = null!;
 
@@ -158,8 +159,20 @@ public sealed class Redirect : AggregateRoot
 
     // A relative target is normalized exactly like FromPath (no leading/trailing slash) so Görev 6's
     // route resolution can treat both the same way; an absolute target must be https (ADR-024 §15 -
-    // never http, javascript:, or any other scheme).
-    private static Result<string> NormalizeTargetPath(string? targetPath)
+    // never http, javascript:, or any other scheme). A relative target must additionally be a plain
+    // site-internal path: RouteResolutionService.TryResolveRedirectAsync feeds whatever this returns
+    // straight into RoutePathFormat.BuildPublicPath's Location header with no further sanitization, so
+    // a leading "\" or "//" here becomes "/\evil.example.com" or "//evil.example.com" - both forms
+    // browsers resolve as protocol-relative, i.e. an open redirect to an attacker-controlled host
+    // (confirmed reachable - see the frontend's safeRedirectTarget, which only guards the edge; this
+    // closes the same hole at the source). internal (not private) so UpdateRedirectCommandHandler's
+    // own pre-check can reuse the exact same rule instead of re-implementing a laxer Trim('/').
+    //
+    // The scheme check below runs on SchemePrefixRegex, not on Uri.TryCreate(..., UriKind.Absolute)
+    // alone: on Windows that call treats "//host" and "/\host" as UNC-style file:// URIs (verified -
+    // Scheme comes back "file", not "https"), so without this explicit, OS-independent regex gate the
+    // "//"/backslash rejection below would only hold by accident on whichever OS happens to run it.
+    internal static Result<string> NormalizeTargetPath(string? targetPath)
     {
         var trimmed = (targetPath ?? string.Empty).Trim();
         if (trimmed.Length == 0)
@@ -167,15 +180,41 @@ public sealed class Redirect : AggregateRoot
             return Result.Failure<string>(Error.Validation("Redirect.TargetPathRequired", "TargetPath is required."));
         }
 
-        if (Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
+        if (SchemePrefixRegex().IsMatch(trimmed) && Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
         {
             return uri.Scheme == Uri.UriSchemeHttps
                 ? Result.Success(trimmed)
                 : Result.Failure<string>(Error.Validation("Redirect.TargetPathMustBeHttps", "An absolute target URL must use https."));
         }
 
-        return Result.Success(trimmed.Trim('/'));
+        return ValidateRelativeTargetPath(trimmed);
     }
+
+    // Rejects everything a site-internal path has no legitimate reason to contain: backslashes and a
+    // "//" prefix (both the open-redirect vector described above), any ':' (SchemePrefixRegex above
+    // only matches a well-formed "scheme:" token at the very start; this also catches one embedded
+    // mid-path, or one that survives alongside a control character SchemePrefixRegex's URI follow-up
+    // would otherwise reject anyway), control characters, whitespace, and ".." path-traversal segments.
+    private static Result<string> ValidateRelativeTargetPath(string trimmed)
+    {
+        var isInvalid = trimmed.Contains('\\', StringComparison.Ordinal)
+            || trimmed.StartsWith("//", StringComparison.Ordinal)
+            || trimmed.Contains(':')
+            || trimmed.Any(char.IsControl)
+            || trimmed.Any(char.IsWhiteSpace)
+            || trimmed.Split('/').Contains("..", StringComparer.Ordinal);
+
+        return isInvalid
+            ? Result.Failure<string>(Error.Validation(
+                "Redirect.TargetPathInvalid", "TargetPath must be a plain site-internal path."))
+            : Result.Success(trimmed.Trim('/'));
+    }
+
+    // RFC 3986 scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ), anchored at the start and requiring
+    // the literal ':' to immediately follow (no "//" or "\" allowed to intervene, unlike a bare
+    // Uri.TryCreate check) - see NormalizeTargetPath's comment for why this can't just delegate to Uri.
+    [GeneratedRegex(@"^[a-zA-Z][a-zA-Z0-9+.\-]*:")]
+    private static partial Regex SchemePrefixRegex();
 
     // Shares RoutePathFormat.Normalize with NotFoundLog.NormalizePath (fix: a single path
     // normalization rule module-wide) - this also means FromPath is now lowercase/single-slash

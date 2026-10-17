@@ -180,6 +180,42 @@ public class RedirectAndNotFoundLogFlowTests : IClassFixture<CustomWebApplicatio
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    // GÖREV 1 (open-redirect hardening): end-to-end proof, through the real HTTP pipeline, that a
+    // targetPath browsers would resolve as protocol-relative (backslash or a "//" prefix) or as a
+    // non-https scheme is rejected with 400 ProblemDetails - not persisted and never reachable by
+    // RouteResolutionService. "yeni-yol" (valid relative) and "https://example.com/hedef" (valid
+    // absolute) prove the same request shape still succeeds when the target is actually safe.
+    [Theory]
+    [InlineData("\\evil.example.com", "Redirect.TargetPathInvalid")]
+    [InlineData("//evil.example.com", "Redirect.TargetPathInvalid")]
+    [InlineData("javascript:alert(1)", "Redirect.TargetPathMustBeHttps")]
+    public async Task CreateRedirect_WithUnsafeTargetPath_ReturnsBadRequestProblemDetails(string targetPath, string expectedErrorCode)
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var request = new CreateRedirectRequest("tr", $"eski-{Guid.NewGuid():N}", "Path", null, targetPath, "MovedPermanently");
+
+        var response = await _client.SendAsync(Authorized(HttpMethod.Post, "/api/v1/admin/website/redirects", accessToken, request));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetailsBody>();
+        Assert.Equal(expectedErrorCode, problem!.Title);
+    }
+
+    [Theory]
+    [InlineData("yeni-yol")]
+    [InlineData("https://example.com/hedef")]
+    public async Task CreateRedirect_WithSafeTargetPath_Succeeds(string targetPath)
+    {
+        var accessToken = await LoginAsAdminAsync();
+        var request = new CreateRedirectRequest("tr", $"eski-{Guid.NewGuid():N}", "Path", null, targetPath, "MovedPermanently");
+
+        var response = await _client.SendAsync(Authorized(HttpMethod.Post, "/api/v1/admin/website/redirects", accessToken, request));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    private sealed record ProblemDetailsBody(string Title, string Detail);
+
     [Fact]
     public async Task GetRedirects_FiltersBySearch()
     {

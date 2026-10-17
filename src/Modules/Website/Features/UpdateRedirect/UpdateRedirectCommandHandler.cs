@@ -44,14 +44,20 @@ public sealed class UpdateRedirectCommandHandler(
             }
         }
 
+        // Reuses Redirect's own NormalizeTargetPath rather than re-deriving a candidate with a laxer
+        // Trim('/') (that duplicate used to let a backslash/".."/control-character target slip past
+        // this chain check unnoticed - see Redirect.cs). A normalization failure here is not surfaced
+        // directly: it is left for redirect.Update(...) below to report as the real validation error.
         if (targetKind == RedirectTargetKind.Path && !string.IsNullOrWhiteSpace(request.TargetPath))
         {
-            var normalizedTarget = request.TargetPath.Trim('/');
-            if (await redirectRepository.GetByFromPathAsync(redirect.LanguageCode, normalizedTarget, cancellationToken) is { } chained
+            var normalizedTargetResult = Redirect.NormalizeTargetPath(request.TargetPath);
+            if (normalizedTargetResult.IsSuccess
+                && await redirectRepository.GetByFromPathAsync(redirect.LanguageCode, normalizedTargetResult.Value, cancellationToken) is { } chained
                 && chained.Id != redirect.Id)
             {
                 return Result.Failure(Error.Conflict(
-                    "Redirect.TargetWouldCreateChain", $"'{normalizedTarget}' is itself the source of another redirect; chained redirects are not supported."));
+                    "Redirect.TargetWouldCreateChain",
+                    $"'{normalizedTargetResult.Value}' is itself the source of another redirect; chained redirects are not supported."));
             }
         }
 

@@ -111,6 +111,90 @@ public class RedirectTests
         Assert.Equal("yeni-yol", result.Value.TargetPath);
     }
 
+    // GÖREV 1: open-redirect hardening. "\evil.example.com" used to survive NormalizeTargetPath's old
+    // Trim('/')-only logic untouched, and RouteResolutionService would turn it into the Location header
+    // "/\evil.example.com" - a form browsers resolve as protocol-relative (see the frontend's
+    // safeRedirectTarget commit for the confirmed end-to-end exploit path).
+    [Theory]
+    [InlineData("\\evil.example.com")]
+    [InlineData("/\\evil.example.com")]
+    [InlineData("yeni\\yol")]
+    public void Create_WithBackslashInTargetPath_Fails(string targetPath)
+    {
+        var result = Redirect.Create(
+            Tr, "eski-yol", RedirectTargetKind.Path, null, targetPath, RedirectStatusCode.MovedPermanently, UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Redirect.TargetPathInvalid", result.Error.Code);
+    }
+
+    [Theory]
+    [InlineData("//evil.example.com")]
+    [InlineData("///evil.example.com")]
+    public void Create_WithProtocolRelativeTargetPath_Fails(string targetPath)
+    {
+        var result = Redirect.Create(
+            Tr, "eski-yol", RedirectTargetKind.Path, null, targetPath, RedirectStatusCode.MovedPermanently, UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Redirect.TargetPathInvalid", result.Error.Code);
+    }
+
+    // "javascript:alert(1)" parses as a well-formed absolute Uri (Scheme="javascript") and is already
+    // rejected by the earlier Uri.TryCreate branch with "TargetPathMustBeHttps" - proven here so a
+    // future change to that branch cannot silently let it fall through to the relative path.
+    [Fact]
+    public void Create_WithJavascriptSchemeTargetPath_Fails()
+    {
+        var result = Redirect.Create(
+            Tr, "eski-yol", RedirectTargetKind.Path, null, "javascript:alert(1)", RedirectStatusCode.MovedPermanently, UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Redirect.TargetPathMustBeHttps", result.Error.Code);
+    }
+
+    [Theory]
+    [InlineData("yeni-yol/..")]
+    [InlineData("../yeni-yol")]
+    [InlineData("yeni/../yol")]
+    [InlineData("..")]
+    public void Create_WithPathTraversalSegmentInTargetPath_Fails(string targetPath)
+    {
+        var result = Redirect.Create(
+            Tr, "eski-yol", RedirectTargetKind.Path, null, targetPath, RedirectStatusCode.MovedPermanently, UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Redirect.TargetPathInvalid", result.Error.Code);
+    }
+
+    [Theory]
+    [InlineData("yeni yol")]
+    [InlineData("yeni\tyol")]
+    [InlineData("yeni\nyol")]
+    [InlineData("yeni\u0000yol")]
+    public void Create_WithWhitespaceOrControlCharacterInTargetPath_Fails(string targetPath)
+    {
+        var result = Redirect.Create(
+            Tr, "eski-yol", RedirectTargetKind.Path, null, targetPath, RedirectStatusCode.MovedPermanently, UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Redirect.TargetPathInvalid", result.Error.Code);
+    }
+
+    // "yeni:yol" alone matches the leading-scheme shape ("yeni" + ':') and is covered by
+    // Create_WithJavascriptSchemeTargetPath_Fails's branch instead (TargetPathMustBeHttps, not
+    // Invalid). A colon appearing after a '/' breaks that scheme shape, so it only reaches this
+    // explicit ':' rejection inside the relative-path branch.
+    [Fact]
+    public void Create_WithColonInRelativeTargetPath_Fails()
+    {
+        var result = Redirect.Create(
+            Tr, "eski-yol", RedirectTargetKind.Path, null, "yeni/yol:ekstra", RedirectStatusCode.MovedPermanently, UserId, Now);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Redirect.TargetPathInvalid", result.Error.Code);
+    }
+
     [Fact]
     public void Create_WithTargetPathEqualToFromPath_Fails()
     {
