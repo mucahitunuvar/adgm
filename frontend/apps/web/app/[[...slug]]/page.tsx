@@ -5,6 +5,7 @@ import { RouteResolutionKind, getPublicContentById, listPublicContents } from '@
 import { getPublicHome } from '@gm/api-client';
 import { createServerApiClient } from '../../lib/apiClient';
 import { pathFromSlug, resolvePage } from '../../lib/resolvePage';
+import { safeRedirectTarget } from '../../lib/safeRedirectTarget';
 import { metadataFromHomeSeo, metadataFromResolution, metadataFromContentDetail, metadataFromContentList } from '../../lib/seo';
 import { HomePage } from '../HomePage';
 import { ContentDetailPage } from '../../components/content/ContentDetailPage';
@@ -59,7 +60,12 @@ export default async function CatchAllPage({ params, searchParams }: CatchAllPag
       return <HomePage />;
 
     case RouteResolutionKind.Redirect: {
-      const target = resolution.location ?? '/';
+      // Açık yönlendirme koruması: backend'in döndürdüğü `location` kök-göreli bir yol ya da
+      // http(s) mutlak URL değilse (ör. bir veri tutarsızlığı veya `Redirects` kaydının beklenmeyen
+      // bir şekilde kirlenmesi sonucu) hedef yerine 404 gösterilir - hiçbir zaman doğrulanmamış bir
+      // adrese yönlendirme yapılmaz.
+      const target = safeRedirectTarget(resolution.location);
+      if (!target) notFound();
       // ADR-024 §15: backend 301/302 ayrımını belirler. App Router'ın özel durum fonksiyonları
       // 301/302'yi birebir üretemez (yöntem koruyan 308/307 üretirler); arama motorları 308'i
       // 301 gibi, 307'yi 302 gibi işler - en yakın eşdeğer budur (Route Handler yazmadan).
