@@ -424,6 +424,28 @@ export {
   type CookieConsentSummaryResponse,
   type GetCookieConsentSummaryParams,
 } from './adminWebsiteCookieConsent';
+export {
+  getRedirects,
+  createRedirect,
+  updateRedirect,
+  deleteRedirect,
+  type RedirectResponse,
+  type PagedResultOfRedirectResponse,
+  type CreateRedirectRequest,
+  type CreateRedirectResponse,
+  type UpdateRedirectRequest,
+  type ListRedirectsParams,
+} from './adminWebsiteRedirects';
+export {
+  getNotFoundPaths,
+  deleteNotFoundPath,
+  convertNotFoundPathToRedirect,
+  type NotFoundLogResponse,
+  type PagedResultOfNotFoundLogResponse,
+  type ConvertNotFoundPathToRedirectRequest,
+  type ConvertNotFoundPathToRedirectResponse,
+  type ListNotFoundPathsParams,
+} from './adminWebsiteNotFoundPaths';
 export type { paths, operations, components } from './schema';
 export * from './enums.generated';
 export { parseEnum } from './parseEnum';

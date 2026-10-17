@@ -3,6 +3,7 @@ import { useAuth } from '@gm/auth';
 import { Brand, Button, useToast } from '@gm/ui';
 import {
   BarChart3,
+  Cookie,
   FileText,
   Globe,
   Image,
@@ -10,9 +11,12 @@ import {
   LayoutPanelTop,
   LayoutTemplate,
   ListTree,
+  Mail,
   MessageSquareWarning,
   ScrollText,
+  Scale,
   Settings,
+  SignpostBig,
   SlidersHorizontal,
   Tag,
   User,
@@ -70,6 +74,10 @@ export function AdminShell() {
           { to: ROUTES.websiteImpactMetrics, label: 'Rakamlar şeridi', icon: BarChart3 },
           { to: ROUTES.websitePopups, label: 'Pop-up / Banner', icon: MessageSquareWarning },
           { to: ROUTES.websiteHomeLayout, label: 'Ana sayfa düzeni', icon: LayoutPanelTop },
+          { to: ROUTES.websiteLegalDocuments, label: 'Yasal metinler', icon: Scale },
+          { to: ROUTES.websiteNewsletterSubscribers, label: 'Bülten aboneleri', icon: Mail },
+          { to: ROUTES.websiteCookieConsentSummary, label: 'Çerez özeti', icon: Cookie },
+          { to: ROUTES.websiteRedirects, label: 'Yönlendirmeler', icon: SignpostBig },
         ]
       : []),
     { to: ROUTES.account, label: 'Hesabım', icon: User },

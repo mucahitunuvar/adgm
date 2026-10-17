@@ -29,6 +29,10 @@ import { SliderDetailPage } from './features/website/sliders/SliderDetailPage';
 import { ImpactMetricsPage } from './features/website/impactMetrics/ImpactMetricsPage';
 import { PopupsListPage } from './features/website/popups/PopupsListPage';
 import { PopupDetailPage } from './features/website/popups/PopupDetailPage';
+import { LegalDocumentsListPage } from './features/website/legalDocuments/LegalDocumentsListPage';
+import { NewsletterSubscribersListPage } from './features/website/newsletterSubscribers/NewsletterSubscribersListPage';
+import { CookieConsentSummaryPage } from './features/website/cookieConsent/CookieConsentSummaryPage';
+import { RedirectsPage } from './features/website/redirects/RedirectsPage';
 import { ROUTES } from './routes';
 
 /**
@@ -67,6 +71,9 @@ const queryClient = createQueryClient();
 // gzip ana paket - bkz. FRONTEND-ACIK-MADDELER.md A11).
 const ContentItemDetailPage = lazy(() => import('./features/website/contentItems/ContentItemDetailPage'));
 const HomeLayoutPage = lazy(() => import('./features/website/layouts/HomeLayoutPage'));
+// Taslak gövde düzenleyicisi (`LegalDocumentDraftBodyPanel`) de `@gm/rich-text` kullanır - yukarıdaki
+// not aynen geçerli.
+const LegalDocumentDetailPage = lazy(() => import('./features/website/legalDocuments/LegalDocumentDetailPage'));
 
 /**
  * `<Suspense>`'in parça (chunk) indirilirken gösterdiği geçici hal - yalnız `LoadingState` kullanmak
@@ -123,6 +130,18 @@ export function App() {
                     <Route path={ROUTES.websiteImpactMetrics} element={<ImpactMetricsPage />} />
                     <Route path={ROUTES.websitePopups} element={<PopupsListPage />} />
                     <Route path="/site-yonetimi/popup/:id" element={<PopupDetailPage />} />
+                    <Route path={ROUTES.websiteLegalDocuments} element={<LegalDocumentsListPage />} />
+                    <Route
+                      path="/site-yonetimi/yasal-metinler/:id"
+                      element={
+                        <Suspense fallback={<RouteLoadingFallback />}>
+                          <LegalDocumentDetailPage />
+                        </Suspense>
+                      }
+                    />
+                    <Route path={ROUTES.websiteNewsletterSubscribers} element={<NewsletterSubscribersListPage />} />
+                    <Route path={ROUTES.websiteCookieConsentSummary} element={<CookieConsentSummaryPage />} />
+                    <Route path={ROUTES.websiteRedirects} element={<RedirectsPage />} />
                     <Route
                       path={ROUTES.websiteHomeLayout}
                       element={

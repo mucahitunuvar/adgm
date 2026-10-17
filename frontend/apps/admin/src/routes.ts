@@ -30,4 +30,9 @@ export const ROUTES = {
   websitePopups: '/site-yonetimi/popup',
   websitePopupDetail: (popupId: string) => `/site-yonetimi/popup/${popupId}`,
   websiteHomeLayout: '/site-yonetimi/ana-sayfa-duzeni',
+  websiteLegalDocuments: '/site-yonetimi/yasal-metinler',
+  websiteLegalDocumentDetail: (id: string) => `/site-yonetimi/yasal-metinler/${id}`,
+  websiteNewsletterSubscribers: '/site-yonetimi/bulten-aboneleri',
+  websiteCookieConsentSummary: '/site-yonetimi/cerez-ozeti',
+  websiteRedirects: '/site-yonetimi/yonlendirmeler',
 } as const;
