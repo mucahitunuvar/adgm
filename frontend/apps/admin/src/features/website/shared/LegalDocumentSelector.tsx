@@ -2,6 +2,7 @@ import { getLegalDocumentById, getLegalDocuments, type LegalDocumentKind } from 
 import { useAuth } from '@gm/auth';
 import { formatDateTime, SelectField } from '@gm/ui';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { getEnumLabel } from '../../../i18n/getEnumLabel';
 
 /**
@@ -32,6 +33,17 @@ export function LegalDocumentSelector({
   const candidates = (documents ?? []).filter((document) => document.kind === kind);
   const selected = (documents ?? []).find((document) => document.key === value);
 
+  // `allowEmpty={false}` olduğunda "Yok" seçeneği yoktur - native `<select>` yine de ilk seçeneği
+  // GÖRSEL olarak seçili gösterir (tarayıcı varsayılanı), ama kontrollü `value` hâlâ `null` kalırsa bu
+  // görünümle durum birbirini tutmaz (kullanıcı hiçbir şeye dokunmadan kaydederse `null` gönderilir).
+  // İlk adayı otomatik seçerek bu ikisini eşitler.
+  useEffect(() => {
+    if (!allowEmpty && value === null && candidates.length > 0) {
+      onChange(candidates[0]!.key);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allowEmpty, value, candidates.length]);
+
   const { data: selectedDetail } = useQuery({
     queryKey: ['website-legal-document', selected?.id],
     queryFn: () => getLegalDocumentById(client, selected!.id),
@@ -44,6 +56,7 @@ export function LegalDocumentSelector({
       <SelectField
         id={`${idPrefix}-legal-document-key`}
         label={label}
+        required={!allowEmpty}
         hint={`Yalnız "${getEnumLabel('LegalDocumentKind', kind)}" türündeki yasal metinler listelenir.`}
         value={value ?? ''}
         onChange={(event) => onChange(event.target.value || null)}
