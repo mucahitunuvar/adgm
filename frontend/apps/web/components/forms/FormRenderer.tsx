@@ -1,16 +1,10 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import {
-  createApiClient,
-  createSubmissionToken,
-  submitFormSubmission,
-  ApiError,
-  getApiErrorMessage,
-  FormFieldType,
-} from '@gm/api-client';
+import { createApiClient, submitFormSubmission, ApiError, getApiErrorMessage, FormFieldType } from '@gm/api-client';
 import type { PublicFormDefinitionResponse, SubmitFormSubmissionResponse } from '@gm/api-client';
 import { TextField, TextAreaField, SelectField, CheckboxField, safeUrl } from '@gm/ui';
+import { useSubmissionToken } from '../../lib/useSubmissionToken';
 import { HoneypotField } from './HoneypotField';
 import { TurnstileWidget } from './TurnstileWidget';
 
@@ -34,6 +28,7 @@ export function FormRenderer({ formKey, definition, contentItemId, turnstileSite
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const submissionToken = useSubmissionToken();
 
   const hasUnsupportedField = definition.fields.some((field) => !KNOWN_FIELD_TYPES.has(field.type));
 
@@ -55,8 +50,7 @@ export function FormRenderer({ formKey, definition, contentItemId, turnstileSite
     setPhase('submitting');
     try {
       const client = createApiClient({ baseUrl: window.location.origin });
-      const { token } = await createSubmissionToken(client);
-      formData.set('token', token);
+      formData.set('token', submissionToken ?? '');
       formData.set('turnstileToken', turnstileToken ?? '');
       formData.set('lang', 'tr');
       formData.set('acceptedPrivacyNoticeVersion', String(definition.privacyNotice.versionNumber));
