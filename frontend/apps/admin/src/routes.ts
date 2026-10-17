@@ -35,4 +35,8 @@ export const ROUTES = {
   websiteNewsletterSubscribers: '/site-yonetimi/bulten-aboneleri',
   websiteCookieConsentSummary: '/site-yonetimi/cerez-ozeti',
   websiteRedirects: '/site-yonetimi/yonlendirmeler',
+  websiteForms: '/site-yonetimi/formlar',
+  websiteFormDetail: (formId: string) => `/site-yonetimi/formlar/${formId}`,
+  websiteFormSubmissions: '/site-yonetimi/form-basvurulari',
+  websiteFormSubmissionDetail: (submissionId: string) => `/site-yonetimi/form-basvurulari/${submissionId}`,
 } as const;

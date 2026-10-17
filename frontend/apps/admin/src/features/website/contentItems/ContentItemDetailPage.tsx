@@ -8,6 +8,7 @@ import { ROUTES } from '../../../routes';
 import { ContentItemAttachmentsPanel } from './ContentItemAttachmentsPanel';
 import { ContentItemCategoriesPanel } from './ContentItemCategoriesPanel';
 import { ContentItemEventPanel } from './ContentItemEventPanel';
+import { ContentItemFormPanel } from './ContentItemFormPanel';
 import { ContentItemGalleryPanel } from './ContentItemGalleryPanel';
 import { ContentItemGeneralForm } from './ContentItemGeneralForm';
 import { ContentItemHierarchyPanel } from './ContentItemHierarchyPanel';
@@ -108,6 +109,9 @@ export function ContentItemDetailPage() {
   }
   if (contentType.supportsBlockLayout) {
     tabs.push({ key: 'layout', label: 'Düzen', content: <ContentLayoutPanel contentItemId={contentItemId} /> });
+  }
+  if (contentType.supportsForm) {
+    tabs.push({ key: 'form', label: 'Form', content: <ContentItemFormPanel contentItemId={contentItemId} detail={detail} onSaved={onSaved} /> });
   }
   tabs.push({
     key: 'revisions',

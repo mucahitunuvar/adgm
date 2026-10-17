@@ -3,10 +3,12 @@ import { useAuth } from '@gm/auth';
 import { Brand, Button, useToast } from '@gm/ui';
 import {
   BarChart3,
+  ClipboardList,
   Cookie,
   FileText,
   Globe,
   Image,
+  Inbox,
   LayoutDashboard,
   LayoutPanelTop,
   LayoutTemplate,
@@ -78,6 +80,8 @@ export function AdminShell() {
           { to: ROUTES.websiteNewsletterSubscribers, label: 'Bülten aboneleri', icon: Mail },
           { to: ROUTES.websiteCookieConsentSummary, label: 'Çerez özeti', icon: Cookie },
           { to: ROUTES.websiteRedirects, label: 'Yönlendirmeler', icon: SignpostBig },
+          { to: ROUTES.websiteForms, label: 'Formlar', icon: ClipboardList },
+          { to: ROUTES.websiteFormSubmissions, label: 'Form başvuruları', icon: Inbox },
         ]
       : []),
     { to: ROUTES.account, label: 'Hesabım', icon: User },

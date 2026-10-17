@@ -33,6 +33,10 @@ import { LegalDocumentsListPage } from './features/website/legalDocuments/LegalD
 import { NewsletterSubscribersListPage } from './features/website/newsletterSubscribers/NewsletterSubscribersListPage';
 import { CookieConsentSummaryPage } from './features/website/cookieConsent/CookieConsentSummaryPage';
 import { RedirectsPage } from './features/website/redirects/RedirectsPage';
+import { FormDefinitionsListPage } from './features/website/forms/FormDefinitionsListPage';
+import { FormDefinitionDetailPage } from './features/website/forms/FormDefinitionDetailPage';
+import { FormSubmissionsListPage } from './features/website/formSubmissions/FormSubmissionsListPage';
+import { FormSubmissionDetailPage } from './features/website/formSubmissions/FormSubmissionDetailPage';
 import { ROUTES } from './routes';
 
 /**
@@ -142,6 +146,10 @@ export function App() {
                     <Route path={ROUTES.websiteNewsletterSubscribers} element={<NewsletterSubscribersListPage />} />
                     <Route path={ROUTES.websiteCookieConsentSummary} element={<CookieConsentSummaryPage />} />
                     <Route path={ROUTES.websiteRedirects} element={<RedirectsPage />} />
+                    <Route path={ROUTES.websiteForms} element={<FormDefinitionsListPage />} />
+                    <Route path="/site-yonetimi/formlar/:formId" element={<FormDefinitionDetailPage />} />
+                    <Route path={ROUTES.websiteFormSubmissions} element={<FormSubmissionsListPage />} />
+                    <Route path="/site-yonetimi/form-basvurulari/:submissionId" element={<FormSubmissionDetailPage />} />
                     <Route
                       path={ROUTES.websiteHomeLayout}
                       element={
