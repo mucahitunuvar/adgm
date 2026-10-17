@@ -12,10 +12,11 @@ namespace GenclikMerkezi.Modules.ReferenceData;
 // Madde 39 (Faz 3 Koşu 3C): /public/jobs filtre dropdown'larının (il/pozisyon/departman/çalışma
 // şekli/çalışma yeri tipi) ihtiyaç duyduğu 5 set - yalnız bunlar, ReferenceData'nın tüm kataloğu
 // değil. Zaten var olan AllowAnonymous /api/v1/reference-data/* uçlarından (LookupEndpoints.MapReadOnly)
-// kasıtlı olarak ayrı: onlar Code/IsActive/SortOrder taşır ve hiçbir rate limiting policy'sine tabi
-// değildir (dokunulmayan, önceden var olan bir tutarsızlık - bkz. tamamlanma raporu). Bu public aile
-// ise public-read rate limiting + dar id/ad şekliyle FRONTEND-API-SOZLESMESI.md §3'teki diğer
-// /public/* uçlarıyla aynı sözleşmeye uyar.
+// kasıtlı olarak ayrı: onlar Code/IsActive/SortOrder taşır (bu public aile dar id/ad şekli taşır).
+// İkisi de aynı "public-read" rate limiting politikasına bağlıdır - LookupEndpoints.MapReadOnly
+// önceden bu politikaya tabi değildi (dokunulmayan, önceden var olan bir tutarsızlık), sonradan
+// kapatıldı. Bu public aile ise ayrıca FRONTEND-API-SOZLESMESI.md §3'teki diğer /public/* uçlarıyla
+// aynı dar şekil sözleşmesine uyar.
 internal static class PublicLookupEndpoints
 {
     private const string BasePath = "/api/v1/public/reference-data";

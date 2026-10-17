@@ -44,7 +44,9 @@ internal static class LookupEndpoints
                     return result.ToOkOrProblem();
                 })
             .AllowAnonymous()
+            .RequireRateLimiting("public-read")
             .Produces<PagedResult<LookupItemSummary>>(StatusCodes.Status200OK)
+            .ProducesRateLimited()
             .WithName($"Get{routeSegment}")
             .WithTags("ReferenceData");
     }
